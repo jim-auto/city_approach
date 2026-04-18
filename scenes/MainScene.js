@@ -1,4 +1,5 @@
 import { sfx } from "../sfx.js";
+import { getBest, setBest, getDifficulty, cycleDifficulty } from "../storage.js";
 
 const WORLD = { width: 1280, height: 760 };
 
@@ -182,6 +183,10 @@ export default class MainScene extends Phaser.Scene {
   create(data = {}) {
     this.currentMapKey = data.mapKey || "nagoya";
     this.score = data.score || 0;
+    this.best = Math.max(getBest(), this.score);
+    this.difficulty = getDifficulty();
+    this.history = Array.isArray(data.history) ? data.history.slice(-3) : [];
+    if (data.lastOutcome) this.pushHistory(data.lastOutcome);
     this.joystickVector = new Phaser.Math.Vector2();
     this.joystickPointerId = null;
     this.nearNpc = null;
@@ -214,6 +219,7 @@ export default class MainScene extends Phaser.Scene {
 
     this.scale.on("resize", this.layoutHud, this);
     this.layoutHud();
+    this.updateBest();
   }
 
   buildMap() {
@@ -468,6 +474,13 @@ export default class MainScene extends Phaser.Scene {
       .setVisible(false);
 
     this.mapButton = this.createHudButton("街切替", () => this.switchMap(), 118, 46, 0x223340);
+    this.difficultyButton = this.createHudButton(
+      `難度:${this.difficulty.label}`,
+      () => this.toggleDifficulty(),
+      148,
+      46,
+      0x2f2a3a
+    );
     this.actionButtons = [
       this.createHudButton("軽く", () => this.tryApproach("soft"), 148, 52, 0x204a42),
       this.createHudButton("ストレート", () => this.tryApproach("straight"), 148, 52, 0x51323d),
@@ -516,6 +529,10 @@ export default class MainScene extends Phaser.Scene {
     const height = this.scale.height;
     this.infoText.setPosition(16, 14);
     this.mapButton.setPosition(width - this.mapButton.buttonWidth - 14, 14);
+    this.difficultyButton.setPosition(
+      width - this.mapButton.buttonWidth - this.difficultyButton.buttonWidth - 22,
+      14
+    );
 
     const buttonX = width - 160;
     const totalButtonHeight = 52 * this.actionButtons.length + 8 * (this.actionButtons.length - 1);
@@ -676,8 +693,33 @@ export default class MainScene extends Phaser.Scene {
     const nearText = this.nearNpc
       ? `${this.nearNpc.profile.type} / 興味${this.nearNpc.profile.interest}`
       : "近くの相手なし";
-    this.infoText.setText(`${map.label} ${map.period}\nScore ${this.score} / ${nearText}`);
+    const historyLine = this.history.length
+      ? `\n直近: ${this.history[this.history.length - 1]}`
+      : "";
+    this.infoText.setText(
+      `${map.label} ${map.period} / ${this.difficulty.label}\n` +
+        `Score ${this.score} / Best ${this.best} / ${nearText}` +
+        historyLine
+    );
     this.actionButtons.forEach((button) => button.redraw(Boolean(this.nearNpc)));
+  }
+
+  pushHistory(entry) {
+    this.history.push(entry);
+    if (this.history.length > 3) this.history.shift();
+  }
+
+  updateBest() {
+    if (this.score > this.best) this.best = this.score;
+    if (this.best > getBest()) setBest(this.best);
+  }
+
+  toggleDifficulty() {
+    this.difficulty = cycleDifficulty(this.difficulty.key);
+    const text = this.difficultyButton.list.find((c) => c.text !== undefined);
+    if (text) text.setText(`難度:${this.difficulty.label}`);
+    this.showMessage(`難度: ${this.difficulty.label}`, 1100);
+    sfx.play("tick");
   }
 
   tryApproach(actionKey) {
@@ -694,12 +736,16 @@ export default class MainScene extends Phaser.Scene {
     if (roll <= rate) {
       sfx.play("success");
       this.player.setVelocity(0, 0);
+      this.pushHistory(`${actionLabel} 通過 (${Math.round(rate * 100)}%)`);
       this.showMessage(`${actionLabel}: 反応あり。会話へ。`, 650);
       this.time.delayedCall(520, () => {
         this.scene.start("TalkScene", {
           profile: target.profile,
           mapKey: this.currentMapKey,
           score: this.score,
+          best: this.best,
+          difficulty: this.difficulty.key,
+          history: this.history.slice(),
         });
       });
       return;
@@ -709,6 +755,7 @@ export default class MainScene extends Phaser.Scene {
     target.disabled = true;
     target.sprite.setAlpha(0.35);
     target.icons.setAlpha(0.25);
+    this.pushHistory(`スルー (${actionLabel} ${Math.round(rate * 100)}%)`);
     this.showMessage(`スルーされた。${this.feedbackFor(target.profile, actionKey)} 成功率${Math.round(rate * 100)}%`, 2300);
   }
 
@@ -720,7 +767,9 @@ export default class MainScene extends Phaser.Scene {
 
     const target = this.nearNpc;
     const { bonus, reason } = this.calculateSkipBonus(target.profile);
-    this.score += bonus;
+    const adjusted = Math.round(bonus * this.difficulty.mult);
+    this.score += adjusted;
+    this.updateBest();
     sfx.play("skip");
 
     target.disabled = true;
@@ -729,7 +778,8 @@ export default class MainScene extends Phaser.Scene {
     this.nearNpc = null;
     this.nearRing.clear();
 
-    const sign = bonus >= 0 ? `+${bonus}` : `${bonus}`;
+    const sign = adjusted >= 0 ? `+${adjusted}` : `${adjusted}`;
+    this.pushHistory(`離れる ${sign}`);
     this.showMessage(`離れた。${reason} Score ${sign}`, 2300);
   }
 
@@ -768,7 +818,9 @@ export default class MainScene extends Phaser.Scene {
   calculateSuccessRate(profile, actionKey) {
     const map = MAPS[this.currentMapKey];
     const action = ACTIONS[actionKey];
-    let rate = 0.3 + map.baseBonus - map.noisePenalty + (profile.interest - 50) / 190;
+    const diff = this.difficulty;
+    let rate =
+      0.3 + map.baseBonus + diff.baseMod - map.noisePenalty - diff.noiseMod + (profile.interest - 50) / 190;
     profile.traits.forEach((trait) => {
       rate += TRAIT_RATE_MODS[trait] || 0;
       rate += action.traits[trait] || 0;
@@ -817,6 +869,10 @@ export default class MainScene extends Phaser.Scene {
 
   switchMap() {
     const next = this.currentMapKey === "nagoya" ? "kabukicho" : "nagoya";
-    this.scene.restart({ mapKey: next, score: this.score });
+    this.scene.restart({
+      mapKey: next,
+      score: this.score,
+      history: this.history.slice(),
+    });
   }
 }

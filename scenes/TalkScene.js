@@ -1,4 +1,5 @@
 import { sfx } from "../sfx.js";
+import { DIFFICULTIES, getDifficulty } from "../storage.js";
 
 const CHOICES = [
   { key: "empathy", label: "共感", color: 0x24544f },
@@ -20,6 +21,10 @@ export default class TalkScene extends Phaser.Scene {
     };
     this.mapKey = data.mapKey || "nagoya";
     this.score = data.score || 0;
+    this.best = data.best || 0;
+    this.history = Array.isArray(data.history) ? data.history.slice(-3) : [];
+    this.difficulty =
+      DIFFICULTIES.find((d) => d.key === data.difficulty) || getDifficulty();
     this.favor = 42 + Math.round((this.profile.interest - 50) * 0.35);
     this.discomfort = this.mapKey === "kabukicho" ? 24 : 14;
     this.lineIndex = -1;
@@ -328,23 +333,29 @@ export default class TalkScene extends Phaser.Scene {
     let body = "会話は自然に終わった。反応は悪くないが、次の提案には至らない。";
     this.resultBonus = 25;
 
+    let outcomeTag = "中間";
     if (success) {
       title = "カフェ成功";
       body = "短く文脈に合わせた提案が通った。";
       this.resultBonus = 120;
+      outcomeTag = "カフェ成功";
       sfx.play("win");
     } else if (failedByDiscomfort || this.discomfort >= 100) {
       title = "失敗";
       body = "違和感が上がりすぎた。追わずに離れる。";
       this.resultBonus = 0;
+      outcomeTag = "違和感で失敗";
       sfx.play("lose");
     } else if (this.favor >= 68) {
       body = "短い雑談は成立。場所とタイミング次第で次に進める。";
       this.resultBonus = 55;
+      outcomeTag = "雑談成立";
       sfx.play("win");
     } else {
+      outcomeTag = "中間";
       sfx.play("skip");
     }
+    this.lastOutcome = `${outcomeTag} 好${this.favor}/違${this.discomfort}`;
 
     this.topicText.setText(title);
     this.lineText.setFontSize(this.scale.width < 430 ? 30 : 42);
@@ -358,9 +369,14 @@ export default class TalkScene extends Phaser.Scene {
   }
 
   returnToField() {
+    const adjusted = Math.round(this.resultBonus * this.difficulty.mult);
     this.scene.start("MainScene", {
       mapKey: this.mapKey,
-      score: this.score + this.resultBonus,
+      score: this.score + adjusted,
+      best: this.best,
+      difficulty: this.difficulty.key,
+      history: this.history,
+      lastOutcome: `${this.lastOutcome || "中間"} +${adjusted}`,
     });
   }
 

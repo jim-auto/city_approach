@@ -2,7 +2,7 @@
 
 This file is a long-form handoff note for the next coding agent, especially Claude. It describes the current state of the project, why the implementation is shaped this way, what has already been verified, and what would be useful to improve next.
 
-Last updated: 2026-04-19 JST (added 離れる button + WebAudio SFX)
+Last updated: 2026-04-19 JST (added 離れる, WebAudio SFX, difficulty, high score, history)
 
 ## 1. Project Summary
 
@@ -51,6 +51,7 @@ project-root/
 +-- style.css
 +-- main.js
 +-- sfx.js
++-- storage.js
 +-- README.md
 +-- PLAN.md
 +-- scenes/
@@ -170,8 +171,11 @@ Important methods:
 - `updateJoystick()`: calculates joystick vector.
 - `updateNpcs()`: moves NPCs.
 - `updateNearestNpc()`: detects approach range.
-- `tryApproach()`: runs success/failure check.
-- `respectfullySkip()`: disables the near NPC and adds a small Score bonus based on how strong the defensive signals were. No TalkScene transition.
+- `tryApproach()`: runs success/failure check. Pushes an entry to `history` on both branches.
+- `respectfullySkip()`: disables the near NPC and adds a small Score bonus based on how strong the defensive signals were. Bonus is multiplied by `this.difficulty.mult`. No TalkScene transition.
+- `toggleDifficulty()`: cycles the difficulty, persists via `storage.js`, updates the HUD button label and info text.
+- `updateBest()`: syncs `this.best` with the current score and persists to `localStorage` when it exceeds the stored value.
+- `pushHistory(entry)`: keeps the last 3 outcome strings for the info HUD.
 - `calculateSkipBonus()`: maps defensive traits (`イヤホン`, `友達といる`, `歩くの速い`, `外界遮断`, `夜の警戒`, `人混み`) to a bonus capped at 15. If none match but open traits are present, returns 1. If nothing matches, returns 2.
 - `calculateSuccessRate()`: core approach probability logic.
 - `feedbackFor()`: failure feedback text.
@@ -554,9 +558,9 @@ Priority order if Claude continues:
 4. Add a title or start overlay only if it does not block direct play.
 5. ~~Add simple "respectful skip" mechanic where not approaching a busy/high-defense NPC gives a small score.~~ **Done** (2026-04-19): `離れる` button in `MainScene.respectfullySkip()`. Tuning the bonus table in `calculateSkipBonus()` is the natural next polish.
 6. Add more conversation lines per trait.
-7. Add a small result log so the player learns why an approach worked or failed.
-8. Add a difficulty selector.
-9. Add local persistent high score with `localStorage`.
+7. ~~Add a small result log so the player learns why an approach worked or failed.~~ **Done** (2026-04-19): last 3 entries tracked in `MainScene.history` and the most recent is shown as the third line of the info HUD. Entries survive map switches and TalkScene round-trips via scene data.
+8. ~~Add a difficulty selector.~~ **Done** (2026-04-19): three levels (`やさしい`/`ふつう`/`きびしい`) in `storage.js`. A HUD button cycles them and persists the choice in `localStorage`. `baseMod`/`noiseMod` shift the success formula; `mult` scales both skip and TalkScene bonuses so the leaderboard reflects actual difficulty.
+9. ~~Add local persistent high score with `localStorage`.~~ **Done** (2026-04-19): `getBest`/`setBest` in `storage.js`. `MainScene.updateBest()` persists on any new high. Displayed in the info HUD as `Best <n>`.
 10. Add a tiny smoke test script to prevent scene-init regressions.
 
 ## 18. Recommended Art Improvements
