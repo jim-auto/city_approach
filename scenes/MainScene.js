@@ -1,3 +1,5 @@
+import { sfx } from "../sfx.js";
+
 const WORLD = { width: 1280, height: 760 };
 
 const MAPS = {
@@ -690,6 +692,7 @@ export default class MainScene extends Phaser.Scene {
     const actionLabel = ACTIONS[actionKey].label;
 
     if (roll <= rate) {
+      sfx.play("success");
       this.player.setVelocity(0, 0);
       this.showMessage(`${actionLabel}: 反応あり。会話へ。`, 650);
       this.time.delayedCall(520, () => {
@@ -702,6 +705,7 @@ export default class MainScene extends Phaser.Scene {
       return;
     }
 
+    sfx.play("fail");
     target.disabled = true;
     target.sprite.setAlpha(0.35);
     target.icons.setAlpha(0.25);
@@ -717,6 +721,7 @@ export default class MainScene extends Phaser.Scene {
     const target = this.nearNpc;
     const { bonus, reason } = this.calculateSkipBonus(target.profile);
     this.score += bonus;
+    sfx.play("skip");
 
     target.disabled = true;
     target.sprite.setAlpha(0.28);

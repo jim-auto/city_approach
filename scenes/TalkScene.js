@@ -1,3 +1,5 @@
+import { sfx } from "../sfx.js";
+
 const CHOICES = [
   { key: "empathy", label: "共感", color: 0x24544f },
   { key: "tsukkomi", label: "ツッコミ", color: 0x5d3340 },
@@ -259,6 +261,7 @@ export default class TalkScene extends Phaser.Scene {
     this.topicText.setText(line.weak ? `反応ポイント: ${line.cue}` : `観察: ${line.cue}`);
     this.lineStartedAt = this.time.now;
     this.lineDuration = line.weak ? 3800 : 3000;
+    sfx.play("tick");
   }
 
   choose(choiceKey) {
@@ -271,14 +274,17 @@ export default class TalkScene extends Phaser.Scene {
       this.favor = Phaser.Math.Clamp(this.favor + 24, 0, 100);
       this.discomfort = Phaser.Math.Clamp(this.discomfort - 6, 0, 100);
       this.feedbackText.setText("刺さった。相手の文脈に合っている。");
+      sfx.play("hit");
     } else if (line.weak) {
       this.favor = Phaser.Math.Clamp(this.favor - 5, 0, 100);
       this.discomfort = Phaser.Math.Clamp(this.discomfort + 22, 0, 100);
       this.feedbackText.setText("ズレた。弱点ではなく不安を押している。");
+      sfx.play("miss");
     } else {
       this.favor = Phaser.Math.Clamp(this.favor + (choiceKey === "empathy" ? 7 : 1), 0, 100);
       this.discomfort = Phaser.Math.Clamp(this.discomfort + (choiceKey === "tsukkomi" ? 5 : 0), 0, 100);
       this.feedbackText.setText("観察フェーズ。急がず反応を見る。");
+      sfx.play("tick");
     }
 
     this.drawGauges();
@@ -326,13 +332,18 @@ export default class TalkScene extends Phaser.Scene {
       title = "カフェ成功";
       body = "短く文脈に合わせた提案が通った。";
       this.resultBonus = 120;
+      sfx.play("win");
     } else if (failedByDiscomfort || this.discomfort >= 100) {
       title = "失敗";
       body = "違和感が上がりすぎた。追わずに離れる。";
       this.resultBonus = 0;
+      sfx.play("lose");
     } else if (this.favor >= 68) {
       body = "短い雑談は成立。場所とタイミング次第で次に進める。";
       this.resultBonus = 55;
+      sfx.play("win");
+    } else {
+      sfx.play("skip");
     }
 
     this.topicText.setText(title);

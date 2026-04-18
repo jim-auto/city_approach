@@ -2,7 +2,7 @@
 
 This file is a long-form handoff note for the next coding agent, especially Claude. It describes the current state of the project, why the implementation is shaped this way, what has already been verified, and what would be useful to improve next.
 
-Last updated: 2026-04-19 JST (added 離れる/respectful skip button)
+Last updated: 2026-04-19 JST (added 離れる button + WebAudio SFX)
 
 ## 1. Project Summary
 
@@ -50,6 +50,7 @@ project-root/
 +-- index.html
 +-- style.css
 +-- main.js
++-- sfx.js
 +-- README.md
 +-- PLAN.md
 +-- scenes/
@@ -478,16 +479,19 @@ Pages is already configured to publish `main` branch root.
 
 There is no persistent test suite. Browser checks were manual/temporary. If the project grows, add a tiny smoke script or Playwright setup.
 
-### No audio
+### Audio (implemented 2026-04-19)
 
-There is currently no sound. A retro-style game would benefit a lot from:
+`sfx.js` is a tiny WebAudio module. It creates one `AudioContext` on the first `pointerdown`/`keydown`/`touchstart` (required for mobile autoplay policies) and exposes `sfx.play(name)` with these presets:
 
-- approach confirm sound
-- failure blip
-- TalkScene line advance sound
-- gauge change sound
+- `success` / `fail` — approach outcome in `MainScene.tryApproach()`
+- `skip` — `MainScene.respectfullySkip()` and TalkScene's "intermediate" result
+- `tick` — TalkScene `nextLine()` and non-weak choices
+- `hit` / `miss` — TalkScene `choose()` correct / wrong on weak lines
+- `win` / `lose` — TalkScene `showFinal()`
 
-Use generated oscillator sounds or tiny local assets. Avoid heavy audio libraries.
+Each preset is a short oscillator tone (50–340ms) with a frequency sweep and an envelope. Chord presets (`win`, `lose`) layer three staggered tones. No external audio files — keeps the no-build / GitHub Pages constraint.
+
+If audio ever needs to be disabled, set `sfx.enabled = false` from the console; all `play()` calls become no-ops.
 
 ### No animation frames
 
@@ -546,7 +550,7 @@ Priority order if Claude continues:
 
 1. Improve player/NPC animation.
 2. Replace text status icons with pixel icon sheet.
-3. Add lightweight sound effects.
+3. ~~Add lightweight sound effects.~~ **Done** (2026-04-19): `sfx.js` + wiring in both scenes. Next polish: gauge-change tick, volume slider.
 4. Add a title or start overlay only if it does not block direct play.
 5. ~~Add simple "respectful skip" mechanic where not approaching a busy/high-defense NPC gives a small score.~~ **Done** (2026-04-19): `離れる` button in `MainScene.respectfullySkip()`. Tuning the bonus table in `calculateSkipBonus()` is the natural next polish.
 6. Add more conversation lines per trait.
