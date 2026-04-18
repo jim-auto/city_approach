@@ -55,6 +55,7 @@ project-root/
 +-- README.md
 +-- PLAN.md
 +-- scenes/
+|   +-- TitleScene.js
 |   +-- MainScene.js
 |   +-- TalkScene.js
 +-- assets/
@@ -552,12 +553,12 @@ https://jim-auto.github.io/city_approach/?v=<commit-sha>
 
 Priority order if Claude continues:
 
-1. Improve player/NPC animation.
+1. Improve player/NPC animation. **Partial** (2026-04-19): gentle scaleY breathing tween on player and each NPC in `MainScene.create()` / `spawnNpcs()`. Directional walk frames still TODO and require actual sprite frames.
 2. Replace text status icons with pixel icon sheet.
 3. ~~Add lightweight sound effects.~~ **Done** (2026-04-19): `sfx.js` + wiring in both scenes. Next polish: gauge-change tick, volume slider.
-4. Add a title or start overlay only if it does not block direct play.
+4. ~~Add a title or start overlay only if it does not block direct play.~~ **Done** (2026-04-19): `scenes/TitleScene.js` is the first scene. Shows title, subtitle, best score, and a cycling difficulty button. Any tap or key starts `MainScene`, which also satisfies the mobile audio-unlock gesture requirement.
 5. ~~Add simple "respectful skip" mechanic where not approaching a busy/high-defense NPC gives a small score.~~ **Done** (2026-04-19): `離れる` button in `MainScene.respectfullySkip()`. Tuning the bonus table in `calculateSkipBonus()` is the natural next polish.
-6. Add more conversation lines per trait.
+6. ~~Add more conversation lines per trait.~~ **Done** (2026-04-19): `TalkScene.buildLines()` picks from a pool grouped by trait bucket (`opening`, `phone`, `eye_contact`, `waiting`, `friend`, `earphones`, `fast`, `slow`, `lookingAround`, per-map). Each NPC encounter reshuffles, so replaying the same NPC type now produces different dialogue.
 7. ~~Add a small result log so the player learns why an approach worked or failed.~~ **Done** (2026-04-19): last 3 entries tracked in `MainScene.history` and the most recent is shown as the third line of the info HUD. Entries survive map switches and TalkScene round-trips via scene data.
 8. ~~Add a difficulty selector.~~ **Done** (2026-04-19): three levels (`やさしい`/`ふつう`/`きびしい`) in `storage.js`. A HUD button cycles them and persists the choice in `localStorage`. `baseMod`/`noiseMod` shift the success formula; `mult` scales both skip and TalkScene bonuses so the leaderboard reflects actual difficulty.
 9. ~~Add local persistent high score with `localStorage`.~~ **Done** (2026-04-19): `getBest`/`setBest` in `storage.js`. `MainScene.updateBest()` persists on any new high. Displayed in the info HUD as `Best <n>`.

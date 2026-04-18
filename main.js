@@ -1,3 +1,4 @@
+import TitleScene from "./scenes/TitleScene.js";
 import MainScene from "./scenes/MainScene.js";
 import TalkScene from "./scenes/TalkScene.js";
 
@@ -36,7 +37,7 @@ const config = {
   input: {
     activePointers: 4,
   },
-  scene: [MainScene, TalkScene],
+  scene: [TitleScene, MainScene, TalkScene],
 };
 
 window.cityApproachGame = new Phaser.Game(config);

@@ -211,6 +211,14 @@ export default class MainScene extends Phaser.Scene {
     this.player.body.setSize(22, 24).setOffset(5, 6);
     this.player.setCollideWorldBounds(true);
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
+    this.tweens.add({
+      targets: this.player,
+      scaleY: 1.68,
+      duration: 440,
+      yoyo: true,
+      repeat: -1,
+      ease: "Sine.easeInOut",
+    });
 
     this.createHud();
     this.buildMap();
@@ -366,6 +374,14 @@ export default class MainScene extends Phaser.Scene {
           : Phaser.Math.RND.pick(map.lanes) + Phaser.Math.Between(-30, 30);
       const sprite = this.add.sprite(x, y, "npc").setScale(1.45).setDepth(8);
       sprite.setTint(profile.flags.includes("with_friend") ? 0xffe07a : 0xffffff);
+      this.tweens.add({
+        targets: sprite,
+        scaleY: 1.53,
+        duration: Phaser.Math.Between(520, 640),
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.easeInOut",
+      });
       const icons = this.add
         .text(x, y - 38, this.iconsFor(profile.flags), {
           fontFamily: "monospace",

@@ -84,51 +84,88 @@ export default class TalkScene extends Phaser.Scene {
   }
 
   buildLines(profile, mapKey) {
-    const lines = [
-      { text: "友達待っててさ", weak: false, correct: [], cue: "同伴確認" },
-      { text: "でもちょっと時間あるし", weak: true, correct: ["proposal", "empathy"], cue: "時間の余白" },
-      { text: "ナンパとか普段話さないけど", weak: true, correct: ["empathy"], cue: "警戒" },
-    ];
+    const pool = {
+      opening: [
+        { text: "友達待っててさ", weak: false, correct: [], cue: "同伴確認" },
+        { text: "今ちょっと手短になら", weak: false, correct: [], cue: "時間制約" },
+        { text: "普段は返さないんだけど", weak: false, correct: [], cue: "初見の警戒" },
+      ],
+      neutralWeak: [
+        { text: "でもちょっと時間あるし", weak: true, correct: ["proposal", "empathy"], cue: "時間の余白" },
+        { text: "ナンパとか慣れてなくて", weak: true, correct: ["empathy"], cue: "警戒" },
+        { text: "えっと、何の話?", weak: true, correct: ["tsukkomi", "proposal"], cue: "仕切り直し" },
+      ],
+      phone: [
+        { text: "通知見ながらでごめん", weak: true, correct: ["tsukkomi", "empathy"], cue: "注意分散" },
+        { text: "LINE返してからでいい?", weak: true, correct: ["empathy"], cue: "優先順位" },
+      ],
+      eye_contact: [
+        { text: "目合っちゃったね", weak: true, correct: ["empathy", "tsukkomi"], cue: "偶然の合図" },
+        { text: "ちらっと見えちゃったから", weak: true, correct: ["tsukkomi"], cue: "軽いノリ" },
+      ],
+      waiting: [
+        { text: "友達もう遅れてる", weak: true, correct: ["tsukkomi", "empathy"], cue: "待ち時間" },
+        { text: "ここで30分待ってる", weak: true, correct: ["empathy", "proposal"], cue: "余白" },
+      ],
+      friend: [
+        { text: "友達が戻ったらすぐ行くね", weak: true, correct: ["empathy", "proposal"], cue: "相手の予定" },
+        { text: "この子ほんとに急いでて", weak: false, correct: [], cue: "グループ事情" },
+      ],
+      earphones: [
+        { text: "今ちょっと音楽聞いてて", weak: true, correct: ["empathy"], cue: "遮断サイン" },
+        { text: "片耳だけ外した", weak: true, correct: ["empathy", "proposal"], cue: "半開き" },
+      ],
+      fast: [
+        { text: "急いでるんだごめん", weak: false, correct: [], cue: "急ぎ" },
+      ],
+      slow: [
+        { text: "まだ時間あるからゆっくり", weak: true, correct: ["empathy"], cue: "余白" },
+      ],
+      lookingAround: [
+        { text: "ここ初めてで迷っちゃって", weak: true, correct: ["proposal", "tsukkomi"], cue: "情報要求" },
+        { text: "人多くてびっくりしてる", weak: true, correct: ["empathy", "tsukkomi"], cue: "圧" },
+      ],
+      kabukicho: [
+        { text: "この辺、声かけ多くて警戒しちゃう", weak: true, correct: ["empathy"], cue: "夜の警戒" },
+        { text: "ネオン撮りたかったのに人多い", weak: true, correct: ["empathy", "proposal"], cue: "場所の文脈" },
+        { text: "夜ってテンション違うよね", weak: true, correct: ["tsukkomi", "empathy"], cue: "時間帯" },
+      ],
+      nagoya: [
+        { text: "改札前だと人が多いね", weak: true, correct: ["tsukkomi", "proposal"], cue: "場所の文脈" },
+        { text: "金時計で合流予定", weak: false, correct: [], cue: "待ち合わせ" },
+        { text: "エスカの方から来たんだけど", weak: true, correct: ["tsukkomi", "empathy"], cue: "地理" },
+      ],
+    };
 
+    const pickOne = (bucket) => Phaser.Math.RND.pick(bucket);
+    const lines = [pickOne(pool.opening)];
+
+    if (profile.traits.includes("イヤホン") || profile.traits.includes("外界遮断")) {
+      lines.push(pickOne(pool.earphones));
+    }
     if (profile.traits.includes("スマホ")) {
-      lines.splice(1, 0, {
-        text: "通知見ながらでごめん",
-        weak: true,
-        correct: ["tsukkomi", "empathy"],
-        cue: "注意分散",
-      });
+      lines.push(pickOne(pool.phone));
+    }
+    if (profile.traits.includes("目が合う")) {
+      lines.push(pickOne(pool.eye_contact));
+    }
+    if (profile.traits.includes("待ち合わせ") || profile.traits.includes("立ち止まり")) {
+      lines.push(pickOne(pool.waiting));
     }
     if (profile.traits.includes("友達といる")) {
-      lines.push({
-        text: "友達が戻ったらすぐ行くね",
-        weak: true,
-        correct: ["empathy", "proposal"],
-        cue: "相手の予定",
-      });
+      lines.push(pickOne(pool.friend));
     }
-    if (profile.traits.includes("イヤホン") || profile.traits.includes("外界遮断")) {
-      lines.unshift({
-        text: "今ちょっと音楽聞いてて",
-        weak: true,
-        correct: ["empathy"],
-        cue: "遮断サイン",
-      });
+    if (profile.traits.includes("歩くの速い")) {
+      lines.push(pickOne(pool.fast));
     }
-    if (mapKey === "kabukicho") {
-      lines.push({
-        text: "この辺、声かけ多くて警戒しちゃう",
-        weak: true,
-        correct: ["empathy"],
-        cue: "夜の警戒",
-      });
-    } else {
-      lines.push({
-        text: "改札前だと人が多いね",
-        weak: true,
-        correct: ["tsukkomi", "proposal"],
-        cue: "場所の文脈",
-      });
+    if (profile.traits.includes("歩くの遅い")) {
+      lines.push(pickOne(pool.slow));
     }
+    if (profile.traits.includes("観光中") || profile.traits.includes("周囲を見る")) {
+      lines.push(pickOne(pool.lookingAround));
+    }
+    lines.push(pickOne(pool.neutralWeak));
+    lines.push(pickOne(mapKey === "kabukicho" ? pool.kabukicho : pool.nagoya));
     return lines.slice(0, 6);
   }
 
