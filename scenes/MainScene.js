@@ -470,6 +470,7 @@ export default class MainScene extends Phaser.Scene {
       this.createHudButton("軽く", () => this.tryApproach("soft"), 148, 52, 0x204a42),
       this.createHudButton("ストレート", () => this.tryApproach("straight"), 148, 52, 0x51323d),
       this.createHudButton("状況ツッコミ", () => this.tryApproach("situational"), 148, 52, 0x33405a),
+      this.createHudButton("離れる", () => this.respectfullySkip(), 148, 52, 0x2a2f38),
     ];
 
     this.joystickBase = this.add.graphics().setScrollFactor(0).setDepth(50);
@@ -705,6 +706,58 @@ export default class MainScene extends Phaser.Scene {
     target.sprite.setAlpha(0.35);
     target.icons.setAlpha(0.25);
     this.showMessage(`スルーされた。${this.feedbackFor(target.profile, actionKey)} 成功率${Math.round(rate * 100)}%`, 2300);
+  }
+
+  respectfullySkip() {
+    if (!this.nearNpc) {
+      this.showMessage("離れる相手がいない。まずサインを観察してから。", 1500);
+      return;
+    }
+
+    const target = this.nearNpc;
+    const { bonus, reason } = this.calculateSkipBonus(target.profile);
+    this.score += bonus;
+
+    target.disabled = true;
+    target.sprite.setAlpha(0.28);
+    target.icons.setAlpha(0.2);
+    this.nearNpc = null;
+    this.nearRing.clear();
+
+    const sign = bonus >= 0 ? `+${bonus}` : `${bonus}`;
+    this.showMessage(`離れた。${reason} Score ${sign}`, 2300);
+  }
+
+  calculateSkipBonus(profile) {
+    const defensive = {
+      "イヤホン": 5,
+      "友達といる": 5,
+      "歩くの速い": 4,
+      "外界遮断": 4,
+      "夜の警戒": 3,
+      "人混み": 2,
+    };
+    const openTraits = ["目が合う", "立ち止まり", "待ち合わせ"];
+    const hits = [];
+    let bonus = 0;
+    profile.traits.forEach((trait) => {
+      if (defensive[trait]) {
+        bonus += defensive[trait];
+        hits.push(trait);
+      }
+    });
+    bonus = Math.min(bonus, 15);
+
+    if (hits.length > 0) {
+      return {
+        bonus,
+        reason: `${hits.slice(0, 2).join("・")} のサインを読んで引いた。`,
+      };
+    }
+    if (profile.traits.some((trait) => openTraits.includes(trait))) {
+      return { bonus: 1, reason: "開かれたサインもあったが無理はしなかった。" };
+    }
+    return { bonus: 2, reason: "明確なサインは見えなかったので追わなかった。" };
   }
 
   calculateSuccessRate(profile, actionKey) {

@@ -2,7 +2,7 @@
 
 This file is a long-form handoff note for the next coding agent, especially Claude. It describes the current state of the project, why the implementation is shaped this way, what has already been verified, and what would be useful to improve next.
 
-Last updated: 2026-04-19 JST
+Last updated: 2026-04-19 JST (added 離れる/respectful skip button)
 
 ## 1. Project Summary
 
@@ -100,10 +100,11 @@ Main flow:
    - `bad_actions`
    - `flags`
 5. When the player is close enough to an NPC, the NPC gets a highlight ring.
-6. Player chooses one of three approach buttons:
+6. Player chooses one of four action buttons:
    - `軽く`
    - `ストレート`
    - `状況ツッコミ`
+   - `離れる` (respectful skip — scores based on defensive signals; see §19)
 7. Success rate is calculated from base rate, map noise, NPC interest, traits, selected action, and distance.
 8. Success transitions to `TalkScene`.
 9. Failure marks that NPC as disabled/faded and shows feedback.
@@ -169,6 +170,8 @@ Important methods:
 - `updateNpcs()`: moves NPCs.
 - `updateNearestNpc()`: detects approach range.
 - `tryApproach()`: runs success/failure check.
+- `respectfullySkip()`: disables the near NPC and adds a small Score bonus based on how strong the defensive signals were. No TalkScene transition.
+- `calculateSkipBonus()`: maps defensive traits (`イヤホン`, `友達といる`, `歩くの速い`, `外界遮断`, `夜の警戒`, `人混み`) to a bonus capped at 15. If none match but open traits are present, returns 1. If nothing matches, returns 2.
 - `calculateSuccessRate()`: core approach probability logic.
 - `feedbackFor()`: failure feedback text.
 - `switchMap()`: toggles Nagoya/Kabukicho.
@@ -545,7 +548,7 @@ Priority order if Claude continues:
 2. Replace text status icons with pixel icon sheet.
 3. Add lightweight sound effects.
 4. Add a title or start overlay only if it does not block direct play.
-5. Add simple "respectful skip" mechanic where not approaching a busy/high-defense NPC gives a small score.
+5. ~~Add simple "respectful skip" mechanic where not approaching a busy/high-defense NPC gives a small score.~~ **Done** (2026-04-19): `離れる` button in `MainScene.respectfullySkip()`. Tuning the bonus table in `calculateSkipBonus()` is the natural next polish.
 6. Add more conversation lines per trait.
 7. Add a small result log so the player learns why an approach worked or failed.
 8. Add a difficulty selector.
@@ -601,10 +604,13 @@ Maintain these guardrails:
 - Avoid language that frames persistence after rejection as positive.
 - Keep "do not approach" as a valid implied lesson.
 
-Potential improvement:
+Implemented (2026-04-19):
 
-- Add a "見送る" or "離れる" button when near an NPC.
-- Score it positively when traits clearly indicate interruption would be bad.
+- `離れる` button added as the 4th action button in `MainScene.createHud()`.
+- `respectfullySkip()` reads the near NPC's traits and calls `calculateSkipBonus()`.
+- Score goes up more when defensive signals (`イヤホン`, `友達といる`, `歩くの速い`, `外界遮断`, `夜の警戒`, `人混み`) are present. Capped at +15 to avoid farming.
+- Open-signal NPCs (`目が合う`, `立ち止まり`, `待ち合わせ`) only give +1 for skipping — the game still rewards engaging when signals are clearly open, just doesn't punish backing off.
+- After skip, the NPC fades (same as approach failure) so the player can't skip the same target twice.
 
 ## 20. Deployment State
 
