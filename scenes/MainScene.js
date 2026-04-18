@@ -11,7 +11,7 @@ const MAPS = {
     ambientCount: 8,
     playerStart: { x: 640, y: 440 },
     movement: "linear",
-    tint: 0xd8dde6,
+    tint: 0x23272f,
     lanes: [292, 372, 452, 548],
     stopPoints: [
       { x: 255, y: 370, label: "銀時計" },
@@ -29,7 +29,7 @@ const MAPS = {
     ambientCount: 17,
     playerStart: { x: 650, y: 575 },
     movement: "random",
-    tint: 0x7780a0,
+    tint: 0x211423,
     lanes: [260, 360, 470, 575],
     stopPoints: [
       { x: 270, y: 295, label: "広場" },
@@ -245,63 +245,74 @@ export default class MainScene extends Phaser.Scene {
 
   drawNagoyaMap() {
     const g = this.mapGraphics;
-    g.fillStyle(0x26313e, 1).fillRect(0, 0, WORLD.width, WORLD.height);
-    g.fillStyle(0xd4d2c3, 1).fillRect(120, 245, 1040, 280);
-    g.fillStyle(0xbfc3bb, 1).fillRect(120, 335, 1040, 22);
-    g.fillStyle(0xbfc3bb, 1).fillRect(120, 440, 1040, 22);
-    g.lineStyle(2, 0x8c928c, 0.45);
+    g.fillStyle(0x090b10, 1).fillRect(0, 0, WORLD.width, WORLD.height);
+    g.fillStyle(0x181b22, 1).fillRect(120, 245, 1040, 280);
+    g.fillStyle(0x2a2d35, 1).fillRect(120, 335, 1040, 22);
+    g.fillStyle(0x2a2d35, 1).fillRect(120, 440, 1040, 22);
+    g.lineStyle(2, 0xf5f1df, 0.13);
     for (let x = 160; x <= 1120; x += 80) {
       g.lineBetween(x, 245, x, 525);
     }
-    g.fillStyle(0x4b5b68, 1).fillRect(120, 210, 1040, 34);
+    for (let y = 260; y <= 510; y += 48) {
+      g.lineStyle(1, 0xffffff, 0.05).lineBetween(120, y, 1160, y);
+    }
+    g.lineStyle(3, 0xf5f1df, 0.22).strokeRect(120, 245, 1040, 280);
+    g.fillStyle(0x10131a, 1).fillRect(120, 210, 1040, 34);
     g.fillRect(120, 526, 1040, 40);
-    g.fillStyle(0x3f5260, 1).fillRect(550, 565, 180, 75);
-    g.fillStyle(0xa46b3b, 1).fillRect(185, 292, 130, 95);
-    g.fillStyle(0xc8b15d, 1).fillRect(960, 292, 130, 95);
-    this.addMapLabel(255, 335, "銀時計", "#18202a", 18);
-    this.addMapLabel(1015, 335, "金時計", "#18202a", 18);
-    this.addMapLabel(640, 604, "改札前", "#eaf0f6", 18);
-    this.addMapLabel(640, 225, "中央コンコース", "#eaf0f6", 17);
-    this.drawStopMarkers(MAPS.nagoya.stopPoints, 0x2f6f8f);
+    g.fillStyle(0x1c2530, 1).fillRect(550, 565, 180, 75);
+    g.lineStyle(2, 0xf5f1df, 0.18).strokeRect(550, 565, 180, 75);
+    g.fillStyle(0x2b2118, 1).fillRect(185, 292, 130, 95);
+    g.fillStyle(0x2f2a17, 1).fillRect(960, 292, 130, 95);
+    g.lineStyle(3, 0xf5f1df, 0.32).strokeRect(185, 292, 130, 95);
+    g.strokeRect(960, 292, 130, 95);
+    this.addPixelFlecks(145, 260, 990, 240, 26, [0xf5f1df, 0x5e6674]);
+    this.addMapLabel(255, 335, "銀時計", "#f5f1df", 18);
+    this.addMapLabel(1015, 335, "金時計", "#f5f1df", 18);
+    this.addMapLabel(640, 604, "改札前", "#f5f1df", 18);
+    this.addMapLabel(640, 225, "中央コンコース", "#f5f1df", 17);
+    this.drawStopMarkers(MAPS.nagoya.stopPoints, 0xf5f1df);
   }
 
   drawKabukichoMap() {
     const g = this.mapGraphics;
-    g.fillStyle(0x151820, 1).fillRect(0, 0, WORLD.width, WORLD.height);
-    g.fillStyle(0x242932, 1).fillRect(130, 205, 1020, 440);
-    g.fillStyle(0x30343d, 1).fillRect(575, 205, 130, 440);
-    g.fillStyle(0x30343d, 1).fillRect(130, 395, 1020, 120);
-    g.lineStyle(2, 0xf3f0cf, 0.55);
+    g.fillStyle(0x05050a, 1).fillRect(0, 0, WORLD.width, WORLD.height);
+    g.fillStyle(0x11131a, 1).fillRect(130, 205, 1020, 440);
+    g.fillStyle(0x1c1f28, 1).fillRect(575, 205, 130, 440);
+    g.fillStyle(0x1c1f28, 1).fillRect(130, 395, 1020, 120);
+    g.lineStyle(2, 0xf5f1df, 0.42);
     for (let x = 585; x < 700; x += 22) {
       g.lineBetween(x, 405, x - 60, 510);
       g.lineBetween(x + 75, 405, x + 15, 510);
     }
+    g.lineStyle(3, 0xf5f1df, 0.18).strokeRect(130, 205, 1020, 440);
 
     const buildings = [
-      [155, 235, 160, 105, 0x30384a, "BAR"],
-      [360, 230, 155, 120, 0x3b3147, "GAME"],
-      [735, 225, 165, 115, 0x2b4350, "KARAOKE"],
-      [945, 232, 160, 110, 0x46313a, "FOOD"],
-      [150, 545, 210, 85, 0x2b4050, "HOTEL"],
-      [905, 545, 205, 85, 0x423349, "CLUB"],
+      [155, 235, 160, 105, 0x171922, "BAR"],
+      [360, 230, 155, 120, 0x1b1622, "GAME"],
+      [735, 225, 165, 115, 0x142126, "KARAOKE"],
+      [945, 232, 160, 110, 0x22161a, "FOOD"],
+      [150, 545, 210, 85, 0x142026, "HOTEL"],
+      [905, 545, 205, 85, 0x211822, "CLUB"],
     ];
     buildings.forEach(([x, y, w, h, color, label], index) => {
       g.fillStyle(color, 1).fillRect(x, y, w, h);
-      g.lineStyle(3, index % 2 ? 0xffc857 : 0x2bd9d0, 0.85);
+      g.lineStyle(3, 0xf5f1df, 0.24).strokeRect(x, y, w, h);
+      g.lineStyle(3, index % 2 ? 0xffd24f : 0x57f5ff, 0.9);
       g.strokeRect(x + 8, y + 8, w - 16, 26);
-      this.addMapLabel(x + w / 2, y + 21, label, "#f7fbff", 15);
+      this.addMapLabel(x + w / 2, y + 21, label, "#f5f1df", 15);
     });
 
-    g.fillStyle(0xe34d4d, 0.9).fillRect(520, 178, 240, 16);
+    g.fillStyle(0xff4d6d, 0.92).fillRect(520, 178, 240, 16);
+    g.lineStyle(2, 0xf5f1df, 0.35).strokeRect(520, 178, 240, 16);
     this.addMapLabel(640, 184, "NEON STREET", "#ffffff", 15);
-    this.addMapLabel(642, 457, "横断前", "#f9f4d4", 17);
-    this.drawStopMarkers(MAPS.kabukicho.stopPoints, 0xc54968);
+    this.addMapLabel(642, 457, "横断前", "#f5f1df", 17);
+    this.drawStopMarkers(MAPS.kabukicho.stopPoints, 0xff4d6d);
 
     for (let i = 0; i < 44; i += 1) {
       const x = Phaser.Math.Between(150, 1130);
       const y = Phaser.Math.Between(215, 630);
-      const color = Phaser.Math.RND.pick([0x2bd9d0, 0xffc857, 0xf45b69, 0xf7f7ff]);
-      g.fillStyle(color, 0.55).fillRect(x, y, 4, 4);
+      const color = Phaser.Math.RND.pick([0x57f5ff, 0xffd24f, 0xff4d6d, 0xf5f1df]);
+      g.fillStyle(color, 0.68).fillRect(x, y, 4, 4);
     }
   }
 
@@ -323,6 +334,15 @@ export default class MainScene extends Phaser.Scene {
     this.mapLabels.push(label);
   }
 
+  addPixelFlecks(x, y, width, height, count, colors) {
+    for (let i = 0; i < count; i += 1) {
+      const px = x + Phaser.Math.Between(0, width);
+      const py = y + Phaser.Math.Between(0, height);
+      const color = Phaser.Math.RND.pick(colors);
+      this.mapGraphics.fillStyle(color, i % 3 === 0 ? 0.16 : 0.08).fillRect(px, py, 4, 4);
+    }
+  }
+
   spawnNpcs(map) {
     const usedStops = Phaser.Utils.Array.Shuffle([...map.stopPoints]);
     for (let i = 0; i < map.npcCount; i += 1) {
@@ -337,7 +357,7 @@ export default class MainScene extends Phaser.Scene {
           ? stop.y + Phaser.Math.Between(-28, 28)
           : Phaser.Math.RND.pick(map.lanes) + Phaser.Math.Between(-30, 30);
       const sprite = this.add.sprite(x, y, "npc").setScale(1.45).setDepth(8);
-      sprite.setTint(profile.flags.includes("with_friend") ? 0xe0c06e : 0xffffff);
+      sprite.setTint(profile.flags.includes("with_friend") ? 0xffe07a : 0xffffff);
       const icons = this.add
         .text(x, y - 38, this.iconsFor(profile.flags), {
           fontFamily: "monospace",
@@ -401,7 +421,7 @@ export default class MainScene extends Phaser.Scene {
         .setScale(1.08)
         .setDepth(6)
         .setAlpha(map.key === "kabukicho" ? 0.42 : 0.32)
-        .setTint(map.key === "kabukicho" ? Phaser.Math.RND.pick([0x77e4e1, 0xffd166, 0xff7a90]) : 0xb8bec8);
+        .setTint(map.key === "kabukicho" ? Phaser.Math.RND.pick([0x57f5ff, 0xffd24f, 0xff6f8f]) : 0xd8d8d8);
       sprite.dir = Phaser.Math.RND.pick([-1, 1]);
       sprite.speed = Phaser.Math.Between(30, map.key === "kabukicho" ? 82 : 58);
       sprite.nextTurnAt = 0;
