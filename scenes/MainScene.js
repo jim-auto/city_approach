@@ -158,15 +158,15 @@ const ACTIONS = {
   },
 };
 
-const FLAG_ICONS = {
-  eye_contact: "◎",
-  busy: "!",
-  fast: ">>",
-  with_friend: "2",
-  phone: "□",
-  earphones: "E",
-  waiting: "W",
-  looking_around: "?",
+const FLAG_ICON_COLOR = {
+  eye_contact:   0x57f5ff,
+  busy:          0xffa857,
+  fast:          0xffd24f,
+  with_friend:   0xff6f8f,
+  phone:         0x9cb8ff,
+  earphones:     0xffd24f,
+  waiting:       0xf5f1df,
+  looking_around: 0xff4dd2,
 };
 
 export default class MainScene extends Phaser.Scene {
@@ -382,15 +382,8 @@ export default class MainScene extends Phaser.Scene {
         repeat: -1,
         ease: "Sine.easeInOut",
       });
-      const icons = this.add
-        .text(x, y - 38, this.iconsFor(profile.flags), {
-          fontFamily: "monospace",
-          fontSize: "15px",
-          color: "#ffffff",
-          backgroundColor: "rgba(12, 14, 18, 0.72)",
-          padding: { left: 4, right: 4, top: 2, bottom: 2 },
-        })
-        .setOrigin(0.5)
+      const icons = this.makeFlagIcons(profile.flags)
+        .setPosition(x, y - 38)
         .setDepth(12);
 
       this.npcs.push({
@@ -455,12 +448,60 @@ export default class MainScene extends Phaser.Scene {
     }
   }
 
-  iconsFor(flags) {
-    return flags
-      .filter((flag) => FLAG_ICONS[flag])
-      .slice(0, 3)
-      .map((flag) => FLAG_ICONS[flag])
-      .join(" ");
+  makeFlagIcons(flags) {
+    const valid = flags.filter((f) => FLAG_ICON_COLOR[f]).slice(0, 3);
+    const g = this.add.graphics();
+    if (!valid.length) return g;
+    const spacing = 16;
+    const startOffset = -spacing * (valid.length - 1) / 2;
+    valid.forEach((flag, i) => this.drawFlagBadge(g, flag, startOffset + i * spacing, 0));
+    return g;
+  }
+
+  drawFlagBadge(g, flag, cx, cy) {
+    const color = FLAG_ICON_COLOR[flag];
+    const size = 14;
+    const half = size / 2;
+    g.fillStyle(0x0a0b10, 0.92).fillRect(cx - half, cy - half, size, size);
+    g.lineStyle(1, 0xf5f1df, 0.42).strokeRect(cx - half + 0.5, cy - half + 0.5, size - 1, size - 1);
+    g.fillStyle(color, 1);
+    switch (flag) {
+      case "eye_contact":
+        g.fillRect(cx - 3, cy - 2, 6, 4);
+        g.fillStyle(0x0a0b10, 1).fillRect(cx - 1, cy - 1, 2, 2);
+        break;
+      case "busy":
+        g.fillRect(cx - 1, cy - 5, 2, 6);
+        g.fillRect(cx - 1, cy + 3, 2, 2);
+        break;
+      case "fast":
+        g.fillTriangle(cx - 4, cy - 3, cx - 4, cy + 3, cx - 1, cy);
+        g.fillTriangle(cx, cy - 3, cx, cy + 3, cx + 3, cy);
+        break;
+      case "with_friend":
+        g.fillCircle(cx - 2, cy - 1, 2);
+        g.fillCircle(cx + 2, cy - 1, 2);
+        g.fillRect(cx - 3, cy + 2, 6, 1);
+        break;
+      case "phone":
+        g.fillRect(cx - 2, cy - 4, 4, 8);
+        g.fillStyle(0x0a0b10, 1).fillRect(cx - 1, cy - 3, 2, 5);
+        break;
+      case "earphones":
+        g.fillRect(cx - 4, cy - 1, 2, 3);
+        g.fillRect(cx + 2, cy - 1, 2, 3);
+        g.fillRect(cx - 3, cy - 3, 6, 1);
+        break;
+      case "waiting":
+        g.lineStyle(1, color, 1).strokeCircle(cx, cy, 4);
+        g.fillStyle(color, 1).fillRect(cx, cy - 3, 1, 3);
+        g.fillRect(cx, cy, 3, 1);
+        break;
+      case "looking_around":
+        g.fillTriangle(cx - 5, cy, cx - 2, cy - 3, cx - 2, cy + 3);
+        g.fillTriangle(cx + 5, cy, cx + 2, cy - 3, cx + 2, cy + 3);
+        break;
+    }
   }
 
   createHud() {

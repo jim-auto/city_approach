@@ -2,7 +2,7 @@
 
 This file is a long-form handoff note for the next coding agent, especially Claude. It describes the current state of the project, why the implementation is shaped this way, what has already been verified, and what would be useful to improve next.
 
-Last updated: 2026-04-19 JST (added 離れる, WebAudio SFX, difficulty, high score, history)
+Last updated: 2026-04-19 JST (+ title scene, richer dialogue, pixel icons, breathing tween, smoke test)
 
 ## 1. Project Summary
 
@@ -52,6 +52,7 @@ project-root/
 +-- main.js
 +-- sfx.js
 +-- storage.js
++-- smoke.mjs
 +-- README.md
 +-- PLAN.md
 +-- scenes/
@@ -480,9 +481,11 @@ Pages is already configured to publish `main` branch root.
 
 ## 16. Known Gaps And Risks
 
-### No automated gameplay tests
+### Smoke test (implemented 2026-04-19)
 
-There is no persistent test suite. Browser checks were manual/temporary. If the project grows, add a tiny smoke script or Playwright setup.
+`smoke.mjs` is a Playwright harness at the repo root. Start a local static server (`python -m http.server 8000 --bind 127.0.0.1`) and run `node smoke.mjs`. It loads the page, clicks through the title, verifies the four action buttons exist, exercises the skip path, then boots `TalkScene` directly with a known profile to confirm the dialogue pool. Exits with code 1 if any of the 20 assertions fail, so it can be wired into CI.
+
+If a new scene, button, or method is added, extend `smoke.mjs` rather than running ad-hoc scripts — the point is that the check survives future agents.
 
 ### Audio (implemented 2026-04-19)
 
@@ -554,7 +557,7 @@ https://jim-auto.github.io/city_approach/?v=<commit-sha>
 Priority order if Claude continues:
 
 1. Improve player/NPC animation. **Partial** (2026-04-19): gentle scaleY breathing tween on player and each NPC in `MainScene.create()` / `spawnNpcs()`. Directional walk frames still TODO and require actual sprite frames.
-2. Replace text status icons with pixel icon sheet.
+2. ~~Replace text status icons with pixel icon sheet.~~ **Done** (2026-04-19): `MainScene.makeFlagIcons()` builds a small `Graphics` with one 14×14 badge per flag (drawn by `drawFlagBadge`). No asset sheet needed — everything is drawn in code. Colours mirror the palette in §18.
 3. ~~Add lightweight sound effects.~~ **Done** (2026-04-19): `sfx.js` + wiring in both scenes. Next polish: gauge-change tick, volume slider.
 4. ~~Add a title or start overlay only if it does not block direct play.~~ **Done** (2026-04-19): `scenes/TitleScene.js` is the first scene. Shows title, subtitle, best score, and a cycling difficulty button. Any tap or key starts `MainScene`, which also satisfies the mobile audio-unlock gesture requirement.
 5. ~~Add simple "respectful skip" mechanic where not approaching a busy/high-defense NPC gives a small score.~~ **Done** (2026-04-19): `離れる` button in `MainScene.respectfullySkip()`. Tuning the bonus table in `calculateSkipBonus()` is the natural next polish.
@@ -562,7 +565,7 @@ Priority order if Claude continues:
 7. ~~Add a small result log so the player learns why an approach worked or failed.~~ **Done** (2026-04-19): last 3 entries tracked in `MainScene.history` and the most recent is shown as the third line of the info HUD. Entries survive map switches and TalkScene round-trips via scene data.
 8. ~~Add a difficulty selector.~~ **Done** (2026-04-19): three levels (`やさしい`/`ふつう`/`きびしい`) in `storage.js`. A HUD button cycles them and persists the choice in `localStorage`. `baseMod`/`noiseMod` shift the success formula; `mult` scales both skip and TalkScene bonuses so the leaderboard reflects actual difficulty.
 9. ~~Add local persistent high score with `localStorage`.~~ **Done** (2026-04-19): `getBest`/`setBest` in `storage.js`. `MainScene.updateBest()` persists on any new high. Displayed in the info HUD as `Best <n>`.
-10. Add a tiny smoke test script to prevent scene-init regressions.
+10. ~~Add a tiny smoke test script to prevent scene-init regressions.~~ **Done** (2026-04-19): `smoke.mjs` at repo root. Run `node smoke.mjs` against a local static server. 20 checks cover scene registration, title flow, HUD, pixel icons, skip logic, difficulty, history, and TalkScene dialogue. Exits non-zero on any failure so CI can gate on it.
 
 ## 18. Recommended Art Improvements
 
