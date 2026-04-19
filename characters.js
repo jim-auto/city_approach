@@ -9,23 +9,27 @@
 const PALETTES = {
   player: {
     hair:  { base: 0x3a2820, shadow: 0x1d1320, highlight: 0x5a4030 },
-    skin:  { base: 0xf5d6a8, shadow: 0xc88878, highlight: 0xfff0d0 },
+    skin:  { base: 0xfadcae, shadow: 0xd09580, highlight: 0xfff0d6 },
     shirt: { base: 0x4a88c8, shadow: 0x28486a, highlight: 0x9cc4ec },
     shirtAccent: 0xdef0ff,
     pants: { base: 0x2a3a66, shadow: 0x141e38, highlight: 0x4a5c92 },
     shoes: { base: 0x181820, shadow: 0x08080c, highlight: 0x343440 },
-    outline: 0x05050a,
-    mouth: 0x8e4a3c,
+    outline: 0x202028,
+    mouth: 0xdc5a66,
+    blush: 0xff9cb4,
+    eyeHighlight: 0xffffff,
   },
   npc: {
     hair:  { base: 0x3a2a20, shadow: 0x1e141c, highlight: 0x5c4132 },
-    skin:  { base: 0xf5d6a8, shadow: 0xc88878, highlight: 0xfff0d0 },
+    skin:  { base: 0xfadcae, shadow: 0xd09580, highlight: 0xfff0d6 },
     shirt: { base: 0xb25664, shadow: 0x6c2a3a, highlight: 0xe48a96 },
     shirtAccent: 0xffd8dc,
     pants: { base: 0x3a2834, shadow: 0x1f141c, highlight: 0x5c4252 },
     shoes: { base: 0x141418, shadow: 0x06060a, highlight: 0x2e2e36 },
-    outline: 0x05050a,
-    mouth: 0x8e4a3c,
+    outline: 0x202028,
+    mouth: 0xdc5a66,
+    blush: 0xff9cb4,
+    eyeHighlight: 0xffffff,
   },
 };
 
@@ -71,18 +75,19 @@ function drawBody(ctx, p) {
   paint(ctx, 11, 6, 2, 1, p.hair.base);
   paint(ctx, 19, 6, 2, 1, p.hair.shadow);
 
-  // Eyes (slightly separated) + eye whites hint
-  paint(ctx, 13, 9, 2, 1, p.outline);
-  paint(ctx, 17, 9, 2, 1, p.outline);
-  paint(ctx, 13, 10, 1, 1, p.skin.highlight);
-  paint(ctx, 17, 10, 1, 1, p.skin.highlight);
-
-  // Mouth
+  // Big round eyes (2x2 with a bright highlight pixel — the chibi cute look)
+  paint(ctx, 13, 8, 2, 3, p.outline);
+  paint(ctx, 17, 8, 2, 3, p.outline);
+  paint(ctx, 13, 8, 1, 1, p.eyeHighlight);
+  paint(ctx, 17, 8, 1, 1, p.eyeHighlight);
+  // Tiny smile
   paint(ctx, 15, 11, 2, 1, p.mouth);
+  // Blush on cheeks
+  paint(ctx, 12, 10, 1, 1, p.blush);
+  paint(ctx, 19, 10, 1, 1, p.blush);
 
-  // Jaw fade shadow
+  // Softer jaw (no hard shadow)
   paint(ctx, 11, 12, 10, 1, p.skin.base);
-  paint(ctx, 17, 12, 3, 1, p.skin.shadow);
 
   // Neck
   paint(ctx, 15, 13, 2, 1, p.skin.shadow);

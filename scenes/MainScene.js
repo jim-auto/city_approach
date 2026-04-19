@@ -18,9 +18,9 @@ const MAPS = {
     tint: 0x23272f,
     lanes: [285, 345, 405, 465],
     stopPoints: [
-      { x: 380, y: 235, label: "銀時計" },
+      { x: 380, y: 380, label: "銀時計" },
       { x: 380, y: 640, label: "改札前" },
-      { x: 380, y: 1060, label: "金時計" },
+      { x: 380, y: 970, label: "金時計" },
     ],
   },
   kabukicho: {
@@ -36,9 +36,9 @@ const MAPS = {
     tint: 0x211423,
     lanes: [220, 340, 430, 540],
     stopPoints: [
-      { x: 380, y: 250, label: "広場" },
-      { x: 380, y: 640, label: "横断前" },
-      { x: 380, y: 1030, label: "ネオン街" },
+      { x: 380, y: 540, label: "TOHO前" },
+      { x: 380, y: 760, label: "横断前" },
+      { x: 380, y: 1050, label: "ネオン街" },
     ],
   },
 };
@@ -290,36 +290,81 @@ export default class MainScene extends Phaser.Scene {
       0.11,
       10
     );
-    // Silver clock building (top)
-    g.fillStyle(0x2b2118, 1).fillRect(310, 175, 140, 110);
-    g.lineStyle(3, 0xf5f1df, 0.32).strokeRect(310, 175, 140, 110);
-    g.fillStyle(0xd8d2a8, 0.32).fillRect(314, 180, 26, 4);
-    // Gold clock building (bottom)
-    g.fillStyle(0x2f2a17, 1).fillRect(310, 995, 140, 110);
-    g.lineStyle(3, 0xf5f1df, 0.32).strokeRect(310, 995, 140, 110);
-    g.fillStyle(0xf4c25a, 0.32).fillRect(314, 1000, 26, 4);
-    this.addPixelFlecks(248, 140, 264, 1000, 26, [0xf5f1df, 0x5e6674]);
-    this.addMapLabel(380, 235, "銀時計", "#f5f1df", 18);
-    this.addMapLabel(380, 1055, "金時計", "#f5f1df", 18);
+    // Silver clock tower (top)
+    this.drawClockTower(380, 300, {
+      main: 0xc0c6d0,
+      dark: 0x4a5058,
+      accent: 0xeaf0f5,
+      faceBg: 0xfaf4de,
+      hand: 0x1a1d24,
+    });
+    // Gold clock tower (bottom)
+    this.drawClockTower(380, 1125, {
+      main: 0xd4a94a,
+      dark: 0x6b4824,
+      accent: 0xffd780,
+      faceBg: 0xfaf4de,
+      hand: 0x2a1a0a,
+    });
+    this.addPixelFlecks(248, 140, 264, 1000, 20, [0xf5f1df, 0x5e6674]);
+    this.addMapLabel(380, 340, "銀時計", "#c0c6d0", 18);
+    this.addMapLabel(380, 1170, "金時計", "#d4a94a", 18);
     this.addMapLabel(157, 644, "改札前", "#f5f1df", 18);
     this.addMapLabel(380, 140, "中央コンコース", "#f5f1df", 16);
     this.drawStopMarkers(MAPS.nagoya.stopPoints, 0xf5f1df);
   }
 
+  drawClockTower(cx, baseY, colors) {
+    const g = this.mapGraphics;
+    const { main, dark, accent, faceBg, hand } = colors;
+    // Wide base
+    g.fillStyle(dark, 1).fillRect(cx - 42, baseY - 2, 84, 6);
+    g.fillStyle(main, 1).fillRect(cx - 38, baseY - 6, 76, 4);
+    g.fillStyle(accent, 0.8).fillRect(cx - 36, baseY - 6, 72, 1);
+    // Mid base
+    g.fillStyle(main, 1).fillRect(cx - 28, baseY - 12, 56, 6);
+    g.fillStyle(dark, 1).fillRect(cx - 28, baseY - 7, 56, 1);
+    // Column
+    g.fillStyle(dark, 1).fillRect(cx - 10, baseY - 46, 20, 34);
+    g.fillStyle(main, 1).fillRect(cx - 8, baseY - 46, 16, 34);
+    g.fillStyle(accent, 0.7).fillRect(cx - 7, baseY - 45, 2, 32);
+    // Clock face (circle)
+    const faceY = baseY - 68;
+    g.fillStyle(dark, 1).fillCircle(cx, faceY, 24);
+    g.fillStyle(main, 1).fillCircle(cx, faceY, 22);
+    g.fillStyle(faceBg, 1).fillCircle(cx, faceY, 18);
+    // Hour marks at 12/3/6/9
+    g.fillStyle(dark, 1);
+    g.fillRect(cx - 1, faceY - 17, 2, 4);
+    g.fillRect(cx + 13, faceY - 1, 4, 2);
+    g.fillRect(cx - 1, faceY + 13, 2, 4);
+    g.fillRect(cx - 17, faceY - 1, 4, 2);
+    // Hour hand (short, 2 o'clock) and minute hand (long, 12)
+    g.lineStyle(2, hand, 1);
+    g.lineBetween(cx, faceY, cx + 7, faceY - 6);
+    g.lineStyle(2, hand, 1);
+    g.lineBetween(cx, faceY, cx, faceY - 14);
+    // Center dot
+    g.fillStyle(accent, 1).fillCircle(cx, faceY, 2);
+    // Top ornament
+    g.fillStyle(main, 1).fillRect(cx - 3, faceY - 27, 6, 3);
+    g.fillStyle(accent, 1).fillRect(cx - 1, faceY - 31, 2, 4);
+  }
+
   drawKabukichoMap() {
     const g = this.mapGraphics;
     g.fillStyle(0x05050a, 1).fillRect(0, 0, WORLD.width, WORLD.height);
-    // Main vertical street area
-    g.fillStyle(0x11131a, 1).fillRect(80, 130, 600, 1020);
-    // Central vertical road (NPC walking path)
-    g.fillStyle(0x1c1f28, 1).fillRect(300, 130, 160, 1020);
-    // Crosswalk / transit band in the middle
-    g.fillStyle(0x1c1f28, 1).fillRect(80, 590, 600, 130);
+    // Main nightlife area (below the TOHO landmark)
+    g.fillStyle(0x11131a, 1).fillRect(60, 510, 640, 640);
+    // Central plaza road (walking path below TOHO)
+    g.fillStyle(0x1c1f28, 1).fillRect(270, 510, 220, 640);
+    // Crosswalk band in the middle
+    g.fillStyle(0x1c1f28, 1).fillRect(60, 720, 640, 100);
     this.sprinkleTileVariants(
-      80,
-      130,
-      600,
-      1020,
+      60,
+      510,
+      640,
+      640,
       [
         { color: 0x05060a, alpha: 0.55 },
         { color: 0x2a1b2d, alpha: 0.45, dot: 0xff4d6d },
@@ -329,46 +374,130 @@ export default class MainScene extends Phaser.Scene {
       0.13,
       10
     );
-    // Crosswalk stripes (horizontal since the street runs vertically)
+    // Crosswalk stripes (diagonal for depth)
     g.lineStyle(2, 0xf5f1df, 0.42);
-    for (let y = 608; y < 710; y += 22) {
-      g.lineBetween(312, y, 420, y - 60);
-      g.lineBetween(312, y + 75, 420, y + 15);
+    for (let y = 735; y < 820; y += 22) {
+      g.lineBetween(290, y, 470, y + 10);
     }
-    g.lineStyle(3, 0xf5f1df, 0.18).strokeRect(80, 130, 600, 1020);
+    g.lineStyle(3, 0xf5f1df, 0.18).strokeRect(60, 510, 640, 640);
 
-    // Buildings: two columns (left & right of the central road), four rows
-    const buildings = [
-      [95, 160, 195, 150, 0x171922, "BAR"],
-      [470, 160, 195, 150, 0x1b1622, "GAME"],
-      [95, 330, 195, 150, 0x142126, "KARAOKE"],
-      [470, 330, 195, 150, 0x22161a, "FOOD"],
-      [95, 740, 195, 150, 0x142026, "HOTEL"],
-      [470, 740, 195, 150, 0x211822, "CLUB"],
-      [95, 920, 195, 170, 0x191521, "LIVE"],
-      [470, 920, 195, 170, 0x221821, "KARA"],
+    // ===== TOHO ビル (central landmark, Shinjuku's iconic building) =====
+    this.drawTohoBuilding(380, 488);
+
+    // Flanking neon buildings around TOHO (upper half of the map)
+    const upperBuildings = [
+      [55, 190, 155, 150, 0x171922, "BAR"],
+      [550, 190, 155, 150, 0x1b1622, "GAME"],
+      [55, 350, 155, 140, 0x142126, "KARAOKE"],
+      [550, 350, 155, 140, 0x22161a, "FOOD"],
     ];
-    buildings.forEach(([x, y, w, h, color, label], index) => {
+    const lowerBuildings = [
+      [70, 520, 185, 150, 0x142026, "HOTEL"],
+      [505, 520, 185, 150, 0x211822, "CLUB"],
+      [70, 870, 185, 150, 0x191521, "LIVE"],
+      [505, 870, 185, 150, 0x221821, "KARA"],
+      [70, 1040, 185, 110, 0x191a28, "RAMEN"],
+      [505, 1040, 185, 110, 0x221a22, "DON"],
+    ];
+    [...upperBuildings, ...lowerBuildings].forEach(([x, y, w, h, color, label], index) => {
       g.fillStyle(color, 1).fillRect(x, y, w, h);
       g.lineStyle(3, 0xf5f1df, 0.24).strokeRect(x, y, w, h);
       g.lineStyle(3, index % 2 ? 0xffd24f : 0x57f5ff, 0.9);
       g.strokeRect(x + 8, y + 8, w - 16, 26);
       this.addMapLabel(x + w / 2, y + 21, label, "#f5f1df", 15);
+      // Tiny window glow dots on flanking buildings
+      for (let wy = y + 40; wy < y + h - 10; wy += 14) {
+        for (let wx = x + 14; wx < x + w - 10; wx += 18) {
+          if (((wx + wy) * 37) % 100 < 62) {
+            g.fillStyle(0xfada50, 0.55).fillRect(wx, wy, 3, 5);
+          }
+        }
+      }
     });
 
-    // Neon signage strip at the top
-    g.fillStyle(0xff4d6d, 0.92).fillRect(220, 104, 320, 16);
-    g.lineStyle(2, 0xf5f1df, 0.35).strokeRect(220, 104, 320, 16);
-    this.addMapLabel(380, 110, "NEON STREET", "#ffffff", 15);
-    this.addMapLabel(380, 655, "横断前", "#f5f1df", 17);
+    this.addMapLabel(380, 785, "横断前", "#f5f1df", 17);
     this.drawStopMarkers(MAPS.kabukicho.stopPoints, 0xff4d6d);
 
-    for (let i = 0; i < 60; i += 1) {
-      const x = Phaser.Math.Between(90, 670);
+    // Neon particles scattered across the whole map
+    for (let i = 0; i < 70; i += 1) {
+      const x = Phaser.Math.Between(70, 690);
       const y = Phaser.Math.Between(140, 1140);
       const color = Phaser.Math.RND.pick([0x57f5ff, 0xffd24f, 0xff4d6d, 0xf5f1df]);
       g.fillStyle(color, 0.68).fillRect(x, y, 4, 4);
     }
+  }
+
+  drawTohoBuilding(cx, baseY) {
+    const g = this.mapGraphics;
+    // --- Godzilla head silhouette on the rooftop (above the building) ---
+    this.drawGodzillaHead(cx + 30, 165);
+    // --- Building body ---
+    const bx = cx - 120;
+    const by = 180;
+    const bw = 240;
+    const bh = baseY - by;
+    g.fillStyle(0x14141a, 1).fillRect(bx, by, bw, bh);
+    g.lineStyle(3, 0xf5f1df, 0.28).strokeRect(bx, by, bw, bh);
+    g.fillStyle(0x1e2028, 1).fillRect(bx + 6, by + 6, bw - 12, bh - 12);
+    // TOHO red sign
+    const signY = by + 30;
+    g.fillStyle(0xe5293b, 1).fillRect(bx + 28, signY, bw - 56, 26);
+    g.lineStyle(2, 0xffffff, 0.6).strokeRect(bx + 28, signY, bw - 56, 26);
+    this.addMapLabel(cx, signY + 13, "TOHO", "#ffffff", 18);
+    // Window grid (deterministic checker)
+    for (let wy = signY + 40; wy < by + bh - 12; wy += 14) {
+      for (let wx = bx + 16; wx < bx + bw - 16; wx += 16) {
+        const lit = (((wx * 13 + wy * 7) % 37) > 13);
+        if (lit) {
+          g.fillStyle(0xfada50, 0.72).fillRect(wx, wy, 5, 8);
+          g.fillStyle(0xffeab0, 0.55).fillRect(wx, wy, 5, 2);
+        } else {
+          g.fillStyle(0x2a2a38, 1).fillRect(wx, wy, 5, 8);
+        }
+      }
+    }
+    // Vertical accent stripes (neon column)
+    g.fillStyle(0xff4d6d, 0.4).fillRect(bx + 12, signY + 30, 2, bh - 80);
+    g.fillStyle(0x57f5ff, 0.4).fillRect(bx + bw - 14, signY + 30, 2, bh - 80);
+    // Entrance at ground level
+    g.fillStyle(0x2a2a36, 1).fillRect(cx - 28, baseY - 24, 56, 24);
+    g.fillStyle(0xffd24f, 0.5).fillRect(cx - 26, baseY - 20, 52, 2);
+  }
+
+  drawGodzillaHead(cx, cy) {
+    const g = this.mapGraphics;
+    const body = 0x3a4a2c;
+    const dark = 0x1a2210;
+    const lit = 0x5c7440;
+    // Back spines (jagged triangles reaching above the skyline)
+    g.fillStyle(0x6a8040, 1);
+    g.fillTriangle(cx - 46, cy + 14, cx - 40, cy - 8, cx - 34, cy + 14);
+    g.fillTriangle(cx - 32, cy + 10, cx - 26, cy - 14, cx - 20, cy + 10);
+    g.fillTriangle(cx - 18, cy + 6, cx - 10, cy - 24, cx - 2, cy + 6);
+    g.fillTriangle(cx - 0, cy + 4, cx + 6, cy - 16, cx + 12, cy + 4);
+    // Neck base emerging from rooftop
+    g.fillStyle(body, 1).fillRect(cx - 18, cy + 12, 40, 16);
+    // Head dome
+    g.fillStyle(body, 1).fillCircle(cx, cy + 6, 18);
+    // Skull highlight on the top-left
+    g.fillStyle(lit, 1).fillRect(cx - 10, cy - 6, 12, 3);
+    g.fillStyle(lit, 1).fillRect(cx - 12, cy - 2, 3, 5);
+    // Snout extends to the right
+    g.fillStyle(body, 1).fillRect(cx + 12, cy + 2, 24, 16);
+    g.fillStyle(body, 1).fillRect(cx + 30, cy + 6, 8, 10);
+    g.fillStyle(lit, 1).fillRect(cx + 14, cy + 3, 20, 2);
+    // Jaw shadow (below snout)
+    g.fillStyle(dark, 1).fillRect(cx + 12, cy + 16, 22, 4);
+    // Eye (glowing orange with yellow core)
+    g.fillStyle(0xff7030, 1).fillRect(cx + 8, cy + 5, 4, 3);
+    g.fillStyle(0xffe080, 1).fillRect(cx + 9, cy + 5, 2, 1);
+    // Teeth
+    g.fillStyle(0xfaf0c0, 1).fillRect(cx + 16, cy + 15, 1, 2);
+    g.fillStyle(0xfaf0c0, 1).fillRect(cx + 20, cy + 15, 1, 2);
+    g.fillStyle(0xfaf0c0, 1).fillRect(cx + 24, cy + 15, 1, 2);
+    g.fillStyle(0xfaf0c0, 1).fillRect(cx + 28, cy + 15, 1, 2);
+    // Nostril
+    g.fillStyle(dark, 1).fillRect(cx + 32, cy + 9, 2, 2);
   }
 
   drawStopMarkers(points, color) {
@@ -429,7 +558,7 @@ export default class MainScene extends Phaser.Scene {
       const y =
         map.key === "nagoya"
           ? stop.y + Phaser.Math.Between(-28, 28)
-          : Phaser.Math.Between(170, 1100);
+          : Phaser.Math.Between(530, 1100);
       const sprite = this.add.sprite(x, y, "npc-0").setScale(1.45).setDepth(8);
       sprite.setTint(this.npcTintFor(profile));
       sprite.play("npc-walk");
@@ -491,7 +620,7 @@ export default class MainScene extends Phaser.Scene {
       const sy =
         map.key === "nagoya"
           ? Phaser.Math.Between(150, 1140)
-          : Phaser.Math.Between(170, 1100);
+          : Phaser.Math.Between(530, 1100);
       const sprite = this.add
         .sprite(sx, sy, "npc-0")
         .setScale(1.08)
@@ -793,7 +922,7 @@ export default class MainScene extends Phaser.Scene {
         npc.sprite.x += npc.vx * npc.speed * dt;
         npc.sprite.y += npc.vy * npc.speed * dt;
         if (npc.sprite.x < 95 || npc.sprite.x > 665) npc.vx *= -1;
-        if (npc.sprite.y < 140 || npc.sprite.y > 1140) npc.vy *= -1;
+        if (npc.sprite.y < 520 || npc.sprite.y > 1140) npc.vy *= -1;
         if (Math.abs(npc.vx) > 0.05) npc.sprite.setFlipX(npc.vx < 0);
       }
       npc.icons.setPosition(npc.sprite.x, npc.sprite.y - 38);
@@ -813,7 +942,7 @@ export default class MainScene extends Phaser.Scene {
         sprite.x += sprite.vx * sprite.speed * dt;
         sprite.y += sprite.vy * sprite.speed * dt;
         if (sprite.x < 95 || sprite.x > 665) sprite.vx *= -1;
-        if (sprite.y < 140 || sprite.y > 1140) sprite.vy *= -1;
+        if (sprite.y < 520 || sprite.y > 1140) sprite.vy *= -1;
         if (Math.abs(sprite.vx) > 0.05) sprite.setFlipX(sprite.vx < 0);
       }
     });
