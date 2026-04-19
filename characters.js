@@ -1,16 +1,17 @@
-// 32x32 character sprites drawn to an offscreen canvas, registered as Phaser
-// textures. Two modes:
-//   "pixel" — chibi pixel art with 3-value material ramps (default).
-//   "icon"  — emoji rendered via Canvas 2D fillText, for a cuter, cleaner
-//             look that stays cross-platform without any asset files.
-// Both modes emit the same texture keys (player-0/1, npc-0/1) so nothing
-// downstream has to branch.
+// Character sprites registered as Phaser textures under `player-0/1` and
+// `npc-0/1`. Two modes:
+//   "pixel" — chibi pixel art drawn with Canvas 2D fillRect, {base, shadow,
+//             highlight} material ramps, 3×3 sparkly eyes, smile, blush.
+//   "icon"  — AI-generated character artwork loaded from assets/ai/, with the
+//             white background chroma-keyed to transparent at build time.
+// Both modes emit the same texture keys so the rest of the scene doesn't
+// branch on mode.
 
 import { getSpriteMode } from "./storage.js";
 
-const ICON_SETS = {
-  player: ["😊", "😄"],
-  npc:    ["🙂", "😶"],
+const AI_SOURCE_KEYS = {
+  player: "ai_player_raw",
+  npc: "ai_npc_raw",
 };
 
 const PALETTES = {
@@ -185,34 +186,53 @@ function renderPixelFrame(palette, frame) {
   return canvas;
 }
 
-function renderIconFrame(key, frame) {
+const AI_CANVAS_SIZE = 48;
+
+function renderAiFrame(scene, key) {
+  const sourceKey = AI_SOURCE_KEYS[key] || AI_SOURCE_KEYS.npc;
+  if (!scene.textures.exists(sourceKey)) return null;
+  const img = scene.textures.get(sourceKey).getSourceImage();
   const canvas = document.createElement("canvas");
-  canvas.width = 32;
-  canvas.height = 32;
+  canvas.width = AI_CANVAS_SIZE;
+  canvas.height = AI_CANVAS_SIZE;
   const ctx = canvas.getContext("2d");
-  ctx.font = "26px 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  const emoji = (ICON_SETS[key] || ICON_SETS.npc)[frame % 2];
-  ctx.fillText(emoji, 16, 17);
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(img, 0, 0, AI_CANVAS_SIZE, AI_CANVAS_SIZE);
+  // Chroma-key near-white pixels to transparent so characters blend into the
+  // dark map instead of sitting on a white card.
+  const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const d = data.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const r = d[i];
+    const g = d[i + 1];
+    const b = d[i + 2];
+    if (r > 232 && g > 232 && b > 232) {
+      d[i + 3] = 0;
+    } else if (r > 210 && g > 210 && b > 210) {
+      // Soft edge fade so there's no hard outline from the chroma-key.
+      d[i + 3] = Math.max(0, d[i + 3] - 128);
+    }
+  }
+  ctx.putImageData(data, 0, 0);
   return canvas;
 }
 
 export function buildCharacterTextures(scene) {
   const modeKey = getSpriteMode().key;
   Object.entries(PALETTES).forEach(([key, palette]) => {
+    // Precompute the AI canvas once per character since both frames share it.
+    const aiCanvas = modeKey === "icon" ? renderAiFrame(scene, key) : null;
+    const effectiveMode = aiCanvas ? "icon" : "pixel";
     for (let frame = 0; frame < 2; frame += 1) {
       const texKey = `${key}-${frame}`;
       if (scene.textures.exists(texKey)) {
         const existing = scene.textures.get(texKey);
-        if (existing._modeKey === modeKey) continue;
+        if (existing._modeKey === effectiveMode) continue;
         scene.textures.remove(texKey);
       }
-      const canvas = modeKey === "icon"
-        ? renderIconFrame(key, frame)
-        : renderPixelFrame(palette, frame);
+      const canvas = aiCanvas ? aiCanvas : renderPixelFrame(palette, frame);
       const tex = scene.textures.addCanvas(texKey, canvas);
-      if (tex) tex._modeKey = modeKey;
+      if (tex) tex._modeKey = effectiveMode;
     }
   });
 }

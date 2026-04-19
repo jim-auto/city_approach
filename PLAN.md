@@ -236,9 +236,18 @@ Current assets:
 - `assets/npc.png`
 - `assets/tiles.png`
 
-As of 2026-04-19, `player.png` and `npc.png` are no longer referenced — the character textures are drawn in code by `characters.js`. `tiles.png` is still used by `MainScene` as the background tile sprite.
+As of 2026-04-19, `player.png` and `npc.png` are no longer referenced in pixel mode — the pixel-mode character textures are drawn in code by `characters.js`. `tiles.png` is still used by `MainScene` as the background tile sprite.
 
-If a future agent wants to bring back hand-authored sprites, put them back in `preload()` and point the `sprite` keys at the PNG keys instead of `player-0` / `npc-0`. The old PNGs were generated locally as simple 32×32 / 64×64 PNGs using PowerShell + `System.Drawing`; the generation script is not saved in the repo.
+### AI-generated character images (2026-04-19)
+
+`assets/ai/player.png` and `assets/ai/npc.png` are AI-generated chibi artwork for the sprite mode = "icon" path (labelled "AI画像" in the UI). Generated via the free Pollinations.ai endpoint with prompts along the lines of:
+
+- Player: `cute+kawaii+chibi+anime+boy+...+blue+shirt+...+brown+hair+...+white+background` (seed=777)
+- NPC: `cute+kawaii+chibi+anime+girl+...+pink+shirt+...+ponytail+...+white+background` (seed=1234)
+
+Both images are served with a white background. At load time, `characters.js#renderAiFrame` chroma-keys near-white pixels to transparent (`r/g/b > 232` → alpha 0; 210–232 → soft fade) and downsamples to a 48×48 canvas so Phaser's existing sprite-scale math still produces a reasonable display size. Both walk frames share the same canvas in AI mode, so `flipX` + the existing tweens carry the motion instead of a true frame-swap walk.
+
+To regenerate the images, rerun the Pollinations.ai curl with a different seed. Keep `white background` in the prompt — the chroma-key relies on it.
 
 Important:
 

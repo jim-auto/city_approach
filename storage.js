@@ -4,7 +4,7 @@ const MODE_KEY = "city_approach_sprite_mode";
 
 export const SPRITE_MODES = [
   { key: "pixel", label: "ドット" },
-  { key: "icon",  label: "アイコン" },
+  { key: "icon",  label: "AI画像" },
 ];
 
 export const DIFFICULTIES = [

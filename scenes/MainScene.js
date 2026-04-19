@@ -193,6 +193,8 @@ export default class MainScene extends Phaser.Scene {
 
   preload() {
     this.load.image("tiles", "assets/tiles.png");
+    this.load.image("ai_player_raw", "assets/ai/player.png");
+    this.load.image("ai_npc_raw", "assets/ai/npc.png");
   }
 
   create(data = {}) {
