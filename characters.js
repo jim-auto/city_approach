@@ -126,7 +126,7 @@ export function buildCharacterTextures(scene) {
   Object.entries(PALETTES).forEach(([key, palette]) => {
     for (let frame = 0; frame < 2; frame += 1) {
       const texKey = `${key}-${frame}`;
-      if (scene.textures.exists(texKey)) scene.textures.remove(texKey);
+      if (scene.textures.exists(texKey)) continue;
       scene.textures.addCanvas(texKey, renderFrame(palette, frame));
     }
   });
