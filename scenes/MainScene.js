@@ -271,10 +271,26 @@ export default class MainScene extends Phaser.Scene {
     g.fillRect(120, 526, 1040, 40);
     g.fillStyle(0x1c2530, 1).fillRect(550, 565, 180, 75);
     g.lineStyle(2, 0xf5f1df, 0.18).strokeRect(550, 565, 180, 75);
+    this.sprinkleTileVariants(
+      120,
+      245,
+      1040,
+      280,
+      [
+        { color: 0x090b10, alpha: 0.55 },
+        { color: 0x23272f, alpha: 0.35, dot: 0xf5f1df },
+        { color: 0xf5f1df, alpha: 0.05, dot: 0xf5f1df },
+        { color: 0x44321c, alpha: 0.28 },
+      ],
+      0.11,
+      10
+    );
     g.fillStyle(0x2b2118, 1).fillRect(185, 265, 130, 95);
     g.fillStyle(0x2f2a17, 1).fillRect(960, 430, 130, 95);
     g.lineStyle(3, 0xf5f1df, 0.32).strokeRect(185, 265, 130, 95);
     g.strokeRect(960, 430, 130, 95);
+    g.fillStyle(0xd8d2a8, 0.3).fillRect(190, 270, 24, 4);
+    g.fillStyle(0xf4c25a, 0.3).fillRect(966, 435, 24, 4);
     this.addPixelFlecks(145, 260, 990, 240, 26, [0xf5f1df, 0x5e6674]);
     this.addMapLabel(255, 312, "銀時計", "#f5f1df", 18);
     this.addMapLabel(1015, 477, "金時計", "#f5f1df", 18);
@@ -289,6 +305,20 @@ export default class MainScene extends Phaser.Scene {
     g.fillStyle(0x11131a, 1).fillRect(130, 205, 1020, 440);
     g.fillStyle(0x1c1f28, 1).fillRect(575, 205, 130, 440);
     g.fillStyle(0x1c1f28, 1).fillRect(130, 395, 1020, 120);
+    this.sprinkleTileVariants(
+      130,
+      205,
+      1020,
+      440,
+      [
+        { color: 0x05060a, alpha: 0.55 },
+        { color: 0x2a1b2d, alpha: 0.45, dot: 0xff4d6d },
+        { color: 0x152430, alpha: 0.45, dot: 0x57f5ff },
+        { color: 0xffd24f, alpha: 0.08 },
+      ],
+      0.13,
+      10
+    );
     g.lineStyle(2, 0xf5f1df, 0.42);
     for (let x = 585; x < 700; x += 22) {
       g.lineBetween(x, 405, x - 60, 510);
@@ -350,6 +380,25 @@ export default class MainScene extends Phaser.Scene {
       const py = y + Phaser.Math.Between(0, height);
       const color = Phaser.Math.RND.pick(colors);
       this.mapGraphics.fillStyle(color, i % 3 === 0 ? 0.16 : 0.08).fillRect(px, py, 4, 4);
+    }
+  }
+
+  sprinkleTileVariants(x, y, width, height, variants, probability = 0.09, tile = 8) {
+    const g = this.mapGraphics;
+    for (let px = x; px < x + width; px += tile) {
+      for (let py = y; py < y + height; py += tile) {
+        if (Phaser.Math.RND.frac() > probability) continue;
+        const v = Phaser.Math.RND.pick(variants);
+        g.fillStyle(v.color, v.alpha).fillRect(px, py, tile, tile);
+        if (v.dot) {
+          g.fillStyle(v.dot, Math.min(1, v.alpha + 0.15)).fillRect(
+            px + Phaser.Math.Between(1, tile - 2),
+            py + Phaser.Math.Between(1, tile - 2),
+            1,
+            1
+          );
+        }
+      }
     }
   }
 

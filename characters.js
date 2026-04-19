@@ -1,26 +1,29 @@
 // 32x32 chibi sprites drawn to an offscreen canvas, registered as Phaser
-// textures. Two frames per character so we can run a walk animation. The
-// look is inspired by 16-bit JRPG townspeople: bigger head, small body,
-// stubby legs, limited palette.
+// textures. Each material (hair, skin, cloth) uses a 3-value ramp where the
+// shadow hue shifts toward a cooler/chromatic direction — the SNES-JRPG
+// townsfolk trick: skin shadow reds toward mauve, hair shadow cools, cloth
+// shadow deepens saturation. A diagonal single-pixel highlight on the upper
+// left edge fakes a light source. Two frames per character drive the walk
+// animation.
 
 const PALETTES = {
   player: {
-    hair: 0x3a2820,
-    skin: 0xf5d6a8,
-    shirt: 0x4a88c8,
-    shirtAccent: 0xbcd9f0,
-    pants: 0x2a3a66,
-    shoes: 0x181820,
+    hair:  { base: 0x3a2820, shadow: 0x1d1320, highlight: 0x5a4030 },
+    skin:  { base: 0xf5d6a8, shadow: 0xc88878, highlight: 0xfff0d0 },
+    shirt: { base: 0x4a88c8, shadow: 0x28486a, highlight: 0x9cc4ec },
+    shirtAccent: 0xdef0ff,
+    pants: { base: 0x2a3a66, shadow: 0x141e38, highlight: 0x4a5c92 },
+    shoes: { base: 0x181820, shadow: 0x08080c, highlight: 0x343440 },
     outline: 0x05050a,
     mouth: 0x8e4a3c,
   },
   npc: {
-    hair: 0x3a2a20,
-    skin: 0xf5d6a8,
-    shirt: 0xb25664,
-    shirtAccent: 0xf3b1ba,
-    pants: 0x3a2834,
-    shoes: 0x141418,
+    hair:  { base: 0x3a2a20, shadow: 0x1e141c, highlight: 0x5c4132 },
+    skin:  { base: 0xf5d6a8, shadow: 0xc88878, highlight: 0xfff0d0 },
+    shirt: { base: 0xb25664, shadow: 0x6c2a3a, highlight: 0xe48a96 },
+    shirtAccent: 0xffd8dc,
+    pants: { base: 0x3a2834, shadow: 0x1f141c, highlight: 0x5c4252 },
+    shoes: { base: 0x141418, shadow: 0x06060a, highlight: 0x2e2e36 },
     outline: 0x05050a,
     mouth: 0x8e4a3c,
   },
@@ -35,50 +38,91 @@ function paint(ctx, x, y, w, h, color) {
   ctx.fillRect(x, y, w, h);
 }
 
+function fill3(ctx, x, y, w, h, ramp) {
+  // Flat base fill first.
+  paint(ctx, x, y, w, h, ramp.base);
+  // Shadow: right column + bottom row.
+  paint(ctx, x + w - 1, y + 1, 1, h - 1, ramp.shadow);
+  paint(ctx, x + 1, y + h - 1, w - 1, 1, ramp.shadow);
+  // Highlight: single top-left pixel.
+  paint(ctx, x, y, 1, 1, ramp.highlight);
+}
+
 function drawBody(ctx, p) {
-  // Hair cap
-  paint(ctx, 12, 3, 8, 1, p.hair);
-  paint(ctx, 11, 4, 10, 2, p.hair);
-  paint(ctx, 10, 6, 12, 1, p.hair);
-  // Face (skin)
-  paint(ctx, 11, 6, 10, 7, p.skin);
-  // Hair sides + bangs overlap face
-  paint(ctx, 10, 6, 1, 6, p.hair);
-  paint(ctx, 21, 6, 1, 6, p.hair);
-  paint(ctx, 11, 6, 2, 1, p.hair);
-  paint(ctx, 19, 6, 2, 1, p.hair);
-  // Eyes + mouth
+  // Hair cap (rough rounded top)
+  paint(ctx, 12, 3, 8, 1, p.hair.base);
+  paint(ctx, 11, 4, 10, 2, p.hair.base);
+  paint(ctx, 10, 6, 12, 1, p.hair.base);
+  // Hair highlight diagonal (upper-left glossy strip)
+  paint(ctx, 13, 3, 2, 1, p.hair.highlight);
+  paint(ctx, 12, 4, 2, 1, p.hair.highlight);
+  paint(ctx, 11, 5, 2, 1, p.hair.highlight);
+  // Hair shadow right side
+  paint(ctx, 19, 4, 2, 2, p.hair.shadow);
+  paint(ctx, 21, 6, 1, 1, p.hair.shadow);
+
+  // Face skin
+  fill3(ctx, 11, 6, 10, 7, p.skin);
+
+  // Hair sides framing face
+  paint(ctx, 10, 6, 1, 6, p.hair.base);
+  paint(ctx, 21, 6, 1, 6, p.hair.shadow);
+  // Bangs
+  paint(ctx, 11, 6, 2, 1, p.hair.base);
+  paint(ctx, 19, 6, 2, 1, p.hair.shadow);
+
+  // Eyes (slightly separated) + eye whites hint
   paint(ctx, 13, 9, 2, 1, p.outline);
   paint(ctx, 17, 9, 2, 1, p.outline);
+  paint(ctx, 13, 10, 1, 1, p.skin.highlight);
+  paint(ctx, 17, 10, 1, 1, p.skin.highlight);
+
+  // Mouth
   paint(ctx, 15, 11, 2, 1, p.mouth);
-  // Jaw / neck
-  paint(ctx, 11, 12, 10, 1, p.skin);
-  paint(ctx, 15, 13, 2, 1, p.skin);
-  // Shirt
-  paint(ctx, 11, 14, 10, 7, p.shirt);
-  paint(ctx, 10, 15, 1, 5, p.shirt);
-  paint(ctx, 21, 15, 1, 5, p.shirt);
+
+  // Jaw fade shadow
+  paint(ctx, 11, 12, 10, 1, p.skin.base);
+  paint(ctx, 17, 12, 3, 1, p.skin.shadow);
+
+  // Neck
+  paint(ctx, 15, 13, 2, 1, p.skin.shadow);
+
+  // Shirt torso
+  fill3(ctx, 11, 14, 10, 7, p.shirt);
+  // Collar accent (SNES sprites often have a 1-row accent)
   paint(ctx, 14, 14, 4, 1, p.shirtAccent);
+  paint(ctx, 15, 15, 2, 1, p.shirtAccent);
+
+  // Arms (1px wide stick-outs)
+  paint(ctx, 10, 15, 1, 5, p.shirt.base);
+  paint(ctx, 21, 15, 1, 5, p.shirt.shadow);
+
   // Hands
-  paint(ctx, 10, 20, 1, 1, p.skin);
-  paint(ctx, 21, 20, 1, 1, p.skin);
-  // Belt
+  paint(ctx, 10, 20, 1, 1, p.skin.base);
+  paint(ctx, 21, 20, 1, 1, p.skin.shadow);
+
+  // Belt (dark line)
   paint(ctx, 11, 21, 10, 1, p.outline);
-  // Hips
-  paint(ctx, 12, 22, 8, 3, p.pants);
+
+  // Hips (pants top)
+  fill3(ctx, 12, 22, 8, 3, p.pants);
 }
 
 function drawLegs(ctx, p, frame) {
   if (frame === 0) {
-    paint(ctx, 12, 25, 3, 4, p.pants);
-    paint(ctx, 17, 25, 3, 4, p.pants);
-    paint(ctx, 12, 29, 3, 1, p.shoes);
-    paint(ctx, 17, 29, 3, 1, p.shoes);
+    fill3(ctx, 12, 25, 3, 4, p.pants);
+    fill3(ctx, 17, 25, 3, 4, p.pants);
+    paint(ctx, 12, 29, 3, 1, p.shoes.base);
+    paint(ctx, 17, 29, 3, 1, p.shoes.base);
+    paint(ctx, 14, 29, 1, 1, p.shoes.shadow);
+    paint(ctx, 19, 29, 1, 1, p.shoes.shadow);
   } else {
-    paint(ctx, 11, 25, 3, 4, p.pants);
-    paint(ctx, 18, 25, 3, 4, p.pants);
-    paint(ctx, 11, 29, 3, 1, p.shoes);
-    paint(ctx, 18, 29, 3, 1, p.shoes);
+    fill3(ctx, 11, 25, 3, 4, p.pants);
+    fill3(ctx, 18, 25, 3, 4, p.pants);
+    paint(ctx, 11, 29, 3, 1, p.shoes.base);
+    paint(ctx, 18, 29, 3, 1, p.shoes.base);
+    paint(ctx, 13, 29, 1, 1, p.shoes.shadow);
+    paint(ctx, 20, 29, 1, 1, p.shoes.shadow);
   }
 }
 
@@ -92,13 +136,13 @@ function drawOutline(ctx, p, frame) {
   // Side of shirt / arms
   paint(ctx, 9, 15, 1, 5, o);
   paint(ctx, 22, 15, 1, 5, o);
-  // Shirt bottom
+  // Shirt bottom corners
   paint(ctx, 10, 20, 1, 1, o);
   paint(ctx, 21, 20, 1, 1, o);
   // Hip edges
   paint(ctx, 11, 22, 1, 3, o);
   paint(ctx, 20, 22, 1, 3, o);
-  // Leg outer edges
+  // Leg outer edges + gap
   if (frame === 0) {
     paint(ctx, 11, 25, 1, 5, o);
     paint(ctx, 20, 25, 1, 5, o);

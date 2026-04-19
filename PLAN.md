@@ -2,7 +2,7 @@
 
 This file is a long-form handoff note for the next coding agent, especially Claude. It describes the current state of the project, why the implementation is shaped this way, what has already been verified, and what would be useful to improve next.
 
-Last updated: 2026-04-19 JST (+ title tutorial block, button press feedback, texture-reuse fix)
+Last updated: 2026-04-19 JST (+ SNES-JRPG visual polish: shaded characters, tile variation, CRT overlay)
 
 ## 1. Project Summary
 
@@ -165,8 +165,9 @@ Important methods:
 - `preload()`: loads `player`, `npc`, `tiles`.
 - `create()`: initializes camera, world, player, HUD, map, input.
 - `buildMap()`: clears and rebuilds current map.
-- `drawNagoyaMap()`: draws the Nagoya Station-inspired map.
+- `drawNagoyaMap()`: draws the Nagoya Station-inspired map (silver clock top-left, gold clock bottom-right).
 - `drawKabukichoMap()`: draws the Kabukicho-inspired map.
+- `sprinkleTileVariants()`: walks an 8- or 10-px grid and at ~10% probability stamps a darker / lighter / tinted variant (with an optional accent dot). Used by both maps to break up flat floor fills and give tile-like variety without a tileset asset.
 - `spawnNpcs()`: creates interactive NPCs.
 - `makeProfile()`: generates NPC profile from archetype + map traits.
 - `spawnAmbient()`: creates non-interactive crowd sprites.
@@ -555,7 +556,7 @@ https://jim-auto.github.io/city_approach/?v=<commit-sha>
 
 Priority order if Claude continues:
 
-1. ~~Improve player/NPC animation.~~ **Done** (2026-04-19): `characters.js` generates 32×32 chibi sprites on a `<canvas>` and registers them as Phaser textures (`player-0/1`, `npc-0/1`). A 2-frame `player-walk` / `npc-walk` animation plays when the entity moves, and `flipX` handles left/right facing. `player.png` / `npc.png` are no longer loaded (the files remain for now but are unreferenced).
+1. ~~Improve player/NPC animation.~~ **Done** (2026-04-19): `characters.js` generates 32×32 chibi sprites on a `<canvas>` and registers them as Phaser textures (`player-0/1`, `npc-0/1`). A 2-frame `player-walk` / `npc-walk` animation plays when the entity moves, and `flipX` handles left/right facing. Each material (hair, skin, shirt, pants, shoes) is a `{base, shadow, highlight}` ramp — `fill3()` paints base then a 1px shadow on bottom/right + 1px highlight top-left, and hair gets a diagonal highlight strip so chibis read as lit from the upper-left instead of flat. `player.png` / `npc.png` are no longer loaded (the files remain for now but are unreferenced).
 2. ~~Replace text status icons with pixel icon sheet.~~ **Done** (2026-04-19): `MainScene.makeFlagIcons()` builds a small `Graphics` with one 14×14 badge per flag (drawn by `drawFlagBadge`). No asset sheet needed — everything is drawn in code. Colours mirror the palette in §18.
 3. ~~Add lightweight sound effects.~~ **Done** (2026-04-19): `sfx.js` + wiring in both scenes. Next polish: gauge-change tick, volume slider.
 4. ~~Add a title or start overlay only if it does not block direct play.~~ **Done** (2026-04-19): `scenes/TitleScene.js` is the first scene. Shows title, subtitle, a `【あそびかた】` tutorial block (jockstick, four action buttons with which signal each one targets, talk-battle flow, map switch), best score, and a cycling difficulty button. Any tap or key starts `MainScene`, which also satisfies the mobile audio-unlock gesture requirement.
