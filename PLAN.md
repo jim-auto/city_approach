@@ -105,11 +105,12 @@ Main flow:
    - `bad_actions`
    - `flags`
 5. When the player is close enough to an NPC, the NPC gets a highlight ring.
-6. Player chooses one of four action buttons:
-   - `軽く`
-   - `ストレート`
-   - `状況ツッコミ`
-   - `離れる` (respectful skip — scores based on defensive signals; see §19)
+6. Player chooses one of five action buttons (four opener topics + respectful skip):
+   - `お天気op` — safe weather small-talk. Best against `立ち止まり`, `目が合う`, `待ち合わせ`. Weak vs `歩くの速い`, `イヤホン`.
+   - `服装op` — compliment the outfit. Best against `目が合う` + `立ち止まり`, also tourists. Weak vs `歩くの速い`, `友達といる`, `スマホ`.
+   - `小物op` — comment on something they're holding. Best against `スマホ`, `観光中`, `周囲を見る`. Weak vs `歩くの速い`, `イヤホン`.
+   - `ネタop` — lead with a joke. Best against `目が合う`, `友達といる`. Weak vs `夜の警戒`, `外界遮断`, fast walkers. Lowest `defaultMod`.
+   - `離れる` — respectful skip (scores based on defensive signals; see §19).
 7. Success rate is calculated from base rate, map noise, NPC interest, traits, selected action, and distance.
 8. Success transitions to `TalkScene`.
 9. Failure marks that NPC as disabled/faded and shows feedback.

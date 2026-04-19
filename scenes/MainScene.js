@@ -123,38 +123,54 @@ const TRAIT_RATE_MODS = {
 };
 
 const ACTIONS = {
-  soft: {
-    label: "軽く",
+  weather: {
+    label: "お天気op",
     defaultMod: 0.01,
     traits: {
-      "目が合う": 0.1,
-      "立ち止まり": 0.08,
-      "待ち合わせ": 0.05,
-      "友達といる": -0.06,
-      "イヤホン": -0.08,
+      "目が合う": 0.08,
+      "立ち止まり": 0.10,
+      "待ち合わせ": 0.08,
+      "歩くの速い": -0.08,
+      "イヤホン": -0.10,
+      "外界遮断": -0.06,
     },
   },
-  straight: {
-    label: "ストレート",
-    defaultMod: -0.03,
+  outfit: {
+    label: "服装op",
+    defaultMod: 0.03,
     traits: {
       "目が合う": 0.12,
-      "歩くの速い": -0.12,
-      "友達といる": -0.12,
-      "イヤホン": -0.12,
-      "スマホ": -0.04,
+      "立ち止まり": 0.10,
+      "観光中": 0.08,
+      "歩くの速い": -0.10,
+      "友達といる": -0.08,
+      "スマホ": -0.06,
     },
   },
-  situational: {
-    label: "状況ツッコミ",
-    defaultMod: 0.04,
+  item: {
+    label: "小物op",
+    defaultMod: 0.02,
     traits: {
-      "スマホ": 0.06,
+      "スマホ": 0.08,
+      "観光中": 0.10,
       "周囲を見る": 0.09,
-      "観光中": 0.08,
-      "ネオンに注意": 0.04,
+      "目が合う": 0.06,
       "立ち止まり": 0.04,
-      "イヤホン": -0.08,
+      "歩くの速い": -0.08,
+      "イヤホン": -0.06,
+    },
+  },
+  joke: {
+    label: "ネタop",
+    defaultMod: -0.02,
+    traits: {
+      "目が合う": 0.12,
+      "友達といる": 0.08,
+      "立ち止まり": 0.04,
+      "夜の警戒": -0.08,
+      "外界遮断": -0.10,
+      "歩くの速い": -0.10,
+      "人混み": -0.05,
     },
   },
 };
@@ -738,10 +754,11 @@ export default class MainScene extends Phaser.Scene {
       0x2f2a3a
     );
     this.actionButtons = [
-      this.createHudButton("軽く", () => this.tryApproach("soft"), 148, 52, 0x204a42),
-      this.createHudButton("ストレート", () => this.tryApproach("straight"), 148, 52, 0x51323d),
-      this.createHudButton("状況ツッコミ", () => this.tryApproach("situational"), 148, 52, 0x33405a),
-      this.createHudButton("離れる", () => this.respectfullySkip(), 148, 52, 0x2a2f38),
+      this.createHudButton("お天気op", () => this.tryApproach("weather"), 148, 48, 0x204a42),
+      this.createHudButton("服装op", () => this.tryApproach("outfit"), 148, 48, 0x51323d),
+      this.createHudButton("小物op", () => this.tryApproach("item"), 148, 48, 0x33405a),
+      this.createHudButton("ネタop", () => this.tryApproach("joke"), 148, 48, 0x4a3a22),
+      this.createHudButton("離れる", () => this.respectfullySkip(), 148, 48, 0x2a2f38),
     ];
 
     this.joystickBase = this.add.graphics().setScrollFactor(0).setDepth(50);
@@ -799,10 +816,11 @@ export default class MainScene extends Phaser.Scene {
     );
 
     const buttonX = width - 160;
-    const totalButtonHeight = 52 * this.actionButtons.length + 8 * (this.actionButtons.length - 1);
-    const startY = Math.max(84, height - totalButtonHeight - 18);
+    const spacing = 54;
+    const totalStack = spacing * (this.actionButtons.length - 1) + 48;
+    const startY = Math.max(84, height - totalStack - 14);
     this.actionButtons.forEach((button, index) => {
-      button.setPosition(buttonX, startY + index * 60);
+      button.setPosition(buttonX, startY + index * spacing);
     });
 
     this.joystickCenter = {
@@ -1118,9 +1136,12 @@ export default class MainScene extends Phaser.Scene {
 
   feedbackFor(profile, actionKey) {
     if (profile.traits.includes("イヤホン")) return "外界遮断のサインが強い。声量より距離感を優先。";
+    if (profile.traits.includes("友達といる") && actionKey === "joke") return "同伴中の笑い取りはグループ内の空気を崩す。";
     if (profile.traits.includes("友達といる")) return "同伴中は防御が高い。グループの流れを切らない。";
-    if (profile.traits.includes("歩くの速い")) return "歩行速度が速く、急ぎの可能性が高い。";
-    if (actionKey === "straight") return "直球が強すぎた。短く軽い入りが向く場面だった。";
+    if (profile.traits.includes("歩くの速い")) return "歩行速度が速く、余白の話題に乗る余裕がなかった。";
+    if (actionKey === "joke") return "不意のボケは警戒モードでは刺さらない。";
+    if (actionKey === "outfit" && profile.traits.includes("スマホ")) return "服装opより、注意の外からすっと入る方が向く場面。";
+    if (actionKey === "weather") return "差し障りない話題でも、今は余白がなかった。";
     if (profile.traits.includes("スマホ")) return "注意がスマホに分散していた。状況を見て一言で切る。";
     return "反応が薄いので追わずに離れた。";
   }
