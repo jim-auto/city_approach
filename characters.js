@@ -1,10 +1,17 @@
-// 32x32 chibi sprites drawn to an offscreen canvas, registered as Phaser
-// textures. Each material (hair, skin, cloth) uses a 3-value ramp where the
-// shadow hue shifts toward a cooler/chromatic direction — the SNES-JRPG
-// townsfolk trick: skin shadow reds toward mauve, hair shadow cools, cloth
-// shadow deepens saturation. A diagonal single-pixel highlight on the upper
-// left edge fakes a light source. Two frames per character drive the walk
-// animation.
+// 32x32 character sprites drawn to an offscreen canvas, registered as Phaser
+// textures. Two modes:
+//   "pixel" — chibi pixel art with 3-value material ramps (default).
+//   "icon"  — emoji rendered via Canvas 2D fillText, for a cuter, cleaner
+//             look that stays cross-platform without any asset files.
+// Both modes emit the same texture keys (player-0/1, npc-0/1) so nothing
+// downstream has to branch.
+
+import { getSpriteMode } from "./storage.js";
+
+const ICON_SETS = {
+  player: ["😊", "😄"],
+  npc:    ["🙂", "😶"],
+};
 
 const PALETTES = {
   player: {
@@ -14,10 +21,11 @@ const PALETTES = {
     shirtAccent: 0xdef0ff,
     pants: { base: 0x2a3a66, shadow: 0x141e38, highlight: 0x4a5c92 },
     shoes: { base: 0x181820, shadow: 0x08080c, highlight: 0x343440 },
-    outline: 0x202028,
+    outline: 0x23202a,
     mouth: 0xdc5a66,
     blush: 0xff9cb4,
     eyeHighlight: 0xffffff,
+    eyeGlint: 0xffc880,
   },
   npc: {
     hair:  { base: 0x3a2a20, shadow: 0x1e141c, highlight: 0x5c4132 },
@@ -26,10 +34,11 @@ const PALETTES = {
     shirtAccent: 0xffd8dc,
     pants: { base: 0x3a2834, shadow: 0x1f141c, highlight: 0x5c4252 },
     shoes: { base: 0x141418, shadow: 0x06060a, highlight: 0x2e2e36 },
-    outline: 0x202028,
+    outline: 0x23202a,
     mouth: 0xdc5a66,
     blush: 0xff9cb4,
     eyeHighlight: 0xffffff,
+    eyeGlint: 0xffc880,
   },
 };
 
@@ -75,21 +84,26 @@ function drawBody(ctx, p) {
   paint(ctx, 11, 6, 2, 1, p.hair.base);
   paint(ctx, 19, 6, 2, 1, p.hair.shadow);
 
-  // Big round eyes (2x2 with a bright highlight pixel — the chibi cute look)
-  paint(ctx, 13, 8, 2, 3, p.outline);
-  paint(ctx, 17, 8, 2, 3, p.outline);
-  paint(ctx, 13, 8, 1, 1, p.eyeHighlight);
+  // Big sparkly chibi eyes — 3x3 with sparkle, pupil band, and warm glint
+  paint(ctx, 12, 8, 3, 3, p.outline);
+  paint(ctx, 17, 8, 3, 3, p.outline);
+  // White sparkle (top-left)
+  paint(ctx, 12, 8, 1, 1, p.eyeHighlight);
   paint(ctx, 17, 8, 1, 1, p.eyeHighlight);
-  // Tiny smile
-  paint(ctx, 15, 11, 2, 1, p.mouth);
-  // Blush on cheeks
-  paint(ctx, 12, 10, 1, 1, p.blush);
-  paint(ctx, 19, 10, 1, 1, p.blush);
+  // Warm reflective glint (mid)
+  paint(ctx, 14, 9, 1, 1, p.eyeGlint);
+  paint(ctx, 19, 9, 1, 1, p.eyeGlint);
 
-  // Softer jaw (no hard shadow)
-  paint(ctx, 11, 12, 10, 1, p.skin.base);
+  // Blush (row 10, outer cheeks)
+  paint(ctx, 11, 10, 1, 1, p.blush);
+  paint(ctx, 20, 10, 1, 1, p.blush);
 
-  // Neck
+  // Smile arc — corners up, bottom dip in the middle
+  paint(ctx, 14, 11, 1, 1, p.mouth);
+  paint(ctx, 17, 11, 1, 1, p.mouth);
+  paint(ctx, 15, 12, 2, 1, p.mouth);
+
+  // Neck (row 13, connecting head to shirt)
   paint(ctx, 15, 13, 2, 1, p.skin.shadow);
 
   // Shirt torso
@@ -159,7 +173,7 @@ function drawOutline(ctx, p, frame) {
   }
 }
 
-function renderFrame(palette, frame) {
+function renderPixelFrame(palette, frame) {
   const canvas = document.createElement("canvas");
   canvas.width = 32;
   canvas.height = 32;
@@ -171,12 +185,34 @@ function renderFrame(palette, frame) {
   return canvas;
 }
 
+function renderIconFrame(key, frame) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 32;
+  canvas.height = 32;
+  const ctx = canvas.getContext("2d");
+  ctx.font = "26px 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  const emoji = (ICON_SETS[key] || ICON_SETS.npc)[frame % 2];
+  ctx.fillText(emoji, 16, 17);
+  return canvas;
+}
+
 export function buildCharacterTextures(scene) {
+  const modeKey = getSpriteMode().key;
   Object.entries(PALETTES).forEach(([key, palette]) => {
     for (let frame = 0; frame < 2; frame += 1) {
       const texKey = `${key}-${frame}`;
-      if (scene.textures.exists(texKey)) continue;
-      scene.textures.addCanvas(texKey, renderFrame(palette, frame));
+      if (scene.textures.exists(texKey)) {
+        const existing = scene.textures.get(texKey);
+        if (existing._modeKey === modeKey) continue;
+        scene.textures.remove(texKey);
+      }
+      const canvas = modeKey === "icon"
+        ? renderIconFrame(key, frame)
+        : renderPixelFrame(palette, frame);
+      const tex = scene.textures.addCanvas(texKey, canvas);
+      if (tex) tex._modeKey = modeKey;
     }
   });
 }

@@ -1,5 +1,5 @@
 import { sfx } from "../sfx.js";
-import { getBest, getDifficulty, cycleDifficulty } from "../storage.js";
+import { getBest, getDifficulty, cycleDifficulty, getSpriteMode, cycleSpriteMode } from "../storage.js";
 
 const TUTORIAL_LINES = [
   "【あそびかた】",
@@ -22,6 +22,7 @@ export default class TitleScene extends Phaser.Scene {
 
   create() {
     this.difficulty = getDifficulty();
+    this.spriteMode = getSpriteMode();
     this.best = getBest();
     this.started = false;
 
@@ -66,6 +67,13 @@ export default class TitleScene extends Phaser.Scene {
         color: "#ffd24f",
       })
       .setOrigin(0.5);
+    this.modeText = this.add
+      .text(0, 0, "", {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "17px",
+        color: "#9cc4ec",
+      })
+      .setOrigin(0.5);
     this.startText = this.add
       .text(0, 0, "タップで開始", {
         fontFamily: "system-ui, sans-serif",
@@ -79,6 +87,14 @@ export default class TitleScene extends Phaser.Scene {
     this.diffButton.on("pointerdown", (pointer, _lx, _ly, event) => {
       event?.stopPropagation?.();
       this.difficulty = cycleDifficulty(this.difficulty.key);
+      this.refreshTexts();
+      sfx.play("tick");
+    });
+    this.modeButton = this.add.rectangle(0, 0, 220, 44, 0x1d3148, 0.86).setStrokeStyle(2, 0xffffff, 0.32);
+    this.modeButton.setInteractive({ useHandCursor: true });
+    this.modeButton.on("pointerdown", (pointer, _lx, _ly, event) => {
+      event?.stopPropagation?.();
+      this.spriteMode = cycleSpriteMode(this.spriteMode.key);
       this.refreshTexts();
       sfx.play("tick");
     });
@@ -103,6 +119,7 @@ export default class TitleScene extends Phaser.Scene {
   refreshTexts() {
     this.bestText.setText(`Best ${this.best}`);
     this.diffText.setText(`難度: ${this.difficulty.label}（タップで切替）`);
+    this.modeText.setText(`キャラ: ${this.spriteMode.label}（タップで切替）`);
   }
 
   layout() {
@@ -121,10 +138,12 @@ export default class TitleScene extends Phaser.Scene {
     this.titleText.setPosition(cx, h * 0.1).setFontSize(mobile ? 34 : 52);
     this.subText.setPosition(cx, h * 0.17).setWordWrapWidth(Math.min(640, w - 40));
     this.tutorialText.setPosition(cx, h * 0.24).setFontSize(mobile ? 12 : 15);
-    this.bestText.setPosition(cx, h * 0.7);
-    this.diffButton.setPosition(cx, h * 0.78);
-    this.diffText.setPosition(cx, h * 0.78);
-    this.startText.setPosition(cx, h * 0.9);
+    this.bestText.setPosition(cx, h * 0.66);
+    this.diffButton.setPosition(cx, h * 0.74);
+    this.diffText.setPosition(cx, h * 0.74);
+    this.modeButton.setPosition(cx, h * 0.82);
+    this.modeText.setPosition(cx, h * 0.82);
+    this.startText.setPosition(cx, h * 0.93);
   }
 
   startGame() {
