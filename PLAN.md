@@ -152,8 +152,8 @@ This is the field/exploration scene.
 
 Important constants:
 
-- `WORLD`: fixed world size, currently `1280 x 760`.
-- `MAPS`: map definitions for `nagoya` and `kabukicho`.
+- `WORLD`: fixed world size, currently `760 x 1280` (portrait). Mobile-first — the vertical corridor reads natural on phones and the follow-camera pans up/down.
+- `MAPS`: map definitions for `nagoya` and `kabukicho`. `movement: "vertical"` means NPCs walk up/down and drift toward a lane x-value; `movement: "random"` means free 2D wandering within map bounds.
 - `CHARACTER_TYPES`: abstract NPC behavior archetypes.
 - `MAP_TRAITS`: extra traits by city.
 - `TRAIT_RATE_MODS`: success-rate modifiers per trait.
@@ -165,7 +165,7 @@ Important methods:
 - `preload()`: loads `player`, `npc`, `tiles`.
 - `create()`: initializes camera, world, player, HUD, map, input.
 - `buildMap()`: clears and rebuilds current map.
-- `drawNagoyaMap()`: draws the Nagoya Station-inspired map (silver clock top-left, gold clock bottom-right).
+- `drawNagoyaMap()`: draws the Nagoya Station-inspired map. Portrait concourse running top→bottom, silver clock at the top, gold clock at the bottom, ticket gate box on the middle-left.
 - `drawKabukichoMap()`: draws the Kabukicho-inspired map.
 - `sprinkleTileVariants()`: walks an 8- or 10-px grid and at ~10% probability stamps a darker / lighter / tinted variant (with an optional accent dot). Used by both maps to break up flat floor fills and give tile-like variety without a tileset asset.
 - `spawnNpcs()`: creates interactive NPCs.

@@ -2,7 +2,7 @@ import { sfx } from "../sfx.js";
 import { getBest, setBest, getDifficulty, cycleDifficulty } from "../storage.js";
 import { buildCharacterTextures, registerCharacterAnimations } from "../characters.js";
 
-const WORLD = { width: 1280, height: 760 };
+const WORLD = { width: 760, height: 1280 };
 
 const MAPS = {
   nagoya: {
@@ -13,14 +13,14 @@ const MAPS = {
     noisePenalty: 0.02,
     npcCount: 3,
     ambientCount: 8,
-    playerStart: { x: 640, y: 440 },
-    movement: "linear",
+    playerStart: { x: 380, y: 640 },
+    movement: "vertical",
     tint: 0x23272f,
-    lanes: [292, 372, 452, 548],
+    lanes: [285, 345, 405, 465],
     stopPoints: [
-      { x: 255, y: 312, label: "銀時計" },
-      { x: 640, y: 440, label: "改札前" },
-      { x: 1015, y: 477, label: "金時計" },
+      { x: 380, y: 235, label: "銀時計" },
+      { x: 380, y: 640, label: "改札前" },
+      { x: 380, y: 1060, label: "金時計" },
     ],
   },
   kabukicho: {
@@ -31,14 +31,14 @@ const MAPS = {
     noisePenalty: 0.12,
     npcCount: 3,
     ambientCount: 17,
-    playerStart: { x: 650, y: 575 },
+    playerStart: { x: 380, y: 640 },
     movement: "random",
     tint: 0x211423,
-    lanes: [260, 360, 470, 575],
+    lanes: [220, 340, 430, 540],
     stopPoints: [
-      { x: 270, y: 295, label: "広場" },
-      { x: 640, y: 405, label: "横断前" },
-      { x: 1010, y: 290, label: "ネオン街" },
+      { x: 380, y: 250, label: "広場" },
+      { x: 380, y: 640, label: "横断前" },
+      { x: 380, y: 1030, label: "ネオン街" },
     ],
   },
 };
@@ -256,26 +256,31 @@ export default class MainScene extends Phaser.Scene {
   drawNagoyaMap() {
     const g = this.mapGraphics;
     g.fillStyle(0x090b10, 1).fillRect(0, 0, WORLD.width, WORLD.height);
-    g.fillStyle(0x181b22, 1).fillRect(120, 245, 1040, 280);
-    g.fillStyle(0x2a2d35, 1).fillRect(120, 335, 1040, 22);
-    g.fillStyle(0x2a2d35, 1).fillRect(120, 440, 1040, 22);
+    // Vertical concourse
+    g.fillStyle(0x181b22, 1).fillRect(240, 120, 280, 1040);
+    // Two decorative horizontal seams across the floor
+    g.fillStyle(0x2a2d35, 1).fillRect(240, 430, 280, 22);
+    g.fillStyle(0x2a2d35, 1).fillRect(240, 830, 280, 22);
+    // Lane stripes (vertical) + subtle horizontal gridlines
     g.lineStyle(2, 0xf5f1df, 0.13);
-    for (let x = 160; x <= 1120; x += 80) {
-      g.lineBetween(x, 245, x, 525);
+    for (let y = 160; y <= 1120; y += 80) {
+      g.lineBetween(240, y, 520, y);
     }
-    for (let y = 260; y <= 510; y += 48) {
-      g.lineStyle(1, 0xffffff, 0.05).lineBetween(120, y, 1160, y);
+    for (let x = 260; x <= 500; x += 48) {
+      g.lineStyle(1, 0xffffff, 0.05).lineBetween(x, 120, x, 1160);
     }
-    g.lineStyle(3, 0xf5f1df, 0.22).strokeRect(120, 245, 1040, 280);
-    g.fillStyle(0x10131a, 1).fillRect(120, 210, 1040, 34);
-    g.fillRect(120, 526, 1040, 40);
-    g.fillStyle(0x1c2530, 1).fillRect(550, 565, 180, 75);
-    g.lineStyle(2, 0xf5f1df, 0.18).strokeRect(550, 565, 180, 75);
+    g.lineStyle(3, 0xf5f1df, 0.22).strokeRect(240, 120, 280, 1040);
+    // Entrance bands (top and bottom of concourse)
+    g.fillStyle(0x10131a, 1).fillRect(210, 120, 34, 1040);
+    g.fillRect(516, 120, 40, 1040);
+    // Ticket gate (middle, horizontal box extending left)
+    g.fillStyle(0x1c2530, 1).fillRect(75, 600, 165, 90);
+    g.lineStyle(2, 0xf5f1df, 0.18).strokeRect(75, 600, 165, 90);
     this.sprinkleTileVariants(
+      240,
       120,
-      245,
-      1040,
       280,
+      1040,
       [
         { color: 0x090b10, alpha: 0.55 },
         { color: 0x23272f, alpha: 0.35, dot: 0xf5f1df },
@@ -285,31 +290,36 @@ export default class MainScene extends Phaser.Scene {
       0.11,
       10
     );
-    g.fillStyle(0x2b2118, 1).fillRect(185, 265, 130, 95);
-    g.fillStyle(0x2f2a17, 1).fillRect(960, 430, 130, 95);
-    g.lineStyle(3, 0xf5f1df, 0.32).strokeRect(185, 265, 130, 95);
-    g.strokeRect(960, 430, 130, 95);
-    g.fillStyle(0xd8d2a8, 0.3).fillRect(190, 270, 24, 4);
-    g.fillStyle(0xf4c25a, 0.3).fillRect(966, 435, 24, 4);
-    this.addPixelFlecks(145, 260, 990, 240, 26, [0xf5f1df, 0x5e6674]);
-    this.addMapLabel(255, 312, "銀時計", "#f5f1df", 18);
-    this.addMapLabel(1015, 477, "金時計", "#f5f1df", 18);
-    this.addMapLabel(640, 604, "改札前", "#f5f1df", 18);
-    this.addMapLabel(640, 225, "中央コンコース", "#f5f1df", 17);
+    // Silver clock building (top)
+    g.fillStyle(0x2b2118, 1).fillRect(310, 175, 140, 110);
+    g.lineStyle(3, 0xf5f1df, 0.32).strokeRect(310, 175, 140, 110);
+    g.fillStyle(0xd8d2a8, 0.32).fillRect(314, 180, 26, 4);
+    // Gold clock building (bottom)
+    g.fillStyle(0x2f2a17, 1).fillRect(310, 995, 140, 110);
+    g.lineStyle(3, 0xf5f1df, 0.32).strokeRect(310, 995, 140, 110);
+    g.fillStyle(0xf4c25a, 0.32).fillRect(314, 1000, 26, 4);
+    this.addPixelFlecks(248, 140, 264, 1000, 26, [0xf5f1df, 0x5e6674]);
+    this.addMapLabel(380, 235, "銀時計", "#f5f1df", 18);
+    this.addMapLabel(380, 1055, "金時計", "#f5f1df", 18);
+    this.addMapLabel(157, 644, "改札前", "#f5f1df", 18);
+    this.addMapLabel(380, 140, "中央コンコース", "#f5f1df", 16);
     this.drawStopMarkers(MAPS.nagoya.stopPoints, 0xf5f1df);
   }
 
   drawKabukichoMap() {
     const g = this.mapGraphics;
     g.fillStyle(0x05050a, 1).fillRect(0, 0, WORLD.width, WORLD.height);
-    g.fillStyle(0x11131a, 1).fillRect(130, 205, 1020, 440);
-    g.fillStyle(0x1c1f28, 1).fillRect(575, 205, 130, 440);
-    g.fillStyle(0x1c1f28, 1).fillRect(130, 395, 1020, 120);
+    // Main vertical street area
+    g.fillStyle(0x11131a, 1).fillRect(80, 130, 600, 1020);
+    // Central vertical road (NPC walking path)
+    g.fillStyle(0x1c1f28, 1).fillRect(300, 130, 160, 1020);
+    // Crosswalk / transit band in the middle
+    g.fillStyle(0x1c1f28, 1).fillRect(80, 590, 600, 130);
     this.sprinkleTileVariants(
+      80,
       130,
-      205,
+      600,
       1020,
-      440,
       [
         { color: 0x05060a, alpha: 0.55 },
         { color: 0x2a1b2d, alpha: 0.45, dot: 0xff4d6d },
@@ -319,20 +329,24 @@ export default class MainScene extends Phaser.Scene {
       0.13,
       10
     );
+    // Crosswalk stripes (horizontal since the street runs vertically)
     g.lineStyle(2, 0xf5f1df, 0.42);
-    for (let x = 585; x < 700; x += 22) {
-      g.lineBetween(x, 405, x - 60, 510);
-      g.lineBetween(x + 75, 405, x + 15, 510);
+    for (let y = 608; y < 710; y += 22) {
+      g.lineBetween(312, y, 420, y - 60);
+      g.lineBetween(312, y + 75, 420, y + 15);
     }
-    g.lineStyle(3, 0xf5f1df, 0.18).strokeRect(130, 205, 1020, 440);
+    g.lineStyle(3, 0xf5f1df, 0.18).strokeRect(80, 130, 600, 1020);
 
+    // Buildings: two columns (left & right of the central road), four rows
     const buildings = [
-      [155, 235, 160, 105, 0x171922, "BAR"],
-      [360, 230, 155, 120, 0x1b1622, "GAME"],
-      [735, 225, 165, 115, 0x142126, "KARAOKE"],
-      [945, 232, 160, 110, 0x22161a, "FOOD"],
-      [150, 545, 210, 85, 0x142026, "HOTEL"],
-      [905, 545, 205, 85, 0x211822, "CLUB"],
+      [95, 160, 195, 150, 0x171922, "BAR"],
+      [470, 160, 195, 150, 0x1b1622, "GAME"],
+      [95, 330, 195, 150, 0x142126, "KARAOKE"],
+      [470, 330, 195, 150, 0x22161a, "FOOD"],
+      [95, 740, 195, 150, 0x142026, "HOTEL"],
+      [470, 740, 195, 150, 0x211822, "CLUB"],
+      [95, 920, 195, 170, 0x191521, "LIVE"],
+      [470, 920, 195, 170, 0x221821, "KARA"],
     ];
     buildings.forEach(([x, y, w, h, color, label], index) => {
       g.fillStyle(color, 1).fillRect(x, y, w, h);
@@ -342,15 +356,16 @@ export default class MainScene extends Phaser.Scene {
       this.addMapLabel(x + w / 2, y + 21, label, "#f5f1df", 15);
     });
 
-    g.fillStyle(0xff4d6d, 0.92).fillRect(520, 178, 240, 16);
-    g.lineStyle(2, 0xf5f1df, 0.35).strokeRect(520, 178, 240, 16);
-    this.addMapLabel(640, 184, "NEON STREET", "#ffffff", 15);
-    this.addMapLabel(642, 457, "横断前", "#f5f1df", 17);
+    // Neon signage strip at the top
+    g.fillStyle(0xff4d6d, 0.92).fillRect(220, 104, 320, 16);
+    g.lineStyle(2, 0xf5f1df, 0.35).strokeRect(220, 104, 320, 16);
+    this.addMapLabel(380, 110, "NEON STREET", "#ffffff", 15);
+    this.addMapLabel(380, 655, "横断前", "#f5f1df", 17);
     this.drawStopMarkers(MAPS.kabukicho.stopPoints, 0xff4d6d);
 
-    for (let i = 0; i < 44; i += 1) {
-      const x = Phaser.Math.Between(150, 1130);
-      const y = Phaser.Math.Between(215, 630);
+    for (let i = 0; i < 60; i += 1) {
+      const x = Phaser.Math.Between(90, 670);
+      const y = Phaser.Math.Between(140, 1140);
       const color = Phaser.Math.RND.pick([0x57f5ff, 0xffd24f, 0xff4d6d, 0xf5f1df]);
       g.fillStyle(color, 0.68).fillRect(x, y, 4, 4);
     }
@@ -410,11 +425,11 @@ export default class MainScene extends Phaser.Scene {
       const x =
         map.key === "nagoya"
           ? stop.x + Phaser.Math.Between(-35, 35)
-          : Phaser.Math.Between(210, 1070);
+          : Phaser.Math.Between(110, 650);
       const y =
         map.key === "nagoya"
           ? stop.y + Phaser.Math.Between(-28, 28)
-          : Phaser.Math.RND.pick(map.lanes) + Phaser.Math.Between(-30, 30);
+          : Phaser.Math.Between(170, 1100);
       const sprite = this.add.sprite(x, y, "npc-0").setScale(1.45).setDepth(8);
       sprite.setTint(this.npcTintFor(profile));
       sprite.play("npc-walk");
@@ -469,8 +484,16 @@ export default class MainScene extends Phaser.Scene {
 
   spawnAmbient(map) {
     for (let i = 0; i < map.ambientCount; i += 1) {
+      const sx =
+        map.key === "nagoya"
+          ? Phaser.Math.RND.pick(map.lanes) + Phaser.Math.Between(-14, 14)
+          : Phaser.Math.Between(110, 650);
+      const sy =
+        map.key === "nagoya"
+          ? Phaser.Math.Between(150, 1140)
+          : Phaser.Math.Between(170, 1100);
       const sprite = this.add
-        .sprite(Phaser.Math.Between(150, 1130), Phaser.Math.RND.pick(map.lanes), "npc-0")
+        .sprite(sx, sy, "npc-0")
         .setScale(1.08)
         .setDepth(6)
         .setAlpha(map.key === "kabukicho" ? 0.42 : 0.32)
@@ -757,42 +780,40 @@ export default class MainScene extends Phaser.Scene {
         npc.icons.setPosition(npc.sprite.x, npc.sprite.y - 38);
         return;
       }
-      if (map.movement === "linear") {
-        npc.sprite.x += npc.dir * npc.speed * dt;
-        npc.sprite.y += (npc.lane - npc.sprite.y) * 0.03;
-        if (npc.sprite.x < 145 || npc.sprite.x > 1135) npc.dir *= -1;
-        npc.sprite.setFlipX(npc.dir < 0);
+      if (map.movement === "vertical") {
+        npc.sprite.y += npc.dir * npc.speed * dt;
+        npc.sprite.x += (npc.lane - npc.sprite.x) * 0.03;
+        if (npc.sprite.y < 145 || npc.sprite.y > 1140) npc.dir *= -1;
       } else {
         if (time > npc.nextTurnAt) {
           npc.nextTurnAt = time + Phaser.Math.Between(800, 1800);
-          npc.vx = Phaser.Math.FloatBetween(-1, 1);
-          npc.vy = Phaser.Math.FloatBetween(-0.7, 0.7);
+          npc.vx = Phaser.Math.FloatBetween(-0.7, 0.7);
+          npc.vy = Phaser.Math.FloatBetween(-1, 1);
         }
         npc.sprite.x += npc.vx * npc.speed * dt;
         npc.sprite.y += npc.vy * npc.speed * dt;
-        if (npc.sprite.x < 150 || npc.sprite.x > 1130) npc.vx *= -1;
-        if (npc.sprite.y < 215 || npc.sprite.y > 630) npc.vy *= -1;
+        if (npc.sprite.x < 95 || npc.sprite.x > 665) npc.vx *= -1;
+        if (npc.sprite.y < 140 || npc.sprite.y > 1140) npc.vy *= -1;
         if (Math.abs(npc.vx) > 0.05) npc.sprite.setFlipX(npc.vx < 0);
       }
       npc.icons.setPosition(npc.sprite.x, npc.sprite.y - 38);
     });
 
     this.ambient.forEach((sprite) => {
-      if (map.movement === "linear") {
-        sprite.x += sprite.dir * sprite.speed * dt;
-        if (sprite.x < 120) sprite.x = 1160;
-        if (sprite.x > 1160) sprite.x = 120;
-        sprite.setFlipX(sprite.dir < 0);
+      if (map.movement === "vertical") {
+        sprite.y += sprite.dir * sprite.speed * dt;
+        if (sprite.y < 130) sprite.y = 1150;
+        if (sprite.y > 1150) sprite.y = 130;
       } else {
         if (time > sprite.nextTurnAt) {
           sprite.nextTurnAt = time + Phaser.Math.Between(500, 1500);
-          sprite.vx = Phaser.Math.FloatBetween(-1, 1);
-          sprite.vy = Phaser.Math.FloatBetween(-0.8, 0.8);
+          sprite.vx = Phaser.Math.FloatBetween(-0.8, 0.8);
+          sprite.vy = Phaser.Math.FloatBetween(-1, 1);
         }
         sprite.x += sprite.vx * sprite.speed * dt;
         sprite.y += sprite.vy * sprite.speed * dt;
-        if (sprite.x < 140 || sprite.x > 1140) sprite.vx *= -1;
-        if (sprite.y < 210 || sprite.y > 640) sprite.vy *= -1;
+        if (sprite.x < 95 || sprite.x > 665) sprite.vx *= -1;
+        if (sprite.y < 140 || sprite.y > 1140) sprite.vy *= -1;
         if (Math.abs(sprite.vx) > 0.05) sprite.setFlipX(sprite.vx < 0);
       }
     });
