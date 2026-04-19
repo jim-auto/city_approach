@@ -2,7 +2,7 @@
 
 This file is a long-form handoff note for the next coding agent, especially Claude. It describes the current state of the project, why the implementation is shaped this way, what has already been verified, and what would be useful to improve next.
 
-Last updated: 2026-04-19 JST (+ title scene, richer dialogue, pixel icons, breathing tween, smoke test)
+Last updated: 2026-04-19 JST (+ SFC-JRPG-style character sprites and 2-frame walk)
 
 ## 1. Project Summary
 
@@ -52,6 +52,7 @@ project-root/
 +-- main.js
 +-- sfx.js
 +-- storage.js
++-- characters.js
 +-- smoke.mjs
 +-- README.md
 +-- PLAN.md
@@ -233,11 +234,9 @@ Current assets:
 - `assets/npc.png`
 - `assets/tiles.png`
 
-They were generated locally as simple 32x32 / 64x64 PNGs using PowerShell + `System.Drawing`. The generation script is not saved in the repo. If Claude wants to regenerate them, either:
+As of 2026-04-19, `player.png` and `npc.png` are no longer referenced — the character textures are drawn in code by `characters.js`. `tiles.png` is still used by `MainScene` as the background tile sprite.
 
-- write a temporary local script again,
-- use a small pixel editor,
-- or replace with hand-authored PNGs.
+If a future agent wants to bring back hand-authored sprites, put them back in `preload()` and point the `sprite` keys at the PNG keys instead of `player-0` / `npc-0`. The old PNGs were generated locally as simple 32×32 / 64×64 PNGs using PowerShell + `System.Drawing`; the generation script is not saved in the repo.
 
 Important:
 
@@ -556,7 +555,7 @@ https://jim-auto.github.io/city_approach/?v=<commit-sha>
 
 Priority order if Claude continues:
 
-1. Improve player/NPC animation. **Partial** (2026-04-19): gentle scaleY breathing tween on player and each NPC in `MainScene.create()` / `spawnNpcs()`. Directional walk frames still TODO and require actual sprite frames.
+1. ~~Improve player/NPC animation.~~ **Done** (2026-04-19): `characters.js` generates 32×32 chibi sprites on a `<canvas>` and registers them as Phaser textures (`player-0/1`, `npc-0/1`). A 2-frame `player-walk` / `npc-walk` animation plays when the entity moves, and `flipX` handles left/right facing. `player.png` / `npc.png` are no longer loaded (the files remain for now but are unreferenced).
 2. ~~Replace text status icons with pixel icon sheet.~~ **Done** (2026-04-19): `MainScene.makeFlagIcons()` builds a small `Graphics` with one 14×14 badge per flag (drawn by `drawFlagBadge`). No asset sheet needed — everything is drawn in code. Colours mirror the palette in §18.
 3. ~~Add lightweight sound effects.~~ **Done** (2026-04-19): `sfx.js` + wiring in both scenes. Next polish: gauge-change tick, volume slider.
 4. ~~Add a title or start overlay only if it does not block direct play.~~ **Done** (2026-04-19): `scenes/TitleScene.js` is the first scene. Shows title, subtitle, best score, and a cycling difficulty button. Any tap or key starts `MainScene`, which also satisfies the mobile audio-unlock gesture requirement.

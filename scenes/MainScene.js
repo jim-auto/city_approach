@@ -1,5 +1,6 @@
 import { sfx } from "../sfx.js";
 import { getBest, setBest, getDifficulty, cycleDifficulty } from "../storage.js";
+import { buildCharacterTextures, registerCharacterAnimations } from "../characters.js";
 
 const WORLD = { width: 1280, height: 760 };
 
@@ -175,8 +176,6 @@ export default class MainScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image("player", "assets/player.png");
-    this.load.image("npc", "assets/npc.png");
     this.load.image("tiles", "assets/tiles.png");
   }
 
@@ -194,6 +193,9 @@ export default class MainScene extends Phaser.Scene {
     this.ambient = [];
     this.mapLabels = [];
 
+    buildCharacterTextures(this);
+    registerCharacterAnimations(this);
+
     this.cameras.main.setBounds(0, 0, WORLD.width, WORLD.height);
     this.physics.world.setBounds(0, 0, WORLD.width, WORLD.height);
 
@@ -205,20 +207,12 @@ export default class MainScene extends Phaser.Scene {
     this.nearRing = this.add.graphics().setDepth(5);
 
     this.player = this.physics.add
-      .sprite(0, 0, "player")
+      .sprite(0, 0, "player-0")
       .setScale(1.6)
       .setDepth(10);
-    this.player.body.setSize(22, 24).setOffset(5, 6);
+    this.player.body.setSize(14, 20).setOffset(9, 10);
     this.player.setCollideWorldBounds(true);
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
-    this.tweens.add({
-      targets: this.player,
-      scaleY: 1.68,
-      duration: 440,
-      yoyo: true,
-      repeat: -1,
-      ease: "Sine.easeInOut",
-    });
 
     this.createHud();
     this.buildMap();
@@ -372,16 +366,9 @@ export default class MainScene extends Phaser.Scene {
         map.key === "nagoya"
           ? stop.y + Phaser.Math.Between(-28, 28)
           : Phaser.Math.RND.pick(map.lanes) + Phaser.Math.Between(-30, 30);
-      const sprite = this.add.sprite(x, y, "npc").setScale(1.45).setDepth(8);
-      sprite.setTint(profile.flags.includes("with_friend") ? 0xffe07a : 0xffffff);
-      this.tweens.add({
-        targets: sprite,
-        scaleY: 1.53,
-        duration: Phaser.Math.Between(520, 640),
-        yoyo: true,
-        repeat: -1,
-        ease: "Sine.easeInOut",
-      });
+      const sprite = this.add.sprite(x, y, "npc-0").setScale(1.45).setDepth(8);
+      sprite.setTint(this.npcTintFor(profile));
+      sprite.play("npc-walk");
       const icons = this.makeFlagIcons(profile.flags)
         .setPosition(x, y - 38)
         .setDepth(12);
@@ -434,11 +421,12 @@ export default class MainScene extends Phaser.Scene {
   spawnAmbient(map) {
     for (let i = 0; i < map.ambientCount; i += 1) {
       const sprite = this.add
-        .sprite(Phaser.Math.Between(150, 1130), Phaser.Math.RND.pick(map.lanes), "npc")
+        .sprite(Phaser.Math.Between(150, 1130), Phaser.Math.RND.pick(map.lanes), "npc-0")
         .setScale(1.08)
         .setDepth(6)
         .setAlpha(map.key === "kabukicho" ? 0.42 : 0.32)
         .setTint(map.key === "kabukicho" ? Phaser.Math.RND.pick([0x57f5ff, 0xffd24f, 0xff6f8f]) : 0xd8d8d8);
+      sprite.play("npc-walk");
       sprite.dir = Phaser.Math.RND.pick([-1, 1]);
       sprite.speed = Phaser.Math.Between(30, map.key === "kabukicho" ? 82 : 58);
       sprite.nextTurnAt = 0;
@@ -446,6 +434,16 @@ export default class MainScene extends Phaser.Scene {
       sprite.vy = Phaser.Math.FloatBetween(-1, 1);
       this.ambient.push(sprite);
     }
+  }
+
+  npcTintFor(profile) {
+    const flags = profile.flags || [];
+    if (flags.includes("with_friend")) return 0xffe07a;
+    if (flags.includes("earphones")) return 0xd9c37a;
+    if (flags.includes("eye_contact")) return 0xc6e8ff;
+    if (flags.includes("phone")) return 0xaab7e0;
+    if (flags.includes("looking_around")) return 0xe2a8e8;
+    return 0xffffff;
   }
 
   makeFlagIcons(flags) {
@@ -676,9 +674,22 @@ export default class MainScene extends Phaser.Scene {
     if (!this.player) return;
     const speed = 170;
     this.player.setVelocity(this.joystickVector.x * speed, this.joystickVector.y * speed);
+    this.updatePlayerAnim();
     this.updateNpcs(time, delta);
     this.updateNearestNpc();
     this.updateHud();
+  }
+
+  updatePlayerAnim() {
+    const moving = this.joystickVector.length() > 0.1;
+    if (moving) {
+      if (!this.player.anims.isPlaying) this.player.anims.play("player-walk", true);
+      if (this.joystickVector.x < -0.1) this.player.setFlipX(true);
+      else if (this.joystickVector.x > 0.1) this.player.setFlipX(false);
+    } else if (this.player.anims.isPlaying) {
+      this.player.anims.stop();
+      this.player.setTexture("player-0");
+    }
   }
 
   updateNpcs(time, delta) {
@@ -693,6 +704,7 @@ export default class MainScene extends Phaser.Scene {
         npc.sprite.x += npc.dir * npc.speed * dt;
         npc.sprite.y += (npc.lane - npc.sprite.y) * 0.03;
         if (npc.sprite.x < 145 || npc.sprite.x > 1135) npc.dir *= -1;
+        npc.sprite.setFlipX(npc.dir < 0);
       } else {
         if (time > npc.nextTurnAt) {
           npc.nextTurnAt = time + Phaser.Math.Between(800, 1800);
@@ -703,6 +715,7 @@ export default class MainScene extends Phaser.Scene {
         npc.sprite.y += npc.vy * npc.speed * dt;
         if (npc.sprite.x < 150 || npc.sprite.x > 1130) npc.vx *= -1;
         if (npc.sprite.y < 215 || npc.sprite.y > 630) npc.vy *= -1;
+        if (Math.abs(npc.vx) > 0.05) npc.sprite.setFlipX(npc.vx < 0);
       }
       npc.icons.setPosition(npc.sprite.x, npc.sprite.y - 38);
     });
@@ -712,6 +725,7 @@ export default class MainScene extends Phaser.Scene {
         sprite.x += sprite.dir * sprite.speed * dt;
         if (sprite.x < 120) sprite.x = 1160;
         if (sprite.x > 1160) sprite.x = 120;
+        sprite.setFlipX(sprite.dir < 0);
       } else {
         if (time > sprite.nextTurnAt) {
           sprite.nextTurnAt = time + Phaser.Math.Between(500, 1500);
@@ -722,6 +736,7 @@ export default class MainScene extends Phaser.Scene {
         sprite.y += sprite.vy * sprite.speed * dt;
         if (sprite.x < 140 || sprite.x > 1140) sprite.vx *= -1;
         if (sprite.y < 210 || sprite.y > 640) sprite.vy *= -1;
+        if (Math.abs(sprite.vx) > 0.05) sprite.setFlipX(sprite.vx < 0);
       }
     });
   }

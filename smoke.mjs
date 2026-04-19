@@ -88,6 +88,23 @@ function check(name, condition, detail = "") {
   check("pixel icon Graphics attached", main.hasIcons);
   check("difficulty multiplier loaded", typeof main.diffMult === "number");
 
+  const anims = await page.evaluate(() => {
+    const g = window.cityApproachGame;
+    const m = g.scene.keys.MainScene;
+    return {
+      textures: ["player-0", "player-1", "npc-0", "npc-1"].filter((k) => g.textures.exists(k)),
+      playerAnim: m.anims.exists("player-walk"),
+      npcAnim: m.anims.exists("npc-walk"),
+      playerTex: m.player.texture.key,
+      npcAnimating: m.npcs[0]?.sprite.anims.isPlaying,
+    };
+  });
+  check("four character textures registered", anims.textures.length === 4, anims.textures.join(","));
+  check("player-walk animation exists", anims.playerAnim);
+  check("npc-walk animation exists", anims.npcAnim);
+  check("player initial texture is player-0", anims.playerTex === "player-0");
+  check("NPCs playing npc-walk", anims.npcAnimating);
+
   // Exercise the skip path
   const skip = await page.evaluate(() => {
     const m = window.cityApproachGame.scene.keys.MainScene;
