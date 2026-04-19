@@ -17,6 +17,10 @@ const AI_SOURCE_KEYS = {
   "npc-eye": "ai_npc_eye_raw",
   "npc-earphones": "ai_npc_earphones_raw",
   "npc-tourist": "ai_npc_tourist_raw",
+  "npc-student": "ai_npc_student_raw",
+  "npc-reader": "ai_npc_reader_raw",
+  "npc-cafe": "ai_npc_cafe_raw",
+  "npc-jogger": "ai_npc_jogger_raw",
 };
 
 const PALETTES = {

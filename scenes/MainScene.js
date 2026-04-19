@@ -9,6 +9,10 @@ const NPC_VARIANT_KEYS = {
   "目線あり系": "npc-eye",
   "イヤホン系": "npc-earphones",
   "観光・迷い中系": "npc-tourist",
+  "学生系": "npc-student",
+  "読書系": "npc-reader",
+  "カフェ系": "npc-cafe",
+  "ランニング系": "npc-jogger",
 };
 const AMBIENT_VARIANTS = [
   "npc-waiting",
@@ -17,6 +21,10 @@ const AMBIENT_VARIANTS = [
   "npc-eye",
   "npc-earphones",
   "npc-tourist",
+  "npc-student",
+  "npc-reader",
+  "npc-cafe",
+  "npc-jogger",
 ];
 
 const WORLD = { width: 760, height: 1280 };
@@ -28,7 +36,7 @@ const MAPS = {
     period: "昼-夕方",
     baseBonus: 0.04,
     noisePenalty: 0.02,
-    npcCount: 3,
+    npcCount: 5,
     ambientCount: 8,
     playerStart: { x: 380, y: 640 },
     movement: "vertical",
@@ -46,7 +54,7 @@ const MAPS = {
     period: "夜",
     baseBonus: -0.04,
     noisePenalty: 0.12,
-    npcCount: 3,
+    npcCount: 5,
     ambientCount: 17,
     playerStart: { x: 380, y: 640 },
     movement: "random",
@@ -114,6 +122,42 @@ const CHARACTER_TYPES = [
     bad_actions: ["強引", "距離詰め"],
     baseInterest: 42,
     flags: ["looking_around"],
+  },
+  {
+    type: "学生系",
+    traits: ["歩くの遅い", "目が合う"],
+    difficulty: "中",
+    effective_actions: ["軽く", "ネタ"],
+    bad_actions: ["距離詰め", "強引"],
+    baseInterest: 46,
+    flags: ["eye_contact"],
+  },
+  {
+    type: "読書系",
+    traits: ["立ち止まり", "外界遮断"],
+    difficulty: "中",
+    effective_actions: ["小物", "お天気"],
+    bad_actions: ["急に話しかけ", "長話"],
+    baseInterest: 32,
+    flags: ["waiting"],
+  },
+  {
+    type: "カフェ系",
+    traits: ["立ち止まり", "スマホ", "目が合う"],
+    difficulty: "低",
+    effective_actions: ["小物", "お天気", "服装"],
+    bad_actions: ["距離詰め"],
+    baseInterest: 60,
+    flags: ["phone", "eye_contact"],
+  },
+  {
+    type: "ランニング系",
+    traits: ["歩くの速い", "イヤホン", "外界遮断"],
+    difficulty: "高",
+    effective_actions: ["離れる"],
+    bad_actions: ["声かけ全般"],
+    baseInterest: 12,
+    flags: ["fast", "earphones"],
   },
 ];
 
@@ -217,6 +261,10 @@ export default class MainScene extends Phaser.Scene {
     this.load.image("ai_npc_eye_raw", "assets/ai/npc-eye.png");
     this.load.image("ai_npc_earphones_raw", "assets/ai/npc-earphones.png");
     this.load.image("ai_npc_tourist_raw", "assets/ai/npc-tourist.png");
+    this.load.image("ai_npc_student_raw", "assets/ai/npc-student.png");
+    this.load.image("ai_npc_reader_raw", "assets/ai/npc-reader.png");
+    this.load.image("ai_npc_cafe_raw", "assets/ai/npc-cafe.png");
+    this.load.image("ai_npc_jogger_raw", "assets/ai/npc-jogger.png");
   }
 
   create(data = {}) {
