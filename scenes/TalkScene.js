@@ -22,6 +22,7 @@ export default class TalkScene extends Phaser.Scene {
     this.mapKey = data.mapKey || "nagoya";
     this.score = data.score || 0;
     this.best = data.best || 0;
+    this.npcTextureKey = data.npcTextureKey || null;
     this.history = Array.isArray(data.history) ? data.history.slice(-3) : [];
     this.difficulty =
       DIFFICULTIES.find((d) => d.key === data.difficulty) || getDifficulty();
@@ -34,6 +35,10 @@ export default class TalkScene extends Phaser.Scene {
     this.lines = this.buildLines(this.profile, this.mapKey);
 
     this.bg = this.add.graphics().setDepth(-20);
+    this.portraitHalo = this.add.graphics().setDepth(1);
+    this.portraitImage = this.npcTextureKey && this.textures.exists(this.npcTextureKey)
+      ? this.add.image(0, 0, this.npcTextureKey).setDepth(2)
+      : null;
     this.gaugeGraphics = this.add.graphics().setDepth(12);
     this.timerGraphics = this.add.graphics().setDepth(14);
     this.favorGaugeLabel = this.createGaugeLabel("好感度");
@@ -217,10 +222,27 @@ export default class TalkScene extends Phaser.Scene {
     const width = this.scale.width;
     const height = this.scale.height;
     this.drawBackground(width, height);
+
+    // Portrait of the NPC we're talking to, large and centered in the upper
+    // half. The rest of the UI gets pushed down beneath it.
+    let portraitBottom = 64;
+    if (this.portraitImage) {
+      const size = Math.min(width * 0.58, height * 0.34);
+      const centerY = 72 + size / 2;
+      const scale = size / this.portraitImage.width;
+      this.portraitImage.setPosition(width / 2, centerY).setScale(scale);
+      this.portraitHalo.clear();
+      this.portraitHalo.fillStyle(0xffc8d8, 0.32);
+      this.portraitHalo.fillCircle(width / 2, centerY, size * 0.58);
+      this.portraitHalo.fillStyle(0xffffff, 0.14);
+      this.portraitHalo.fillCircle(width / 2, centerY, size * 0.46);
+      portraitBottom = centerY + size / 2 + 8;
+    }
+
+    this.topicText.setPosition(width / 2, portraitBottom + 18);
     this.lineText.setWordWrapWidth(Math.min(880, width - 32));
-    this.lineText.setPosition(width / 2, height * 0.46);
-    this.topicText.setPosition(width / 2, Math.max(82, height * 0.24));
-    this.feedbackText.setPosition(width / 2, Math.min(height - 148, height * 0.68));
+    this.lineText.setPosition(width / 2, portraitBottom + 80);
+    this.feedbackText.setPosition(width / 2, Math.min(height - 148, height * 0.72));
 
     const gap = 10;
     const buttonWidth = Math.min(132, Math.floor((width - 48) / 3));

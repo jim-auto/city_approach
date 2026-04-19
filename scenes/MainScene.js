@@ -1092,12 +1092,11 @@ export default class MainScene extends Phaser.Scene {
     if (roll <= rate) {
       sfx.play("success");
       this.bounceSprite(target.sprite);
-      this.showHitPortrait(target.sprite.texture.key);
       this.showBigText("反応あり！", "#57f5ff");
       this.player.setVelocity(0, 0);
       this.pushHistory(`${actionLabel} 通過 (${Math.round(rate * 100)}%)`);
-      this.showMessage(`${actionLabel}: 反応あり。会話へ。`, 720);
-      this.time.delayedCall(780, () => {
+      this.showMessage(`${actionLabel}: 反応あり。会話へ。`, 650);
+      this.time.delayedCall(620, () => {
         this.scene.start("TalkScene", {
           profile: target.profile,
           mapKey: this.currentMapKey,
@@ -1105,6 +1104,7 @@ export default class MainScene extends Phaser.Scene {
           best: this.best,
           difficulty: this.difficulty.key,
           history: this.history.slice(),
+          npcTextureKey: target.sprite.texture.key,
         });
       });
       return;
