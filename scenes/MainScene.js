@@ -816,15 +816,27 @@ export default class MainScene extends Phaser.Scene {
     container.setInteractive(new Phaser.Geom.Rectangle(0, 0, width, height), Phaser.Geom.Rectangle.Contains);
     container.on("pointerdown", (pointer) => {
       pointer.event?.preventDefault();
+      // Loud press feedback: bright white flash of the bg + scale pop so the
+      // tap is undeniable even on mobile where subtle effects get missed.
+      bg.clear();
+      bg.fillStyle(0xffffff, 1).fillRoundedRect(0, 0, width, height, 8);
+      bg.lineStyle(3, 0xffffff, 1).strokeRoundedRect(0, 0, width, height, 8);
+      this.time.delayedCall(110, () => container.redraw && container.redraw(Boolean(this.nearNpc)));
+      this.tweens.killTweensOf(container);
+      container.setScale(0.84);
       this.tweens.add({
         targets: container,
-        scale: 0.9,
-        duration: 70,
-        yoyo: true,
-        ease: "Quad.easeOut",
+        scaleX: 1,
+        scaleY: 1,
+        duration: 180,
+        ease: "Back.easeOut",
       });
       sfx.play("tick");
-      onClick();
+      try {
+        onClick();
+      } catch (err) {
+        console.error("Button onClick failed", err);
+      }
     });
     container.bg = bg;
     container.fillColor = fillColor;
@@ -1079,13 +1091,13 @@ export default class MainScene extends Phaser.Scene {
 
     if (roll <= rate) {
       sfx.play("success");
-      this.cameras.main.flash(140, 180, 255, 180);
       this.bounceSprite(target.sprite);
+      this.showHitPortrait(target.sprite.texture.key);
       this.showBigText("反応あり！", "#57f5ff");
       this.player.setVelocity(0, 0);
       this.pushHistory(`${actionLabel} 通過 (${Math.round(rate * 100)}%)`);
-      this.showMessage(`${actionLabel}: 反応あり。会話へ。`, 650);
-      this.time.delayedCall(620, () => {
+      this.showMessage(`${actionLabel}: 反応あり。会話へ。`, 720);
+      this.time.delayedCall(780, () => {
         this.scene.start("TalkScene", {
           profile: target.profile,
           mapKey: this.currentMapKey,
@@ -1135,6 +1147,53 @@ export default class MainScene extends Phaser.Scene {
     sprite.setTint(0xff6070);
     this.time.delayedCall(280, () => {
       if (sprite.active) sprite.clearTint();
+    });
+  }
+
+  showHitPortrait(textureKey) {
+    const w = this.scale.width;
+    const h = this.scale.height;
+    const img = this.add
+      .image(w / 2, h * 0.42, textureKey)
+      .setScrollFactor(0)
+      .setDepth(72)
+      .setAlpha(0);
+    // Scale based on viewport so it reads big on both phone and desktop.
+    const target = Math.min(w, h) * 0.55;
+    const startScale = (target / img.width) * 0.8;
+    const endScale = target / img.width;
+    img.setScale(startScale);
+    // Soft pink halo behind the portrait
+    const halo = this.add
+      .graphics()
+      .setScrollFactor(0)
+      .setDepth(71);
+    halo.fillStyle(0xffc8d8, 0.5).fillCircle(w / 2, h * 0.42, target * 0.7);
+    halo.fillStyle(0xffffff, 0.25).fillCircle(w / 2, h * 0.42, target * 0.55);
+    halo.setAlpha(0);
+    this.tweens.add({
+      targets: [img, halo],
+      alpha: 1,
+      duration: 180,
+      ease: "Quad.easeOut",
+    });
+    this.tweens.add({
+      targets: img,
+      scaleX: endScale,
+      scaleY: endScale,
+      duration: 260,
+      ease: "Back.easeOut",
+    });
+    this.time.delayedCall(620, () => {
+      this.tweens.add({
+        targets: [img, halo],
+        alpha: 0,
+        duration: 200,
+        onComplete: () => {
+          img.destroy();
+          halo.destroy();
+        },
+      });
     });
   }
 
