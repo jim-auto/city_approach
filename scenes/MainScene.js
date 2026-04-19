@@ -1,6 +1,23 @@
 import { sfx } from "../sfx.js";
-import { getBest, setBest, getDifficulty, cycleDifficulty } from "../storage.js";
+import { getBest, setBest, getDifficulty, cycleDifficulty, getSpriteMode } from "../storage.js";
 import { buildCharacterTextures, registerCharacterAnimations } from "../characters.js";
+
+const NPC_VARIANT_KEYS = {
+  "待ち合わせ系": "npc-waiting",
+  "忙しい系": "npc-busy",
+  "友達同伴系": "npc-friends",
+  "目線あり系": "npc-eye",
+  "イヤホン系": "npc-earphones",
+  "観光・迷い中系": "npc-tourist",
+};
+const AMBIENT_VARIANTS = [
+  "npc-waiting",
+  "npc-busy",
+  "npc-friends",
+  "npc-eye",
+  "npc-earphones",
+  "npc-tourist",
+];
 
 const WORLD = { width: 760, height: 1280 };
 
@@ -194,7 +211,12 @@ export default class MainScene extends Phaser.Scene {
   preload() {
     this.load.image("tiles", "assets/tiles.png");
     this.load.image("ai_player_raw", "assets/ai/player.png");
-    this.load.image("ai_npc_raw", "assets/ai/npc.png");
+    this.load.image("ai_npc_waiting_raw", "assets/ai/npc-waiting.png");
+    this.load.image("ai_npc_busy_raw", "assets/ai/npc-busy.png");
+    this.load.image("ai_npc_friends_raw", "assets/ai/npc-friends.png");
+    this.load.image("ai_npc_eye_raw", "assets/ai/npc-eye.png");
+    this.load.image("ai_npc_earphones_raw", "assets/ai/npc-earphones.png");
+    this.load.image("ai_npc_tourist_raw", "assets/ai/npc-tourist.png");
   }
 
   create(data = {}) {
@@ -202,6 +224,7 @@ export default class MainScene extends Phaser.Scene {
     this.score = data.score || 0;
     this.best = Math.max(getBest(), this.score);
     this.difficulty = getDifficulty();
+    this.spriteMode = getSpriteMode().key;
     this.history = Array.isArray(data.history) ? data.history.slice(-3) : [];
     if (data.lastOutcome) this.pushHistory(data.lastOutcome);
     this.joystickVector = new Phaser.Math.Vector2();
@@ -577,9 +600,10 @@ export default class MainScene extends Phaser.Scene {
         map.key === "nagoya"
           ? stop.y + Phaser.Math.Between(-28, 28)
           : Phaser.Math.Between(530, 1100);
-      const sprite = this.add.sprite(x, y, "npc-0").setScale(1.45).setDepth(8);
-      sprite.setTint(this.npcTintFor(profile));
-      sprite.play("npc-walk");
+      const variantKey = this.npcVariantKey(profile);
+      const sprite = this.add.sprite(x, y, `${variantKey}-0`).setScale(1.45).setDepth(8);
+      if (this.spriteMode !== "icon") sprite.setTint(this.npcTintFor(profile));
+      sprite.play(`${variantKey}-walk`);
       const icons = this.makeFlagIcons(profile.flags)
         .setPosition(x, y - 38)
         .setDepth(12);
@@ -639,13 +663,18 @@ export default class MainScene extends Phaser.Scene {
         map.key === "nagoya"
           ? Phaser.Math.Between(150, 1140)
           : Phaser.Math.Between(530, 1100);
+      const ambientKey = this.spriteMode === "icon"
+        ? Phaser.Math.RND.pick(AMBIENT_VARIANTS)
+        : "npc";
       const sprite = this.add
-        .sprite(sx, sy, "npc-0")
-        .setScale(1.08)
+        .sprite(sx, sy, `${ambientKey}-0`)
+        .setScale(this.spriteMode === "icon" ? 0.78 : 1.08)
         .setDepth(6)
-        .setAlpha(map.key === "kabukicho" ? 0.42 : 0.32)
-        .setTint(map.key === "kabukicho" ? Phaser.Math.RND.pick([0x57f5ff, 0xffd24f, 0xff6f8f]) : 0xd8d8d8);
-      sprite.play("npc-walk");
+        .setAlpha(map.key === "kabukicho" ? 0.42 : 0.32);
+      if (this.spriteMode !== "icon") {
+        sprite.setTint(map.key === "kabukicho" ? Phaser.Math.RND.pick([0x57f5ff, 0xffd24f, 0xff6f8f]) : 0xd8d8d8);
+      }
+      sprite.play(`${ambientKey}-walk`);
       sprite.dir = Phaser.Math.RND.pick([-1, 1]);
       sprite.speed = Phaser.Math.Between(30, map.key === "kabukicho" ? 82 : 58);
       sprite.nextTurnAt = 0;
@@ -653,6 +682,11 @@ export default class MainScene extends Phaser.Scene {
       sprite.vy = Phaser.Math.FloatBetween(-1, 1);
       this.ambient.push(sprite);
     }
+  }
+
+  npcVariantKey(profile) {
+    if (this.spriteMode !== "icon") return "npc";
+    return NPC_VARIANT_KEYS[profile.type] || "npc-waiting";
   }
 
   npcTintFor(profile) {
@@ -969,6 +1003,7 @@ export default class MainScene extends Phaser.Scene {
   }
 
   updateNearestNpc() {
+    const prev = this.nearNpc;
     let nearest = null;
     let nearestDistance = Number.POSITIVE_INFINITY;
     this.npcs.forEach((npc) => {
@@ -980,10 +1015,20 @@ export default class MainScene extends Phaser.Scene {
       }
     });
 
-    this.nearNpc = nearestDistance <= 88 ? nearest : null;
+    this.nearNpc = nearestDistance <= 96 ? nearest : null;
     this.nearRing.clear();
     if (this.nearNpc) {
-      this.nearRing.lineStyle(3, 0xffffff, 0.68).strokeCircle(this.nearNpc.sprite.x, this.nearNpc.sprite.y, 34);
+      const pulse = 0.55 + 0.35 * Math.sin(this.time.now / 180);
+      const ringR = 44 + 3 * Math.sin(this.time.now / 200);
+      this.nearRing.fillStyle(0xfadc50, 0.12);
+      this.nearRing.fillCircle(this.nearNpc.sprite.x, this.nearNpc.sprite.y, ringR);
+      this.nearRing.lineStyle(4, 0xfadc50, pulse);
+      this.nearRing.strokeCircle(this.nearNpc.sprite.x, this.nearNpc.sprite.y, ringR);
+      this.nearRing.lineStyle(2, 0xffffff, 0.9);
+      this.nearRing.strokeCircle(this.nearNpc.sprite.x, this.nearNpc.sprite.y, ringR - 4);
+    }
+    if (this.nearNpc && !prev) {
+      this.showMessage("→ 右下の op で声かけ！", 1200);
     }
   }
 
@@ -1022,7 +1067,8 @@ export default class MainScene extends Phaser.Scene {
 
   tryApproach(actionKey) {
     if (!this.nearNpc) {
-      this.showMessage("まだ距離が遠い。進路をふさがない位置まで近づく。", 1500);
+      this.showBigText("もっと近づいて！", "#ffd24f");
+      this.showMessage("まだ距離が遠い。相手の近くまで寄ってから op を選ぶ。", 1500);
       return;
     }
 
@@ -1033,10 +1079,13 @@ export default class MainScene extends Phaser.Scene {
 
     if (roll <= rate) {
       sfx.play("success");
+      this.cameras.main.flash(140, 180, 255, 180);
+      this.bounceSprite(target.sprite);
+      this.showBigText("反応あり！", "#57f5ff");
       this.player.setVelocity(0, 0);
       this.pushHistory(`${actionLabel} 通過 (${Math.round(rate * 100)}%)`);
       this.showMessage(`${actionLabel}: 反応あり。会話へ。`, 650);
-      this.time.delayedCall(520, () => {
+      this.time.delayedCall(620, () => {
         this.scene.start("TalkScene", {
           profile: target.profile,
           mapKey: this.currentMapKey,
@@ -1050,11 +1099,68 @@ export default class MainScene extends Phaser.Scene {
     }
 
     sfx.play("fail");
+    this.cameras.main.shake(180, 0.005);
+    this.shakeSprite(target.sprite);
+    this.showBigText("スルー...", "#ff4d6d");
     target.disabled = true;
-    target.sprite.setAlpha(0.35);
+    target.sprite.setAlpha(0.4);
     target.icons.setAlpha(0.25);
     this.pushHistory(`スルー (${actionLabel} ${Math.round(rate * 100)}%)`);
     this.showMessage(`スルーされた。${this.feedbackFor(target.profile, actionKey)} 成功率${Math.round(rate * 100)}%`, 2300);
+  }
+
+  bounceSprite(sprite) {
+    const originalX = sprite.scaleX;
+    const originalY = sprite.scaleY;
+    this.tweens.add({
+      targets: sprite,
+      scaleX: originalX * 1.35,
+      scaleY: originalY * 1.35,
+      duration: 150,
+      yoyo: true,
+      ease: "Back.easeOut",
+    });
+  }
+
+  shakeSprite(sprite) {
+    const originalX = sprite.x;
+    this.tweens.add({
+      targets: sprite,
+      x: originalX + 5,
+      duration: 60,
+      yoyo: true,
+      repeat: 3,
+      onComplete: () => { sprite.x = originalX; },
+    });
+    sprite.setTint(0xff6070);
+    this.time.delayedCall(280, () => {
+      if (sprite.active) sprite.clearTint();
+    });
+  }
+
+  showBigText(text, color) {
+    const w = this.scale.width;
+    const h = this.scale.height;
+    const t = this.add
+      .text(w / 2, h * 0.4, text, {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: `${Math.min(46, Math.max(32, w * 0.1))}px`,
+        color,
+        fontStyle: "bold",
+        stroke: "#0a0a10",
+        strokeThickness: 6,
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(70);
+    this.tweens.add({
+      targets: t,
+      y: h * 0.32,
+      alpha: 0,
+      duration: 1100,
+      ease: "Quad.easeOut",
+      onComplete: () => t.destroy(),
+    });
   }
 
   respectfullySkip() {

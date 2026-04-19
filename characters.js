@@ -11,7 +11,12 @@ import { getSpriteMode } from "./storage.js";
 
 const AI_SOURCE_KEYS = {
   player: "ai_player_raw",
-  npc: "ai_npc_raw",
+  "npc-waiting": "ai_npc_waiting_raw",
+  "npc-busy": "ai_npc_busy_raw",
+  "npc-friends": "ai_npc_friends_raw",
+  "npc-eye": "ai_npc_eye_raw",
+  "npc-earphones": "ai_npc_earphones_raw",
+  "npc-tourist": "ai_npc_tourist_raw",
 };
 
 const PALETTES = {
@@ -219,8 +224,11 @@ function renderAiFrame(scene, key) {
 
 export function buildCharacterTextures(scene) {
   const modeKey = getSpriteMode().key;
-  Object.entries(PALETTES).forEach(([key, palette]) => {
-    // Precompute the AI canvas once per character since both frames share it.
+  const targets = modeKey === "icon"
+    ? Object.keys(AI_SOURCE_KEYS)
+    : Object.keys(PALETTES);
+  targets.forEach((key) => {
+    const palette = PALETTES[key] || PALETTES.npc;
     const aiCanvas = modeKey === "icon" ? renderAiFrame(scene, key) : null;
     const effectiveMode = aiCanvas ? "icon" : "pixel";
     for (let frame = 0; frame < 2; frame += 1) {
@@ -238,20 +246,18 @@ export function buildCharacterTextures(scene) {
 }
 
 export function registerCharacterAnimations(scene) {
-  if (!scene.anims.exists("player-walk")) {
+  const modeKey = getSpriteMode().key;
+  const targets = modeKey === "icon"
+    ? Object.keys(AI_SOURCE_KEYS)
+    : Object.keys(PALETTES);
+  targets.forEach((key) => {
+    const animKey = `${key}-walk`;
+    if (scene.anims.exists(animKey)) return;
     scene.anims.create({
-      key: "player-walk",
-      frames: [{ key: "player-0" }, { key: "player-1" }],
-      frameRate: 6,
+      key: animKey,
+      frames: [{ key: `${key}-0` }, { key: `${key}-1` }],
+      frameRate: key === "player" ? 6 : 5,
       repeat: -1,
     });
-  }
-  if (!scene.anims.exists("npc-walk")) {
-    scene.anims.create({
-      key: "npc-walk",
-      frames: [{ key: "npc-0" }, { key: "npc-1" }],
-      frameRate: 5,
-      repeat: -1,
-    });
-  }
+  });
 }
