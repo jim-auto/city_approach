@@ -18,9 +18,9 @@ const MAPS = {
     tint: 0x23272f,
     lanes: [292, 372, 452, 548],
     stopPoints: [
-      { x: 255, y: 370, label: "銀時計" },
-      { x: 640, y: 515, label: "改札前" },
-      { x: 1015, y: 370, label: "金時計" },
+      { x: 255, y: 312, label: "銀時計" },
+      { x: 640, y: 440, label: "改札前" },
+      { x: 1015, y: 477, label: "金時計" },
     ],
   },
   kabukicho: {
@@ -271,13 +271,13 @@ export default class MainScene extends Phaser.Scene {
     g.fillRect(120, 526, 1040, 40);
     g.fillStyle(0x1c2530, 1).fillRect(550, 565, 180, 75);
     g.lineStyle(2, 0xf5f1df, 0.18).strokeRect(550, 565, 180, 75);
-    g.fillStyle(0x2b2118, 1).fillRect(185, 292, 130, 95);
-    g.fillStyle(0x2f2a17, 1).fillRect(960, 292, 130, 95);
-    g.lineStyle(3, 0xf5f1df, 0.32).strokeRect(185, 292, 130, 95);
-    g.strokeRect(960, 292, 130, 95);
+    g.fillStyle(0x2b2118, 1).fillRect(185, 265, 130, 95);
+    g.fillStyle(0x2f2a17, 1).fillRect(960, 430, 130, 95);
+    g.lineStyle(3, 0xf5f1df, 0.32).strokeRect(185, 265, 130, 95);
+    g.strokeRect(960, 430, 130, 95);
     this.addPixelFlecks(145, 260, 990, 240, 26, [0xf5f1df, 0x5e6674]);
-    this.addMapLabel(255, 335, "銀時計", "#f5f1df", 18);
-    this.addMapLabel(1015, 335, "金時計", "#f5f1df", 18);
+    this.addMapLabel(255, 312, "銀時計", "#f5f1df", 18);
+    this.addMapLabel(1015, 477, "金時計", "#f5f1df", 18);
     this.addMapLabel(640, 604, "改札前", "#f5f1df", 18);
     this.addMapLabel(640, 225, "中央コンコース", "#f5f1df", 17);
     this.drawStopMarkers(MAPS.nagoya.stopPoints, 0xf5f1df);
