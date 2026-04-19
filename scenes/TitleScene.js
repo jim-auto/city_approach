@@ -1,6 +1,19 @@
 import { sfx } from "../sfx.js";
 import { getBest, getDifficulty, cycleDifficulty } from "../storage.js";
 
+const TUTORIAL_LINES = [
+  "【あそびかた】",
+  "・左下のジョイスティックで街を歩く",
+  "・NPCに近づくとサイン（アイコン）が見える",
+  "・右下の声かけを選ぶ",
+  "　軽く：目が合う/立ち止まり向け",
+  "　ストレート：目が合うときだけ",
+  "　状況ツッコミ：スマホ/観光中に効く",
+  "　離れる：防御サインが強いときの正解",
+  "・成功すると会話バトル（共感/ツッコミ/提案）",
+  "・右上の街切替で名古屋駅⇄歌舞伎町",
+];
+
 export default class TitleScene extends Phaser.Scene {
   constructor() {
     super("TitleScene");
@@ -23,12 +36,21 @@ export default class TitleScene extends Phaser.Scene {
     this.subText = this.add
       .text(0, 0, "街で相手のサインを読む。無理なら離れる。", {
         fontFamily: "system-ui, sans-serif",
-        fontSize: "16px",
+        fontSize: "15px",
         color: "#cfd3da",
         align: "center",
         wordWrap: { width: 640, useAdvancedWrap: true },
       })
       .setOrigin(0.5);
+    this.tutorialText = this.add
+      .text(0, 0, TUTORIAL_LINES.join("\n"), {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "13px",
+        color: "#e3e7ef",
+        align: "left",
+        lineSpacing: 3,
+      })
+      .setOrigin(0.5, 0);
     this.bestText = this.add
       .text(0, 0, "", {
         fontFamily: "system-ui, sans-serif",
@@ -95,12 +117,13 @@ export default class TitleScene extends Phaser.Scene {
 
     const cx = w / 2;
     const mobile = w < 430;
-    this.titleText.setPosition(cx, h * 0.26).setFontSize(mobile ? 36 : 54);
-    this.subText.setPosition(cx, h * 0.38).setWordWrapWidth(Math.min(640, w - 40));
-    this.bestText.setPosition(cx, h * 0.5);
-    this.diffButton.setPosition(cx, h * 0.6);
-    this.diffText.setPosition(cx, h * 0.6);
-    this.startText.setPosition(cx, h * 0.78);
+    this.titleText.setPosition(cx, h * 0.1).setFontSize(mobile ? 34 : 52);
+    this.subText.setPosition(cx, h * 0.17).setWordWrapWidth(Math.min(640, w - 40));
+    this.tutorialText.setPosition(cx, h * 0.24).setFontSize(mobile ? 12 : 15);
+    this.bestText.setPosition(cx, h * 0.7);
+    this.diffButton.setPosition(cx, h * 0.78);
+    this.diffText.setPosition(cx, h * 0.78);
+    this.startText.setPosition(cx, h * 0.9);
   }
 
   startGame() {

@@ -562,6 +562,14 @@ export default class MainScene extends Phaser.Scene {
     container.setInteractive(new Phaser.Geom.Rectangle(0, 0, width, height), Phaser.Geom.Rectangle.Contains);
     container.on("pointerdown", (pointer) => {
       pointer.event?.preventDefault();
+      this.tweens.add({
+        targets: container,
+        scale: 0.9,
+        duration: 70,
+        yoyo: true,
+        ease: "Quad.easeOut",
+      });
+      sfx.play("tick");
       onClick();
     });
     container.bg = bg;
@@ -791,7 +799,6 @@ export default class MainScene extends Phaser.Scene {
     const text = this.difficultyButton.list.find((c) => c.text !== undefined);
     if (text) text.setText(`難度:${this.difficulty.label}`);
     this.showMessage(`難度: ${this.difficulty.label}`, 1100);
-    sfx.play("tick");
   }
 
   tryApproach(actionKey) {

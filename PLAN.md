@@ -2,7 +2,7 @@
 
 This file is a long-form handoff note for the next coding agent, especially Claude. It describes the current state of the project, why the implementation is shaped this way, what has already been verified, and what would be useful to improve next.
 
-Last updated: 2026-04-19 JST (+ SFC-JRPG-style character sprites and 2-frame walk)
+Last updated: 2026-04-19 JST (+ title tutorial block, button press feedback, texture-reuse fix)
 
 ## 1. Project Summary
 
@@ -558,7 +558,7 @@ Priority order if Claude continues:
 1. ~~Improve player/NPC animation.~~ **Done** (2026-04-19): `characters.js` generates 32×32 chibi sprites on a `<canvas>` and registers them as Phaser textures (`player-0/1`, `npc-0/1`). A 2-frame `player-walk` / `npc-walk` animation plays when the entity moves, and `flipX` handles left/right facing. `player.png` / `npc.png` are no longer loaded (the files remain for now but are unreferenced).
 2. ~~Replace text status icons with pixel icon sheet.~~ **Done** (2026-04-19): `MainScene.makeFlagIcons()` builds a small `Graphics` with one 14×14 badge per flag (drawn by `drawFlagBadge`). No asset sheet needed — everything is drawn in code. Colours mirror the palette in §18.
 3. ~~Add lightweight sound effects.~~ **Done** (2026-04-19): `sfx.js` + wiring in both scenes. Next polish: gauge-change tick, volume slider.
-4. ~~Add a title or start overlay only if it does not block direct play.~~ **Done** (2026-04-19): `scenes/TitleScene.js` is the first scene. Shows title, subtitle, best score, and a cycling difficulty button. Any tap or key starts `MainScene`, which also satisfies the mobile audio-unlock gesture requirement.
+4. ~~Add a title or start overlay only if it does not block direct play.~~ **Done** (2026-04-19): `scenes/TitleScene.js` is the first scene. Shows title, subtitle, a `【あそびかた】` tutorial block (jockstick, four action buttons with which signal each one targets, talk-battle flow, map switch), best score, and a cycling difficulty button. Any tap or key starts `MainScene`, which also satisfies the mobile audio-unlock gesture requirement.
 5. ~~Add simple "respectful skip" mechanic where not approaching a busy/high-defense NPC gives a small score.~~ **Done** (2026-04-19): `離れる` button in `MainScene.respectfullySkip()`. Tuning the bonus table in `calculateSkipBonus()` is the natural next polish.
 6. ~~Add more conversation lines per trait.~~ **Done** (2026-04-19): `TalkScene.buildLines()` picks from a pool grouped by trait bucket (`opening`, `phone`, `eye_contact`, `waiting`, `friend`, `earphones`, `fast`, `slow`, `lookingAround`, per-map). Each NPC encounter reshuffles, so replaying the same NPC type now produces different dialogue.
 7. ~~Add a small result log so the player learns why an approach worked or failed.~~ **Done** (2026-04-19): last 3 entries tracked in `MainScene.history` and the most recent is shown as the third line of the info HUD. Entries survive map switches and TalkScene round-trips via scene data.
