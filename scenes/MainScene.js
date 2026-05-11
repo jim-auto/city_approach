@@ -193,64 +193,131 @@ const TRAIT_RATE_MODS = {
 
 const ACTIONS = {
   weather: {
-    label: "お天気op",
-    defaultMod: 0.01,
+    label: "共感する",
+    defaultMod: 0.02,
     traits: {
       "目が合う": 0.08,
       "立ち止まり": 0.10,
       "待ち合わせ": 0.08,
+      "歩くの遅い": 0.04,
       "歩くの速い": -0.08,
       "イヤホン": -0.10,
       "外界遮断": -0.06,
     },
   },
   outfit: {
-    label: "服装op",
-    defaultMod: 0.03,
+    label: "状況いじり",
+    defaultMod: 0,
     traits: {
       "目が合う": 0.12,
       "立ち止まり": 0.10,
       "観光中": 0.08,
+      "周囲を見る": 0.08,
+      "人混み": 0.04,
       "歩くの速い": -0.10,
-      "友達といる": -0.08,
-      "スマホ": -0.06,
+      "夜の警戒": -0.08,
+      "外界遮断": -0.08,
     },
   },
   item: {
-    label: "小物op",
+    label: "持ち物に触れる",
     defaultMod: 0.02,
     traits: {
       "スマホ": 0.08,
       "観光中": 0.10,
       "周囲を見る": 0.09,
-      "目が合う": 0.06,
+      "目が合う": 0.04,
       "立ち止まり": 0.04,
       "歩くの速い": -0.08,
       "イヤホン": -0.06,
     },
   },
   joke: {
-    label: "ネタop",
-    defaultMod: -0.02,
+    label: "ユーモア賭け",
+    defaultMod: -0.05,
     traits: {
-      "目が合う": 0.12,
-      "友達といる": 0.08,
+      "目が合う": 0.18,
+      "友達といる": 0.10,
+      "歩くの遅い": 0.05,
       "立ち止まり": 0.04,
-      "夜の警戒": -0.08,
-      "外界遮断": -0.10,
-      "歩くの速い": -0.10,
-      "人混み": -0.05,
+      "夜の警戒": -0.14,
+      "外界遮断": -0.14,
+      "歩くの速い": -0.16,
+      "イヤホン": -0.14,
+      "人混み": -0.07,
     },
   },
 };
 
 const ACTION_HINTS = {
-  weather: "お天気: 立ち止まり/目線ありに安定",
-  outfit: "服装: 目線あり+余裕ありに強い",
-  item: "小物: スマホ/観光中の注意に合わせる",
-  joke: "ネタ: 警戒が薄い時だけ短く",
+  weather: "共感: 余裕がある相手に安定",
+  outfit: "状況いじり: 迷い/人混み/偶然を拾う",
+  item: "持ち物: スマホ/本/カメラ/コーヒー向け",
+  joke: "ユーモア: 刺されば強いが警戒には危険",
   skip: "離れる: 速い/イヤホン/同伴は正解になりやすい",
 };
+
+const SITUATION_STATUS = {
+  waiting: {
+    label: "待ち中",
+    room: 3,
+    caution: 1,
+    hook: "スマホ",
+    actions: { weather: 0.08, item: 0.04, outfit: 0.02, joke: -0.02 },
+  },
+  lost: {
+    label: "迷い中",
+    room: 2,
+    caution: 1,
+    hook: "カメラ",
+    actions: { outfit: 0.10, item: 0.08, weather: 0.03, joke: 0.02 },
+  },
+  moving: {
+    label: "移動中",
+    room: 0,
+    caution: 2,
+    hook: "なし",
+    actions: { weather: -0.08, outfit: -0.10, item: -0.08, joke: -0.14 },
+  },
+  break: {
+    label: "休憩中",
+    room: 3,
+    caution: 0,
+    hook: "コーヒー",
+    actions: { weather: 0.08, item: 0.09, outfit: 0.04, joke: 0.03 },
+  },
+  chat: {
+    label: "会話中",
+    room: 1,
+    caution: 2,
+    hook: "友達",
+    actions: { joke: 0.08, outfit: 0.02, weather: -0.05, item: -0.04 },
+  },
+  notification: {
+    label: "通知対応中",
+    room: 1,
+    caution: 1,
+    hook: "スマホ",
+    actions: { item: 0.10, weather: 0.02, outfit: -0.02, joke: -0.08 },
+  },
+  music: {
+    label: "音楽中",
+    room: 0,
+    caution: 2,
+    hook: "イヤホン",
+    actions: { item: 0.02, weather: -0.10, outfit: -0.08, joke: -0.14 },
+  },
+  reading: {
+    label: "読書中",
+    room: 2,
+    caution: 1,
+    hook: "本",
+    actions: { item: 0.12, weather: 0.05, outfit: -0.02, joke: -0.08 },
+  },
+};
+
+const ROOM_LABELS = ["低", "低", "中", "高"];
+const CAUTION_LABELS = ["低", "中", "高"];
 
 const FLAG_ICON_COLOR = {
   eye_contact:   0x57f5ff,
@@ -730,7 +797,21 @@ export default class MainScene extends Phaser.Scene {
       bad_actions: base.bad_actions,
       interest,
       flags,
+      situation: this.makeSituation(base, traits, map),
     };
+  }
+
+  makeSituation(base, traits, map) {
+    if (traits.includes("イヤホン")) return { ...SITUATION_STATUS.music };
+    if (traits.includes("歩くの速い")) return { ...SITUATION_STATUS.moving };
+    if (traits.includes("友達といる")) return { ...SITUATION_STATUS.chat };
+    if (traits.includes("観光中") || traits.includes("周囲を見る")) return { ...SITUATION_STATUS.lost };
+    if (base.type === "読書系") return { ...SITUATION_STATUS.reading };
+    if (base.type === "カフェ系") return { ...SITUATION_STATUS.break };
+    if (traits.includes("スマホ")) return { ...SITUATION_STATUS.notification };
+    if (traits.includes("待ち合わせ") || traits.includes("立ち止まり")) return { ...SITUATION_STATUS.waiting };
+    if (map.key === "kabukicho" && Phaser.Math.RND.frac() < 0.35) return { ...SITUATION_STATUS.chat };
+    return { ...Phaser.Math.RND.pick([SITUATION_STATUS.waiting, SITUATION_STATUS.break, SITUATION_STATUS.moving]) };
   }
 
   spawnAmbient(map) {
@@ -883,10 +964,10 @@ export default class MainScene extends Phaser.Scene {
       0x2f2a3a
     );
     this.actionButtons = [
-      this.createHudButton("お天気op", () => this.tryApproach("weather"), 148, 48, 0x204a42),
-      this.createHudButton("服装op", () => this.tryApproach("outfit"), 148, 48, 0x51323d),
-      this.createHudButton("小物op", () => this.tryApproach("item"), 148, 48, 0x33405a),
-      this.createHudButton("ネタop", () => this.tryApproach("joke"), 148, 48, 0x4a3a22),
+      this.createHudButton(ACTIONS.weather.label, () => this.tryApproach("weather"), 148, 48, 0x204a42),
+      this.createHudButton(ACTIONS.outfit.label, () => this.tryApproach("outfit"), 148, 48, 0x51323d),
+      this.createHudButton(ACTIONS.item.label, () => this.tryApproach("item"), 148, 48, 0x33405a),
+      this.createHudButton(ACTIONS.joke.label, () => this.tryApproach("joke"), 148, 48, 0x4a3a22),
       this.createHudButton("離れる", () => this.respectfullySkip(), 148, 48, 0x2a2f38),
     ];
 
@@ -1165,18 +1246,18 @@ export default class MainScene extends Phaser.Scene {
       this.nearRing.strokeCircle(this.nearNpc.sprite.x, this.nearNpc.sprite.y, ringR - 4);
     }
     if (this.nearNpc && !prev) {
-      this.showMessage("→ 右下の op で声かけ！", 1200);
+      this.showMessage("→ 状態を見て選ぶ", 1200);
     }
   }
 
   updateHud() {
     const map = MAPS[this.currentMapKey];
+    const mobile = this.scale.width < 520;
     const nearText = this.nearNpc
-      ? `${this.nearNpc.profile.type} / 興味${this.nearNpc.profile.interest}`
+      ? this.profileSummary(this.nearNpc.profile, mobile)
       : "近くの相手なし";
     const rank = this.rankFor(this.score);
     const goalText = this.cleared ? "CLEAR" : `${Math.min(this.score, CLEAR_SCORE)}/${CLEAR_SCORE}`;
-    const mobile = this.scale.width < 520;
     const historyLine = this.history.length
       ? `\n直近: ${this.history[this.history.length - 1]}`
       : "";
@@ -1189,6 +1270,16 @@ export default class MainScene extends Phaser.Scene {
     this.drawProgress();
     this.updateActionHint();
     this.actionButtons.forEach((button) => button.redraw(Boolean(this.nearNpc)));
+  }
+
+  profileSummary(profile, compact = false) {
+    const s = profile.situation || SITUATION_STATUS.waiting;
+    const room = ROOM_LABELS[s.room] || "中";
+    const caution = CAUTION_LABELS[s.caution] || "中";
+    if (compact) {
+      return `${profile.type} / ${s.label} / 余${room} 警${caution} / ${s.hook}`;
+    }
+    return `${profile.type} / ${s.label} / 余裕${room} / 警戒${caution} / きっかけ:${s.hook}`;
   }
 
   updateActionHint() {
@@ -1208,7 +1299,8 @@ export default class MainScene extends Phaser.Scene {
     const skip = this.calculateSkipBonus(profile).bonus;
     if (skip >= 8) return `${ACTION_HINTS.skip} / 防御サイン強め`;
     const best = ranked[0];
-    return `${ACTION_HINTS[best.key]} / 目安${Math.round(best.rate * 100)}%`;
+    const s = profile.situation || SITUATION_STATUS.waiting;
+    return `${s.label}/${s.hook}: ${ACTION_HINTS[best.key]} / 目安${Math.round(best.rate * 100)}%`;
   }
 
   drawProgress() {
@@ -1404,7 +1496,7 @@ export default class MainScene extends Phaser.Scene {
   tryApproach(actionKey) {
     if (!this.nearNpc) {
       this.showBigText("もっと近づいて！", "#ffd24f");
-      this.showMessage("まだ距離が遠い。相手の近くまで寄ってから op を選ぶ。", 1500);
+      this.showMessage("まだ距離が遠い。相手の近くまで寄ってからオープナーを選ぶ。", 1500);
       return;
     }
 
@@ -1787,6 +1879,11 @@ export default class MainScene extends Phaser.Scene {
       rate += TRAIT_RATE_MODS[trait] || 0;
       rate += action.traits[trait] || 0;
     });
+    if (profile.situation) {
+      rate += profile.situation.actions?.[actionKey] || 0;
+      rate += (profile.situation.room - 1) * 0.025;
+      rate -= profile.situation.caution * 0.025;
+    }
     rate += action.defaultMod;
 
     const distance = Phaser.Math.Distance.Between(
@@ -1810,18 +1907,25 @@ export default class MainScene extends Phaser.Scene {
       rate += TRAIT_RATE_MODS[trait] || 0;
       rate += action.traits[trait] || 0;
     });
+    if (profile.situation) {
+      rate += profile.situation.actions?.[actionKey] || 0;
+      rate += (profile.situation.room - 1) * 0.025;
+      rate -= profile.situation.caution * 0.025;
+    }
     rate += action.defaultMod;
     return Phaser.Math.Clamp(rate, 0.04, 0.86);
   }
 
   feedbackFor(profile, actionKey) {
     if (profile.traits.includes("イヤホン")) return "外界遮断のサインが強い。声量より距離感を優先。";
-    if (profile.traits.includes("友達といる") && actionKey === "joke") return "同伴中の笑い取りはグループ内の空気を崩す。";
+    const situation = profile.situation;
+    if (profile.traits.includes("友達といる") && actionKey === "joke") return "同伴中のユーモアは刺さる時もあるが、場を外すと一気に崩れる。";
     if (profile.traits.includes("友達といる")) return "同伴中は防御が高い。グループの流れを切らない。";
     if (profile.traits.includes("歩くの速い")) return "歩行速度が速く、余白の話題に乗る余裕がなかった。";
-    if (actionKey === "joke") return "不意のボケは警戒モードでは刺さらない。";
-    if (actionKey === "outfit" && profile.traits.includes("スマホ")) return "服装opより、注意の外からすっと入る方が向く場面。";
-    if (actionKey === "weather") return "差し障りない話題でも、今は余白がなかった。";
+    if (actionKey === "joke") return "ユーモア賭けは警戒や急ぎに弱い。目線や余裕を見てから。";
+    if (actionKey === "outfit" && situation?.caution >= 2) return "状況いじりは警戒が高い時ほど軽さが裏目に出る。";
+    if (actionKey === "item" && situation?.hook === "なし") return "持ち物のきっかけが薄く、入り口が作れなかった。";
+    if (actionKey === "weather") return "共感は安定だが、今は相手の余裕が足りなかった。";
     if (profile.traits.includes("スマホ")) return "注意がスマホに分散していた。状況を見て一言で切る。";
     return "反応が薄いので追わずに離れた。";
   }

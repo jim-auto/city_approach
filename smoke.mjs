@@ -90,10 +90,10 @@ function check(name, condition, detail = "") {
   check("transitioned to MainScene", main.active === "MainScene");
   check("five action buttons", main.buttonLabels?.length === 5,
     `labels=${main.buttonLabels?.join(",")}`);
-  check("weather opener present", main.buttonLabels?.includes("お天気op"));
-  check("outfit opener present", main.buttonLabels?.includes("服装op"));
-  check("item opener present", main.buttonLabels?.includes("小物op"));
-  check("joke opener present", main.buttonLabels?.includes("ネタop"));
+  check("empathy opener present", main.buttonLabels?.includes("共感する"));
+  check("situation opener present", main.buttonLabels?.includes("状況いじり"));
+  check("item opener present", main.buttonLabels?.includes("持ち物に触れる"));
+  check("humor opener present", main.buttonLabels?.includes("ユーモア賭け"));
   check("skip button present", main.buttonLabels?.includes("離れる"));
   check("respectfullySkip defined", main.hasSkipFn);
   check("NPCs spawned", main.npcCount > 0);

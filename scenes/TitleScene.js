@@ -2,8 +2,9 @@ import { sfx } from "../sfx.js";
 import { getBest, getDifficulty, cycleDifficulty, getSpriteMode, cycleSpriteMode } from "../storage.js";
 
 const TUTORIAL_LINES = [
-  "街を歩く  →  サインを見る  →  opを選ぶ",
+  "街を歩く  →  状態を見る  →  オープナーを選ぶ",
   "防御サインが強い相手は「離れる」が正解",
+  "共感 / 状況いじり / 持ち物 / ユーモア賭け",
   "会話では 共感 / ツッコミ / 提案 を選択",
   "Goal 500点で CITY CLEAR",
 ];
