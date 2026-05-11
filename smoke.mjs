@@ -78,6 +78,7 @@ function check(name, condition, detail = "") {
       hasIcons: m.npcs?.every((n) => n.icons?.type === "Graphics"),
       diffMult: m.difficulty?.mult,
       hintText: m.hintText?.text,
+      spriteMode: m.spriteMode,
       fieldFxReady:
         typeof m.showConnectionBurst === "function" &&
         typeof m.showRespectCue === "function" &&
@@ -99,23 +100,25 @@ function check(name, condition, detail = "") {
   check("history initialised", main.historyIsArray);
   check("pixel icon Graphics attached", main.hasIcons);
   check("difficulty multiplier loaded", typeof main.diffMult === "number");
+  check("AI character mode is default", main.spriteMode === "icon", `mode=${main.spriteMode}`);
   check("action hint shown", typeof main.hintText === "string" && main.hintText.length > 0);
   check("field effects available", main.fieldFxReady);
 
   const anims = await page.evaluate(() => {
     const g = window.cityApproachGame;
     const m = g.scene.keys.MainScene;
+    const firstNpcKey = m.npcs[0]?.sprite.texture.key.replace(/-[01]$/, "");
     return {
-      textures: ["player-0", "player-1", "npc-0", "npc-1"].filter((k) => g.textures.exists(k)),
+      textures: ["player-0", "player-1", `${firstNpcKey}-0`, `${firstNpcKey}-1`].filter((k) => g.textures.exists(k)),
       playerAnim: m.anims.exists("player-walk"),
-      npcAnim: m.anims.exists("npc-walk"),
+      npcAnim: m.anims.exists(`${firstNpcKey}-walk`),
       playerTex: m.player.texture.key,
       npcAnimating: m.npcs[0]?.sprite.anims.isPlaying,
     };
   });
-  check("four character textures registered", anims.textures.length === 4, anims.textures.join(","));
+  check("player and NPC character textures registered", anims.textures.length === 4, anims.textures.join(","));
   check("player-walk animation exists", anims.playerAnim);
-  check("npc-walk animation exists", anims.npcAnim);
+  check("NPC walk animation exists", anims.npcAnim);
   check("player initial texture is player-0", anims.playerTex === "player-0");
   check("NPCs playing npc-walk", anims.npcAnimating);
 

@@ -50,7 +50,7 @@ export function cycleDifficulty(currentKey) {
 
 export function getSpriteMode() {
   const key = safeGet(MODE_KEY);
-  return SPRITE_MODES.find((m) => m.key === key) || SPRITE_MODES[0];
+  return SPRITE_MODES.find((m) => m.key === key) || SPRITE_MODES[1];
 }
 
 export function setSpriteMode(key) {
