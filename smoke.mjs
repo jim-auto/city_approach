@@ -77,6 +77,11 @@ function check(name, condition, detail = "") {
       historyIsArray: Array.isArray(m.history),
       hasIcons: m.npcs?.every((n) => n.icons?.type === "Graphics"),
       diffMult: m.difficulty?.mult,
+      hintText: m.hintText?.text,
+      fieldFxReady:
+        typeof m.showConnectionBurst === "function" &&
+        typeof m.showRespectCue === "function" &&
+        typeof m.showClearOverlay === "function",
     };
   });
   check("transitioned to MainScene", main.active === "MainScene");
@@ -92,6 +97,8 @@ function check(name, condition, detail = "") {
   check("history initialised", main.historyIsArray);
   check("pixel icon Graphics attached", main.hasIcons);
   check("difficulty multiplier loaded", typeof main.diffMult === "number");
+  check("action hint shown", typeof main.hintText === "string" && main.hintText.length > 0);
+  check("field effects available", main.fieldFxReady);
 
   const anims = await page.evaluate(() => {
     const g = window.cityApproachGame;
@@ -147,11 +154,15 @@ function check(name, condition, detail = "") {
       linesCount: t?.lines?.length ?? 0,
       allHaveCue: (t?.lines || []).every((l) => typeof l.cue === "string" && l.cue.length > 0),
       hasAnyWeak: (t?.lines || []).some((l) => l.weak === true),
+      resultScoreTextExists: Boolean(t?.resultScoreText),
+      talkFxReady: typeof t?.pulseFeedback === "function" && typeof t?.drawResultPanel === "function",
     };
   });
   check("TalkScene produced at least 3 lines", talk.linesCount >= 3, `got ${talk.linesCount}`);
   check("every line has a cue", talk.allHaveCue);
   check("at least one weak line exists", talk.hasAnyWeak);
+  check("TalkScene result score text exists", talk.resultScoreTextExists);
+  check("TalkScene effects available", talk.talkFxReady);
 
   await browser.close();
 

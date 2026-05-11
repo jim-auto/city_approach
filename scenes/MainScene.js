@@ -28,6 +28,14 @@ const AMBIENT_VARIANTS = [
 ];
 
 const WORLD = { width: 760, height: 1280 };
+const CLEAR_SCORE = 500;
+const RANKS = [
+  { min: 450, label: "S" },
+  { min: 320, label: "A" },
+  { min: 200, label: "B" },
+  { min: 90, label: "C" },
+  { min: 0, label: "D" },
+];
 
 const MAPS = {
   nagoya: {
@@ -236,6 +244,14 @@ const ACTIONS = {
   },
 };
 
+const ACTION_HINTS = {
+  weather: "お天気: 立ち止まり/目線ありに安定",
+  outfit: "服装: 目線あり+余裕ありに強い",
+  item: "小物: スマホ/観光中の注意に合わせる",
+  joke: "ネタ: 警戒が薄い時だけ短く",
+  skip: "離れる: 速い/イヤホン/同伴は正解になりやすい",
+};
+
 const FLAG_ICON_COLOR = {
   eye_contact:   0x57f5ff,
   busy:          0xffa857,
@@ -274,6 +290,9 @@ export default class MainScene extends Phaser.Scene {
     this.difficulty = getDifficulty();
     this.spriteMode = getSpriteMode().key;
     this.history = Array.isArray(data.history) ? data.history.slice(-3) : [];
+    this.streak = data.streak || 0;
+    this.cleared = Boolean(data.cleared);
+    this.pendingClear = !this.cleared && this.score >= CLEAR_SCORE;
     if (data.lastOutcome) this.pushHistory(data.lastOutcome);
     this.joystickVector = new Phaser.Math.Vector2();
     this.joystickPointerId = null;
@@ -311,6 +330,9 @@ export default class MainScene extends Phaser.Scene {
     this.scale.on("resize", this.layoutHud, this);
     this.layoutHud();
     this.updateBest();
+    if (this.pendingClear) {
+      this.time.delayedCall(260, () => this.checkClear("会話結果で"));
+    }
   }
 
   buildMap() {
@@ -816,6 +838,7 @@ export default class MainScene extends Phaser.Scene {
       .setDepth(50);
 
     this.messageBg = this.add.graphics().setScrollFactor(0).setDepth(50);
+    this.progressGraphics = this.add.graphics().setScrollFactor(0).setDepth(49);
     this.messageText = this.add
       .text(0, 0, "", {
         fontFamily: "system-ui, sans-serif",
@@ -828,6 +851,18 @@ export default class MainScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(51)
       .setVisible(false);
+    this.hintBg = this.add.graphics().setScrollFactor(0).setDepth(52);
+    this.hintText = this.add
+      .text(0, 0, "", {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "14px",
+        color: "#f5f1df",
+        align: "center",
+        wordWrap: { width: 360, useAdvancedWrap: true },
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(53);
 
     this.mapButton = this.createHudButton("街切替", () => this.switchMap(), 118, 46, 0x223340);
     this.difficultyButton = this.createHudButton(
@@ -904,12 +939,22 @@ export default class MainScene extends Phaser.Scene {
   layoutHud() {
     const width = this.scale.width;
     const height = this.scale.height;
-    this.infoText.setPosition(16, 14);
-    this.mapButton.setPosition(width - this.mapButton.buttonWidth - 14, 14);
-    this.difficultyButton.setPosition(
-      width - this.mapButton.buttonWidth - this.difficultyButton.buttonWidth - 22,
-      14
-    );
+    const mobile = width < 520;
+    if (mobile) {
+      this.mapButton.setPosition(width - this.mapButton.buttonWidth - 14, 14);
+      this.difficultyButton.setPosition(14, 14);
+      this.infoText.setPosition(16, 68);
+      this.infoText.setFontSize(14);
+    } else {
+      this.infoText.setPosition(16, 14);
+      this.infoText.setFontSize(16);
+      this.mapButton.setPosition(width - this.mapButton.buttonWidth - 14, 14);
+      this.difficultyButton.setPosition(
+        width - this.mapButton.buttonWidth - this.difficultyButton.buttonWidth - 22,
+        14
+      );
+    }
+    this.drawProgress();
 
     const buttonX = width - 160;
     const spacing = 54;
@@ -926,8 +971,30 @@ export default class MainScene extends Phaser.Scene {
     this.drawJoystick();
 
     this.messageText.setWordWrapWidth(Math.min(640, width - 28));
-    this.messageText.setPosition(width / 2, width < 430 ? 118 : 96);
+    this.messageText.setPosition(width / 2, width < 430 ? 148 : 96);
     this.drawMessageBox();
+    this.layoutHint();
+  }
+
+  layoutHint() {
+    const width = this.scale.width;
+    const mobile = width < 560;
+    const hintWidth = mobile ? 160 : Math.min(360, width - 24);
+    const x = mobile ? width - 86 : width - hintWidth / 2 - 14;
+    const y = (this.actionButtons?.[0]?.y || this.scale.height - 330) - (mobile ? 30 : 36);
+    this.hintText.setWordWrapWidth(hintWidth - 24);
+    this.hintText.setPosition(x, y);
+    this.drawHintBox();
+  }
+
+  drawHintBox() {
+    if (!this.hintText?.visible) return;
+    const bounds = this.hintText.getBounds();
+    this.hintBg.clear();
+    this.hintBg.fillStyle(0x10131a, 0.78);
+    this.hintBg.fillRoundedRect(bounds.x - 12, bounds.y - 8, bounds.width + 24, bounds.height + 16, 8);
+    this.hintBg.lineStyle(1, 0xffffff, 0.18);
+    this.hintBg.strokeRoundedRect(bounds.x - 12, bounds.y - 8, bounds.width + 24, bounds.height + 16, 8);
   }
 
   drawJoystick() {
@@ -1097,15 +1164,58 @@ export default class MainScene extends Phaser.Scene {
     const nearText = this.nearNpc
       ? `${this.nearNpc.profile.type} / 興味${this.nearNpc.profile.interest}`
       : "近くの相手なし";
+    const rank = this.rankFor(this.score);
+    const goalText = this.cleared ? "CLEAR" : `${Math.min(this.score, CLEAR_SCORE)}/${CLEAR_SCORE}`;
+    const mobile = this.scale.width < 520;
     const historyLine = this.history.length
       ? `\n直近: ${this.history[this.history.length - 1]}`
       : "";
-    this.infoText.setText(
-      `${map.label} ${map.period} / ${this.difficulty.label}\n` +
-        `Score ${this.score} / Best ${this.best} / ${nearText}` +
-        historyLine
-    );
+    const baseText = mobile
+      ? `${map.label} / ${nearText}\nScore ${this.score}  Best ${this.best}  R${rank}\nGoal ${goalText}  連続${this.streak}`
+      : `${map.label} ${map.period} / ${this.difficulty.label}\n` +
+        `Score ${this.score} / Best ${this.best} / Rank ${rank}\n` +
+        `Goal ${goalText} / 連続${this.streak} / ${nearText}`;
+    this.infoText.setText(baseText + historyLine);
+    this.drawProgress();
+    this.updateActionHint();
     this.actionButtons.forEach((button) => button.redraw(Boolean(this.nearNpc)));
+  }
+
+  updateActionHint() {
+    const hint = this.nearNpc
+      ? this.hintFor(this.nearNpc.profile)
+      : "NPCに近づくと相性ヒントが出る";
+    this.hintText.setText(hint);
+    this.hintText.setVisible(true);
+    this.drawHintBox();
+  }
+
+  hintFor(profile) {
+    const ranked = Object.keys(ACTIONS).map((key) => ({
+      key,
+      rate: this.estimateActionRate(profile, key),
+    })).sort((a, b) => b.rate - a.rate);
+    const skip = this.calculateSkipBonus(profile).bonus;
+    if (skip >= 8) return `${ACTION_HINTS.skip} / 防御サイン強め`;
+    const best = ranked[0];
+    return `${ACTION_HINTS[best.key]} / 目安${Math.round(best.rate * 100)}%`;
+  }
+
+  drawProgress() {
+    if (!this.progressGraphics) return;
+    const width = Math.min(320, this.scale.width - 32);
+    const x = 16;
+    const y = this.infoText ? this.infoText.y + this.infoText.height + 8 : 84;
+    const progress = Phaser.Math.Clamp(this.score / CLEAR_SCORE, 0, 1);
+    this.progressGraphics.clear();
+    this.progressGraphics.fillStyle(0x10131a, 0.72).fillRoundedRect(x, y, width, 12, 6);
+    this.progressGraphics.fillStyle(this.cleared ? 0x57f5ff : 0xffd24f, 0.92)
+      .fillRoundedRect(x + 2, y + 2, (width - 4) * progress, 8, 4);
+    this.progressGraphics.lineStyle(1, 0xffffff, 0.24).strokeRoundedRect(x, y, width, 12, 6);
+  }
+
+  rankFor(score) {
+    return RANKS.find((rank) => score >= rank.min)?.label || "D";
   }
 
   pushHistory(entry) {
@@ -1116,6 +1226,49 @@ export default class MainScene extends Phaser.Scene {
   updateBest() {
     if (this.score > this.best) this.best = this.score;
     if (this.best > getBest()) setBest(this.best);
+  }
+
+  awardScore(amount, label) {
+    const adjusted = Math.max(0, Math.round(amount));
+    const comboBonus = adjusted > 0 && this.streak >= 2 ? Math.min(30, this.streak * 5) : 0;
+    const total = adjusted + comboBonus;
+    this.score += total;
+    this.updateBest();
+    if (total > 0) this.showScoreFloat(total, comboBonus);
+    this.checkClear(label);
+    return total;
+  }
+
+  showScoreFloat(amount, comboBonus = 0) {
+    const text = comboBonus > 0 ? `+${amount} 連続ボーナス` : `+${amount}`;
+    const t = this.add
+      .text(this.scale.width / 2, 76, text, {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "24px",
+        color: "#ffd24f",
+        fontStyle: "bold",
+        stroke: "#0a0a10",
+        strokeThickness: 5,
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(72);
+    this.tweens.add({
+      targets: t,
+      y: 42,
+      alpha: 0,
+      duration: 900,
+      ease: "Quad.easeOut",
+      onComplete: () => t.destroy(),
+    });
+  }
+
+  checkClear(label = "") {
+    if (this.cleared || this.score < CLEAR_SCORE) return;
+    this.cleared = true;
+    sfx.play("win");
+    this.showClearOverlay();
+    this.showMessage(`${label} 目標${CLEAR_SCORE}点達成。Best更新を狙って続行できる。`, 2600);
   }
 
   toggleDifficulty() {
@@ -1136,10 +1289,12 @@ export default class MainScene extends Phaser.Scene {
     const rate = this.calculateSuccessRate(target.profile, actionKey);
     const roll = Math.random();
     const actionLabel = ACTIONS[actionKey].label;
+    this.showApproachRead(target, rate);
 
     if (roll <= rate) {
       sfx.play("success");
       this.bounceSprite(target.sprite);
+      this.showConnectionBurst(target, actionLabel);
       this.showBigText("反応あり！", "#57f5ff");
       this.player.setVelocity(0, 0);
       this.pushHistory(`${actionLabel} 通過 (${Math.round(rate * 100)}%)`);
@@ -1153,6 +1308,8 @@ export default class MainScene extends Phaser.Scene {
           difficulty: this.difficulty.key,
           history: this.history.slice(),
           npcTextureKey: target.sprite.texture.key,
+          streak: this.streak,
+          cleared: this.cleared,
         });
       });
       return;
@@ -1161,10 +1318,12 @@ export default class MainScene extends Phaser.Scene {
     sfx.play("fail");
     this.cameras.main.shake(180, 0.005);
     this.shakeSprite(target.sprite);
+    this.showRejectionCue(target);
     this.showBigText("スルー...", "#ff4d6d");
     target.disabled = true;
     target.sprite.setAlpha(0.4);
     target.icons.setAlpha(0.25);
+    this.streak = 0;
     this.pushHistory(`スルー (${actionLabel} ${Math.round(rate * 100)}%)`);
     this.showMessage(`スルーされた。${this.feedbackFor(target.profile, actionKey)} 成功率${Math.round(rate * 100)}%`, 2300);
   }
@@ -1195,6 +1354,77 @@ export default class MainScene extends Phaser.Scene {
     sprite.setTint(0xff6070);
     this.time.delayedCall(280, () => {
       if (sprite.active) sprite.clearTint();
+    });
+  }
+
+  showApproachRead(target, rate) {
+    const color = rate >= 0.48 ? 0x57f5ff : 0xff4d6d;
+    const g = this.add.graphics().setDepth(28);
+    g.lineStyle(3, color, 0.85).strokeCircle(target.sprite.x, target.sprite.y, 48);
+    g.lineStyle(1, 0xffffff, 0.5).lineBetween(this.player.x, this.player.y - 10, target.sprite.x, target.sprite.y - 10);
+    this.tweens.add({
+      targets: g,
+      alpha: 0,
+      duration: 420,
+      ease: "Quad.easeOut",
+      onComplete: () => g.destroy(),
+    });
+  }
+
+  showConnectionBurst(target, actionLabel) {
+    const g = this.add.graphics().setDepth(31);
+    const cx = (this.player.x + target.sprite.x) / 2;
+    const cy = (this.player.y + target.sprite.y) / 2 - 28;
+    g.lineStyle(4, 0x57f5ff, 0.95).lineBetween(this.player.x, this.player.y - 18, target.sprite.x, target.sprite.y - 18);
+    g.fillStyle(0x10131a, 0.92).fillRoundedRect(cx - 58, cy - 22, 116, 34, 8);
+    g.lineStyle(2, 0x57f5ff, 0.8).strokeRoundedRect(cx - 58, cy - 22, 116, 34, 8);
+    const t = this.add
+      .text(cx, cy - 5, `${actionLabel} OK`, {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "16px",
+        color: "#ffffff",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(32);
+    this.tweens.add({
+      targets: [g, t],
+      alpha: 0,
+      duration: 620,
+      ease: "Quad.easeOut",
+      onComplete: () => {
+        g.destroy();
+        t.destroy();
+      },
+    });
+  }
+
+  showRejectionCue(target) {
+    const x = target.sprite.x;
+    const y = target.sprite.y - 42;
+    const g = this.add.graphics().setDepth(31);
+    g.lineStyle(4, 0xff4d6d, 0.95);
+    g.strokeCircle(x, y, 16);
+    g.lineBetween(x - 9, y - 9, x + 9, y + 9);
+    const dots = this.add
+      .text(x, y - 28, "...", {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "20px",
+        color: "#ffb0bd",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(32);
+    this.tweens.add({
+      targets: [g, dots],
+      y: "-=8",
+      alpha: 0,
+      duration: 700,
+      ease: "Quad.easeOut",
+      onComplete: () => {
+        g.destroy();
+        dots.destroy();
+      },
     });
   }
 
@@ -1270,6 +1500,70 @@ export default class MainScene extends Phaser.Scene {
     });
   }
 
+  showClearOverlay() {
+    const w = this.scale.width;
+    const h = this.scale.height;
+    const overlay = this.add.graphics().setScrollFactor(0).setDepth(80);
+    overlay.fillStyle(0x05060a, 0.72).fillRect(0, 0, w, h);
+    overlay.lineStyle(3, 0x57f5ff, 0.72).strokeRoundedRect(w / 2 - 150, h * 0.32 - 52, 300, 136, 12);
+    overlay.fillStyle(0xffd24f, 0.12).fillRoundedRect(w / 2 - 145, h * 0.32 - 47, 290, 126, 10);
+    const title = this.add
+      .text(w / 2, h * 0.32, "CITY CLEAR", {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: `${Math.min(46, Math.max(34, w * 0.1))}px`,
+        color: "#57f5ff",
+        fontStyle: "bold",
+        stroke: "#0a0a10",
+        strokeThickness: 7,
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(81);
+    const rank = this.add
+      .text(w / 2, h * 0.32 + 48, `Rank ${this.rankFor(this.score)} / Score ${this.score}`, {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "20px",
+        color: "#ffd24f",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(81);
+    for (let i = 0; i < 24; i += 1) {
+      const p = this.add
+        .rectangle(
+          w / 2 + Phaser.Math.Between(-150, 150),
+          h * 0.32 + Phaser.Math.Between(-70, 70),
+          4,
+          4,
+          Phaser.Math.RND.pick([0x57f5ff, 0xffd24f, 0xff4d6d, 0xf5f1df]),
+          0.95
+        )
+        .setScrollFactor(0)
+        .setDepth(82);
+      this.tweens.add({
+        targets: p,
+        x: p.x + Phaser.Math.Between(-90, 90),
+        y: p.y + Phaser.Math.Between(-80, 80),
+        alpha: 0,
+        duration: Phaser.Math.Between(900, 1400),
+        ease: "Quad.easeOut",
+        onComplete: () => p.destroy(),
+      });
+    }
+    this.tweens.add({
+      targets: [overlay, title, rank],
+      alpha: 0,
+      delay: 1700,
+      duration: 650,
+      onComplete: () => {
+        overlay.destroy();
+        title.destroy();
+        rank.destroy();
+      },
+    });
+  }
+
   respectfullySkip() {
     if (!this.nearNpc) {
       this.showMessage("離れる相手がいない。まずサインを観察してから。", 1500);
@@ -1279,9 +1573,10 @@ export default class MainScene extends Phaser.Scene {
     const target = this.nearNpc;
     const { bonus, reason } = this.calculateSkipBonus(target.profile);
     const adjusted = Math.round(bonus * this.difficulty.mult);
-    this.score += adjusted;
-    this.updateBest();
+    this.streak = adjusted > 0 ? this.streak + 1 : 0;
+    const total = this.awardScore(adjusted, "観察判断で");
     sfx.play("skip");
+    this.showRespectCue(target, total > 0);
 
     target.disabled = true;
     target.sprite.setAlpha(0.28);
@@ -1289,9 +1584,41 @@ export default class MainScene extends Phaser.Scene {
     this.nearNpc = null;
     this.nearRing.clear();
 
-    const sign = adjusted >= 0 ? `+${adjusted}` : `${adjusted}`;
+    const sign = total >= 0 ? `+${total}` : `${total}`;
     this.pushHistory(`離れる ${sign}`);
     this.showMessage(`離れた。${reason} Score ${sign}`, 2300);
+  }
+
+  showRespectCue(target, earned) {
+    const color = earned ? "#57f5ff" : "#f5f1df";
+    const mark = earned ? "✓" : "...";
+    const t = this.add
+      .text(this.player.x, this.player.y - 48, mark, {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "34px",
+        color,
+        fontStyle: "bold",
+        stroke: "#0a0a10",
+        strokeThickness: 5,
+      })
+      .setOrigin(0.5)
+      .setDepth(35);
+    const g = this.add.graphics().setDepth(30);
+    g.lineStyle(3, earned ? 0x57f5ff : 0xf5f1df, 0.45).strokeCircle(target.sprite.x, target.sprite.y, 42);
+    this.tweens.add({
+      targets: t,
+      y: t.y - 26,
+      alpha: 0,
+      duration: 900,
+      ease: "Quad.easeOut",
+      onComplete: () => t.destroy(),
+    });
+    this.tweens.add({
+      targets: g,
+      alpha: 0,
+      duration: 700,
+      onComplete: () => g.destroy(),
+    });
   }
 
   calculateSkipBonus(profile) {
@@ -1349,6 +1676,20 @@ export default class MainScene extends Phaser.Scene {
     return Phaser.Math.Clamp(rate, 0.04, 0.86);
   }
 
+  estimateActionRate(profile, actionKey) {
+    const map = MAPS[this.currentMapKey];
+    const action = ACTIONS[actionKey];
+    const diff = this.difficulty;
+    let rate =
+      0.3 + map.baseBonus + diff.baseMod - map.noisePenalty - diff.noiseMod + (profile.interest - 50) / 190;
+    profile.traits.forEach((trait) => {
+      rate += TRAIT_RATE_MODS[trait] || 0;
+      rate += action.traits[trait] || 0;
+    });
+    rate += action.defaultMod;
+    return Phaser.Math.Clamp(rate, 0.04, 0.86);
+  }
+
   feedbackFor(profile, actionKey) {
     if (profile.traits.includes("イヤホン")) return "外界遮断のサインが強い。声量より距離感を優先。";
     if (profile.traits.includes("友達といる") && actionKey === "joke") return "同伴中の笑い取りはグループ内の空気を崩す。";
@@ -1387,6 +1728,8 @@ export default class MainScene extends Phaser.Scene {
       mapKey: next,
       score: this.score,
       history: this.history.slice(),
+      streak: this.streak,
+      cleared: this.cleared,
     });
   }
 }

@@ -1,6 +1,42 @@
 # city-approach
 
-ブラウザだけで動くPhaser 3製の2Dゲームです。GitHub Pagesにそのまま置けます。
+街で相手のサインを読み、声をかけるか離れるかを判断するPhaser 3製の2Dゲームです。ブラウザだけで動き、GitHub Pagesにそのまま置けます。
+
+![CITY APPROACH app icon](./assets/app-icon.png)
+
+## Demo
+
+![CITY APPROACH demo](./assets/demo.gif)
+
+[WebM版を見る](./assets/demo.webm)
+
+## GitHub About
+
+- Description: 街で相手のサインを読み、距離感と会話の文脈を判断するブラウザ2Dゲーム
+- Website: GitHub Pagesの公開URL
+- Topics: `phaser`, `browser-game`, `javascript`, `pixel-art`, `github-pages`, `city-game`
+
+## ゲーム内容
+
+- 名古屋駅と歌舞伎町を切り替えながら、NPCの行動サインを観察する。
+- 声かけは「お天気op」「服装op」「小物op」「ネタop」から選択する。
+- 防御サインが強い相手には「離れる」が正解になる。
+- 会話に入ると、共感・ツッコミ・提案を選ぶ短い会話バトルに進む。
+- 500点でCITY CLEAR。Bestとランク更新を狙って続行できる。
+
+## ローカル起動
+
+```bash
+python -m http.server 8000 --bind 127.0.0.1
+```
+
+ブラウザで `http://127.0.0.1:8000/` を開きます。
+
+## Smoke test
+
+```bash
+node smoke.mjs
+```
 
 ## 調査メモとゲーム反映
 

@@ -24,6 +24,8 @@ export default class TalkScene extends Phaser.Scene {
     this.best = data.best || 0;
     this.npcTextureKey = data.npcTextureKey || null;
     this.history = Array.isArray(data.history) ? data.history.slice(-3) : [];
+    this.streak = data.streak || 0;
+    this.cleared = Boolean(data.cleared);
     this.difficulty =
       DIFFICULTIES.find((d) => d.key === data.difficulty) || getDifficulty();
     this.favor = 42 + Math.round((this.profile.interest - 50) * 0.35);
@@ -52,6 +54,17 @@ export default class TalkScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setDepth(20);
+    this.resultScoreText = this.add
+      .text(0, 0, "", {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "19px",
+        color: "#ffd24f",
+        align: "center",
+      })
+      .setOrigin(0.5)
+      .setDepth(21)
+      .setVisible(false);
+    this.resultPanel = this.add.graphics().setDepth(19).setVisible(false);
     this.topicText = this.add
       .text(0, 0, "", {
         fontFamily: "system-ui, sans-serif",
@@ -243,6 +256,7 @@ export default class TalkScene extends Phaser.Scene {
     this.lineText.setWordWrapWidth(Math.min(880, width - 32));
     this.lineText.setPosition(width / 2, portraitBottom + 80);
     this.feedbackText.setPosition(width / 2, Math.min(height - 148, height * 0.72));
+    this.resultScoreText.setPosition(width / 2, Math.min(height - 112, height * 0.79));
 
     const gap = 10;
     const buttonWidth = Math.min(132, Math.floor((width - 48) / 3));
@@ -338,16 +352,19 @@ export default class TalkScene extends Phaser.Scene {
       this.favor = Phaser.Math.Clamp(this.favor + 24, 0, 100);
       this.discomfort = Phaser.Math.Clamp(this.discomfort - 6, 0, 100);
       this.feedbackText.setText("刺さった。相手の文脈に合っている。");
+      this.pulseFeedback("hit");
       sfx.play("hit");
     } else if (line.weak) {
       this.favor = Phaser.Math.Clamp(this.favor - 5, 0, 100);
       this.discomfort = Phaser.Math.Clamp(this.discomfort + 22, 0, 100);
       this.feedbackText.setText("ズレた。弱点ではなく不安を押している。");
+      this.pulseFeedback("miss");
       sfx.play("miss");
     } else {
       this.favor = Phaser.Math.Clamp(this.favor + (choiceKey === "empathy" ? 7 : 1), 0, 100);
       this.discomfort = Phaser.Math.Clamp(this.discomfort + (choiceKey === "tsukkomi" ? 5 : 0), 0, 100);
       this.feedbackText.setText("観察フェーズ。急がず反応を見る。");
+      this.pulseFeedback("watch");
       sfx.play("tick");
     }
 
@@ -370,6 +387,7 @@ export default class TalkScene extends Phaser.Scene {
     if (line.weak) {
       this.discomfort = Phaser.Math.Clamp(this.discomfort + 10, 0, 100);
       this.feedbackText.setText("タイミングを逃した。違和感が少し上がる。");
+      this.pulseFeedback("timeout");
     }
     this.time.delayedCall(450, () => {
       if (!this.resultShown) this.nextLine();
@@ -391,35 +409,45 @@ export default class TalkScene extends Phaser.Scene {
     let title = "中間結果";
     let body = "会話は自然に終わった。反応は悪くないが、次の提案には至らない。";
     this.resultBonus = 25;
+    this.streakDelta = 1;
 
     let outcomeTag = "中間";
     if (success) {
       title = "カフェ成功";
       body = "短く文脈に合わせた提案が通った。";
       this.resultBonus = 120;
+      this.streakDelta = 2;
       outcomeTag = "カフェ成功";
       sfx.play("win");
     } else if (failedByDiscomfort || this.discomfort >= 100) {
       title = "失敗";
       body = "違和感が上がりすぎた。追わずに離れる。";
       this.resultBonus = 0;
+      this.streakDelta = -this.streak;
       outcomeTag = "違和感で失敗";
       sfx.play("lose");
     } else if (this.favor >= 68) {
       body = "短い雑談は成立。場所とタイミング次第で次に進める。";
       this.resultBonus = 55;
+      this.streakDelta = 1;
       outcomeTag = "雑談成立";
       sfx.play("win");
     } else {
       outcomeTag = "中間";
+      this.streakDelta = 0;
       sfx.play("skip");
     }
     this.lastOutcome = `${outcomeTag} 好${this.favor}/違${this.discomfort}`;
+    const preview = this.previewScoreResult();
 
     this.topicText.setText(title);
     this.lineText.setFontSize(this.scale.width < 430 ? 30 : 42);
     this.lineText.setText(this.wrapText(body, this.scale.width < 430 ? 12 : 24));
     this.feedbackText.setText(`好感度 ${this.favor} / 違和感 ${this.discomfort}`);
+    this.resultScoreText
+      .setText(`獲得 +${preview.total} / 連続 ${this.streak} → ${preview.nextStreak}`)
+      .setVisible(true);
+    this.drawResultPanel(success, failedByDiscomfort);
     this.resultButton.setVisible(true);
     this.resultButton.setInteractive(
       new Phaser.Geom.Rectangle(0, 0, this.resultButton.buttonWidth, this.resultButton.buttonHeight),
@@ -428,15 +456,87 @@ export default class TalkScene extends Phaser.Scene {
   }
 
   returnToField() {
-    const adjusted = Math.round(this.resultBonus * this.difficulty.mult);
+    const { total, nextStreak } = this.previewScoreResult();
     this.scene.start("MainScene", {
       mapKey: this.mapKey,
-      score: this.score + adjusted,
+      score: this.score + total,
       best: this.best,
       difficulty: this.difficulty.key,
       history: this.history,
-      lastOutcome: `${this.lastOutcome || "中間"} +${adjusted}`,
+      lastOutcome: `${this.lastOutcome || "中間"} +${total}`,
+      streak: nextStreak,
+      cleared: this.cleared,
     });
+  }
+
+  pulseFeedback(kind) {
+    const color = {
+      hit: "#57f5ff",
+      miss: "#ff4d6d",
+      watch: "#ffd24f",
+      timeout: "#f5f1df",
+    }[kind] || "#ffffff";
+    const label = {
+      hit: "HIT",
+      miss: "MISS",
+      watch: "READ",
+      timeout: "LATE",
+    }[kind] || "";
+    const t = this.add
+      .text(this.scale.width / 2, this.scale.height * 0.62, label, {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "32px",
+        color,
+        fontStyle: "bold",
+        stroke: "#0a0a10",
+        strokeThickness: 6,
+      })
+      .setOrigin(0.5)
+      .setDepth(35);
+    this.tweens.add({
+      targets: t,
+      y: t.y - 28,
+      alpha: 0,
+      duration: 650,
+      ease: "Quad.easeOut",
+      onComplete: () => t.destroy(),
+    });
+    this.tweens.add({
+      targets: this.lineText,
+      scaleX: kind === "miss" || kind === "timeout" ? 1.04 : 1.02,
+      scaleY: kind === "miss" || kind === "timeout" ? 1.04 : 1.02,
+      duration: 90,
+      yoyo: true,
+      ease: "Sine.easeOut",
+    });
+  }
+
+  drawResultPanel(success, failedByDiscomfort) {
+    const width = this.scale.width;
+    const height = this.scale.height;
+    const panelWidth = Math.min(width - 28, 540);
+    const lineBounds = this.lineText.getBounds();
+    const panelHeight = Math.min(170, Math.max(104, lineBounds.height + 42));
+    const x = (width - panelWidth) / 2;
+    const y = Math.max(110, Math.min(lineBounds.y - 18, height - panelHeight - 118));
+    const accent = success ? 0x57f5ff : failedByDiscomfort ? 0xff4d6d : 0xffd24f;
+    this.resultPanel.clear();
+    this.resultPanel.setVisible(true);
+    this.resultPanel.fillStyle(0x090b10, 0.82).fillRoundedRect(x, y, panelWidth, panelHeight, 10);
+    this.resultPanel.lineStyle(3, accent, 0.72).strokeRoundedRect(x, y, panelWidth, panelHeight, 10);
+    this.resultPanel.fillStyle(accent, 0.08).fillRoundedRect(x + 5, y + 5, panelWidth - 10, panelHeight - 10, 8);
+  }
+
+  previewScoreResult() {
+    const adjusted = Math.round(this.resultBonus * this.difficulty.mult);
+    const nextStreak = Math.max(0, this.streak + this.streakDelta);
+    const comboBonus = adjusted > 0 && nextStreak >= 3 ? Math.min(40, nextStreak * 6) : 0;
+    return {
+      adjusted,
+      comboBonus,
+      nextStreak,
+      total: adjusted + comboBonus,
+    };
   }
 
   wrapText(text, maxChars) {

@@ -2,22 +2,19 @@ import { sfx } from "../sfx.js";
 import { getBest, getDifficulty, cycleDifficulty, getSpriteMode, cycleSpriteMode } from "../storage.js";
 
 const TUTORIAL_LINES = [
-  "【あそびかた】",
-  "・左下のジョイスティックで街を歩く",
-  "・NPCに近づくとサイン（アイコン）が見える",
-  "・右下の声かけ op を選ぶ",
-  "　お天気op：立ち止まり/目が合う向け",
-  "　服装op：目が合う+立ち止まりに強い",
-  "　小物op：スマホ/観光中の人に刺さる",
-  "　ネタop：目が合う/友達同伴向け、警戒はNG",
-  "　離れる：防御サインが強いときの正解",
-  "・成功すると会話バトル（共感/ツッコミ/提案）",
-  "・右上の街切替で名古屋駅⇄歌舞伎町",
+  "街を歩く  →  サインを見る  →  opを選ぶ",
+  "防御サインが強い相手は「離れる」が正解",
+  "会話では 共感 / ツッコミ / 提案 を選択",
+  "Goal 500点で CITY CLEAR",
 ];
 
 export default class TitleScene extends Phaser.Scene {
   constructor() {
     super("TitleScene");
+  }
+
+  preload() {
+    this.load.image("app-icon", "assets/app-icon.png");
   }
 
   create() {
@@ -27,6 +24,7 @@ export default class TitleScene extends Phaser.Scene {
     this.started = false;
 
     this.bg = this.add.graphics().setDepth(-10);
+    this.iconImage = this.add.image(0, 0, "app-icon").setOrigin(0.5);
     this.titleText = this.add
       .text(0, 0, "CITY APPROACH", {
         fontFamily: "system-ui, sans-serif",
@@ -47,12 +45,12 @@ export default class TitleScene extends Phaser.Scene {
     this.tutorialText = this.add
       .text(0, 0, TUTORIAL_LINES.join("\n"), {
         fontFamily: "system-ui, sans-serif",
-        fontSize: "13px",
+        fontSize: "16px",
         color: "#e3e7ef",
-        align: "left",
-        lineSpacing: 3,
+        align: "center",
+        lineSpacing: 8,
       })
-      .setOrigin(0.5, 0);
+      .setOrigin(0.5);
     this.bestText = this.add
       .text(0, 0, "", {
         fontFamily: "system-ui, sans-serif",
@@ -65,15 +63,19 @@ export default class TitleScene extends Phaser.Scene {
         fontFamily: "system-ui, sans-serif",
         fontSize: "17px",
         color: "#ffd24f",
+        fontStyle: "bold",
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(2);
     this.modeText = this.add
       .text(0, 0, "", {
         fontFamily: "system-ui, sans-serif",
         fontSize: "17px",
         color: "#9cc4ec",
+        fontStyle: "bold",
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(2);
     this.startText = this.add
       .text(0, 0, "タップで開始", {
         fontFamily: "system-ui, sans-serif",
@@ -82,7 +84,7 @@ export default class TitleScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    this.diffButton = this.add.rectangle(0, 0, 220, 44, 0x2f2a3a, 0.86).setStrokeStyle(2, 0xffffff, 0.32);
+    this.diffButton = this.add.rectangle(0, 0, 240, 48, 0x3b3248, 0.96).setStrokeStyle(2, 0xffffff, 0.45).setDepth(1);
     this.diffButton.setInteractive({ useHandCursor: true });
     this.diffButton.on("pointerdown", (pointer, _lx, _ly, event) => {
       event?.stopPropagation?.();
@@ -90,7 +92,7 @@ export default class TitleScene extends Phaser.Scene {
       this.refreshTexts();
       sfx.play("tick");
     });
-    this.modeButton = this.add.rectangle(0, 0, 220, 44, 0x1d3148, 0.86).setStrokeStyle(2, 0xffffff, 0.32);
+    this.modeButton = this.add.rectangle(0, 0, 240, 48, 0x213d5a, 0.96).setStrokeStyle(2, 0xffffff, 0.45).setDepth(1);
     this.modeButton.setInteractive({ useHandCursor: true });
     this.modeButton.on("pointerdown", (pointer, _lx, _ly, event) => {
       event?.stopPropagation?.();
@@ -118,8 +120,8 @@ export default class TitleScene extends Phaser.Scene {
 
   refreshTexts() {
     this.bestText.setText(`Best ${this.best}`);
-    this.diffText.setText(`難度: ${this.difficulty.label}（タップで切替）`);
-    this.modeText.setText(`キャラ: ${this.spriteMode.label}（タップで切替）`);
+    this.diffText.setText(`難度: ${this.difficulty.label}`);
+    this.modeText.setText(`キャラ: ${this.spriteMode.label}`);
   }
 
   layout() {
@@ -135,14 +137,18 @@ export default class TitleScene extends Phaser.Scene {
 
     const cx = w / 2;
     const mobile = w < 430;
-    this.titleText.setPosition(cx, h * 0.1).setFontSize(mobile ? 34 : 52);
-    this.subText.setPosition(cx, h * 0.17).setWordWrapWidth(Math.min(640, w - 40));
-    this.tutorialText.setPosition(cx, h * 0.24).setFontSize(mobile ? 12 : 15);
-    this.bestText.setPosition(cx, h * 0.66);
-    this.diffButton.setPosition(cx, h * 0.74);
-    this.diffText.setPosition(cx, h * 0.74);
-    this.modeButton.setPosition(cx, h * 0.82);
-    this.modeText.setPosition(cx, h * 0.82);
+    const iconSize = Math.min(mobile ? 104 : 132, h * 0.17);
+    this.iconImage
+      .setPosition(cx, h * 0.105)
+      .setDisplaySize(iconSize, iconSize);
+    this.titleText.setPosition(cx, h * 0.235).setFontSize(mobile ? 34 : 54);
+    this.subText.setPosition(cx, h * 0.305).setWordWrapWidth(Math.min(640, w - 40));
+    this.tutorialText.setPosition(cx, h * 0.46).setFontSize(mobile ? 14 : 17);
+    this.bestText.setPosition(cx, h * 0.68);
+    this.diffButton.setPosition(cx, h * 0.765);
+    this.diffText.setPosition(cx, h * 0.765);
+    this.modeButton.setPosition(cx, h * 0.845);
+    this.modeText.setPosition(cx, h * 0.845);
     this.startText.setPosition(cx, h * 0.93);
   }
 
