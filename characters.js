@@ -23,6 +23,10 @@ const AI_SOURCE_KEYS = {
   "npc-jogger": "ai_npc_jogger_raw",
 };
 
+export function aiSourceKeyFor(key) {
+  return AI_SOURCE_KEYS[key] || AI_SOURCE_KEYS.npc;
+}
+
 const PALETTES = {
   player: {
     hair:  { base: 0x3a2820, shadow: 0x1d1320, highlight: 0x5a4030 },

@@ -22,7 +22,7 @@ export default class TalkScene extends Phaser.Scene {
     this.mapKey = data.mapKey || "nagoya";
     this.score = data.score || 0;
     this.best = data.best || 0;
-    this.npcTextureKey = data.npcTextureKey || null;
+    this.npcTextureKey = data.portraitTextureKey || data.npcTextureKey || null;
     this.history = Array.isArray(data.history) ? data.history.slice(-3) : [];
     this.streak = data.streak || 0;
     this.cleared = Boolean(data.cleared);

@@ -1,6 +1,6 @@
 import { sfx } from "../sfx.js";
 import { getBest, setBest, getDifficulty, cycleDifficulty, getSpriteMode } from "../storage.js";
-import { buildCharacterTextures, registerCharacterAnimations } from "../characters.js";
+import { aiSourceKeyFor, buildCharacterTextures, registerCharacterAnimations } from "../characters.js";
 
 const NPC_VARIANT_KEYS = {
   "待ち合わせ系": "npc-waiting",
@@ -691,6 +691,7 @@ export default class MainScene extends Phaser.Scene {
         sprite,
         icons,
         profile,
+        portraitTextureKey: this.spriteMode === "icon" ? aiSourceKeyFor(variantKey) : sprite.texture.key,
         dir: Phaser.Math.RND.pick([-1, 1]),
         speed: map.key === "nagoya" ? Phaser.Math.Between(38, 62) : Phaser.Math.Between(22, 58),
         lane: Phaser.Math.RND.pick(map.lanes),
@@ -1430,6 +1431,7 @@ export default class MainScene extends Phaser.Scene {
           difficulty: this.difficulty.key,
           history: this.history.slice(),
           npcTextureKey: target.sprite.texture.key,
+          portraitTextureKey: target.portraitTextureKey || target.sprite.texture.key,
           streak: this.streak,
           cleared: this.cleared,
         });
