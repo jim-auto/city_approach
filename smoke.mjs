@@ -81,7 +81,9 @@ function check(name, condition, detail = "") {
       fieldFxReady:
         typeof m.showConnectionBurst === "function" &&
         typeof m.showRespectCue === "function" &&
-        typeof m.showClearOverlay === "function",
+        typeof m.showClearOverlay === "function" &&
+        typeof m.showBestUpdate === "function" &&
+        typeof m.showRankSOverlay === "function",
     };
   });
   check("transitioned to MainScene", main.active === "MainScene");

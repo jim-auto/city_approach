@@ -286,13 +286,16 @@ export default class MainScene extends Phaser.Scene {
   create(data = {}) {
     this.currentMapKey = data.mapKey || "nagoya";
     this.score = data.score || 0;
-    this.best = Math.max(getBest(), this.score);
+    this.previousBest = getBest();
+    this.best = Math.max(this.previousBest, this.score);
     this.difficulty = getDifficulty();
     this.spriteMode = getSpriteMode().key;
     this.history = Array.isArray(data.history) ? data.history.slice(-3) : [];
     this.streak = data.streak || 0;
     this.cleared = Boolean(data.cleared);
     this.pendingClear = !this.cleared && this.score >= CLEAR_SCORE;
+    this.pendingBest = this.score > this.previousBest;
+    this.pendingRankS = this.previousBest < RANKS[0].min && this.score >= RANKS[0].min;
     if (data.lastOutcome) this.pushHistory(data.lastOutcome);
     this.joystickVector = new Phaser.Math.Vector2();
     this.joystickPointerId = null;
@@ -330,6 +333,12 @@ export default class MainScene extends Phaser.Scene {
     this.scale.on("resize", this.layoutHud, this);
     this.layoutHud();
     this.updateBest();
+    if (this.pendingBest) {
+      this.time.delayedCall(520, () => this.showBestUpdate());
+    }
+    if (this.pendingRankS) {
+      this.time.delayedCall(980, () => this.showRankSOverlay());
+    }
     if (this.pendingClear) {
       this.time.delayedCall(260, () => this.checkClear("会話結果で"));
     }
@@ -1224,17 +1233,23 @@ export default class MainScene extends Phaser.Scene {
   }
 
   updateBest() {
+    const storedBest = getBest();
+    const improved = this.score > storedBest;
     if (this.score > this.best) this.best = this.score;
-    if (this.best > getBest()) setBest(this.best);
+    if (this.best > storedBest) setBest(this.best);
+    return improved;
   }
 
   awardScore(amount, label) {
     const adjusted = Math.max(0, Math.round(amount));
     const comboBonus = adjusted > 0 && this.streak >= 2 ? Math.min(30, this.streak * 5) : 0;
     const total = adjusted + comboBonus;
+    const oldRank = this.rankFor(this.score);
     this.score += total;
-    this.updateBest();
+    const improvedBest = this.updateBest();
     if (total > 0) this.showScoreFloat(total, comboBonus);
+    if (improvedBest) this.showBestUpdate();
+    if (oldRank !== "S" && this.rankFor(this.score) === "S") this.showRankSOverlay();
     this.checkClear(label);
     return total;
   }
@@ -1260,6 +1275,113 @@ export default class MainScene extends Phaser.Scene {
       duration: 900,
       ease: "Quad.easeOut",
       onComplete: () => t.destroy(),
+    });
+  }
+
+  showBestUpdate() {
+    const w = this.scale.width;
+    const t = this.add
+      .text(w / 2, 112, `BEST更新 ${this.best}`, {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "22px",
+        color: "#ffd24f",
+        fontStyle: "bold",
+        stroke: "#0a0a10",
+        strokeThickness: 5,
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(78)
+      .setAlpha(0);
+    const g = this.add.graphics().setScrollFactor(0).setDepth(77);
+    g.fillStyle(0x10131a, 0.88).fillRoundedRect(w / 2 - 116, 88, 232, 48, 9);
+    g.lineStyle(2, 0xffd24f, 0.8).strokeRoundedRect(w / 2 - 116, 88, 232, 48, 9);
+    g.setAlpha(0);
+    this.tweens.add({
+      targets: [g, t],
+      alpha: 1,
+      duration: 160,
+      ease: "Quad.easeOut",
+    });
+    this.tweens.add({
+      targets: [g, t],
+      alpha: 0,
+      delay: 950,
+      duration: 360,
+      onComplete: () => {
+        g.destroy();
+        t.destroy();
+      },
+    });
+  }
+
+  showRankSOverlay() {
+    const w = this.scale.width;
+    const h = this.scale.height;
+    const cx = w / 2;
+    const cy = h * 0.46;
+    const g = this.add.graphics().setScrollFactor(0).setDepth(83);
+    g.fillStyle(0x05060a, 0.55).fillRect(0, 0, w, h);
+    g.lineStyle(4, 0xffd24f, 0.86).strokeCircle(cx, cy, 86);
+    g.lineStyle(2, 0x57f5ff, 0.68).strokeCircle(cx, cy, 104);
+    const rank = this.add
+      .text(cx, cy - 10, "RANK S", {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: `${Math.min(54, Math.max(42, w * 0.13))}px`,
+        color: "#ffd24f",
+        fontStyle: "bold",
+        stroke: "#0a0a10",
+        strokeThickness: 8,
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(84);
+    const sub = this.add
+      .text(cx, cy + 48, "距離感マスター", {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "20px",
+        color: "#57f5ff",
+        fontStyle: "bold",
+        stroke: "#0a0a10",
+        strokeThickness: 5,
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(84);
+    for (let i = 0; i < 30; i += 1) {
+      const angle = (Math.PI * 2 * i) / 30;
+      const p = this.add
+        .rectangle(cx + Math.cos(angle) * 78, cy + Math.sin(angle) * 78, 5, 5, i % 2 ? 0xffd24f : 0x57f5ff, 1)
+        .setScrollFactor(0)
+        .setDepth(85);
+      this.tweens.add({
+        targets: p,
+        x: cx + Math.cos(angle) * Phaser.Math.Between(120, 170),
+        y: cy + Math.sin(angle) * Phaser.Math.Between(120, 170),
+        alpha: 0,
+        duration: 1100,
+        ease: "Quad.easeOut",
+        onComplete: () => p.destroy(),
+      });
+    }
+    this.tweens.add({
+      targets: [g, rank, sub],
+      scaleX: 1.05,
+      scaleY: 1.05,
+      duration: 180,
+      yoyo: true,
+      ease: "Sine.easeOut",
+    });
+    this.tweens.add({
+      targets: [g, rank, sub],
+      alpha: 0,
+      delay: 1350,
+      duration: 520,
+      onComplete: () => {
+        g.destroy();
+        rank.destroy();
+        sub.destroy();
+      },
     });
   }
 
