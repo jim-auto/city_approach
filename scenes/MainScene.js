@@ -988,8 +988,8 @@ export default class MainScene extends Phaser.Scene {
     container.add([bg, text]);
     container.setSize(width, height);
     container.setInteractive(new Phaser.Geom.Rectangle(0, 0, width, height), Phaser.Geom.Rectangle.Contains);
-    container.on("pointerdown", (pointer) => {
-      pointer.event?.preventDefault();
+    container.press = (pointer) => {
+      pointer?.event?.preventDefault?.();
       // Loud press feedback: bright white flash of the bg + scale pop so the
       // tap is undeniable even on mobile where subtle effects get missed.
       bg.clear();
@@ -1011,7 +1011,7 @@ export default class MainScene extends Phaser.Scene {
       } catch (err) {
         console.error("Button onClick failed", err);
       }
-    });
+    };
     container.bg = bg;
     container.fillColor = fillColor;
     container.buttonWidth = width;
@@ -1112,6 +1112,7 @@ export default class MainScene extends Phaser.Scene {
 
   registerJoystickInput() {
     this.input.on("pointerdown", (pointer) => {
+      if (this.handleHudPointer(pointer)) return;
       const dist = Phaser.Math.Distance.Between(
         pointer.x,
         pointer.y,
@@ -1137,6 +1138,28 @@ export default class MainScene extends Phaser.Scene {
         this.drawJoystick();
       }
     });
+  }
+
+  handleHudPointer(pointer) {
+    if (pointer.wasHudButton) return true;
+    const buttons = [
+      this.mapButton,
+      this.difficultyButton,
+      ...(this.actionButtons || []),
+    ].filter(Boolean);
+    for (const button of buttons) {
+      if (!button.visible || !button.active) continue;
+      const left = button.x;
+      const top = button.y;
+      const right = left + button.buttonWidth;
+      const bottom = top + button.buttonHeight;
+      if (pointer.x >= left && pointer.x <= right && pointer.y >= top && pointer.y <= bottom) {
+        pointer.wasHudButton = true;
+        button.press(pointer);
+        return true;
+      }
+    }
+    return false;
   }
 
   updateJoystick(pointer) {
