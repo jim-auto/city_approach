@@ -29,6 +29,7 @@ const AMBIENT_VARIANTS = [
 
 const WORLD = { width: 760, height: 1280 };
 const CLEAR_SCORE = 500;
+const HOTEL_SCORE = 120;
 const RANKS = [
   { min: 450, label: "S" },
   { min: 320, label: "A" },
@@ -73,6 +74,7 @@ const MAPS = {
       { x: 380, y: 760, label: "横断前" },
       { x: 380, y: 1050, label: "ネオン街" },
     ],
+    hotel: { x: 70, y: 520, w: 185, h: 150, doorX: 162, doorY: 660 },
   },
 };
 
@@ -360,13 +362,18 @@ export default class MainScene extends Phaser.Scene {
     this.history = Array.isArray(data.history) ? data.history.slice(-3) : [];
     this.streak = data.streak || 0;
     this.cleared = Boolean(data.cleared);
+    this.hotelEntered = Boolean(data.hotelEntered);
     this.pendingClear = !this.cleared && this.score >= CLEAR_SCORE;
     this.pendingBest = this.score > this.previousBest;
     this.pendingRankS = this.previousBest < RANKS[0].min && this.score >= RANKS[0].min;
     if (data.lastOutcome) this.pushHistory(data.lastOutcome);
     this.joystickVector = new Phaser.Math.Vector2();
+    this.keyboardVector = new Phaser.Math.Vector2();
     this.joystickPointerId = null;
+    this.defaultJoystickCenter = { x: 88, y: 720 };
     this.nearNpc = null;
+    this.nearHotel = false;
+    this.hotelPrompted = false;
     this.npcs = [];
     this.ambient = [];
     this.mapLabels = [];
@@ -394,6 +401,8 @@ export default class MainScene extends Phaser.Scene {
 
     this.createHud();
     this.buildMap();
+    this.cursors = this.input.keyboard?.createCursorKeys();
+    this.wasd = this.input.keyboard?.addKeys("W,A,S,D");
     this.input.addPointer(3);
     this.registerJoystickInput();
 
@@ -601,6 +610,7 @@ export default class MainScene extends Phaser.Scene {
         }
       }
     });
+    this.drawHotelDoor(MAPS.kabukicho.hotel);
 
     this.addMapLabel(380, 785, "横断前", "#f5f1df", 17);
     this.drawStopMarkers(MAPS.kabukicho.stopPoints, 0xff4d6d);
@@ -612,6 +622,17 @@ export default class MainScene extends Phaser.Scene {
       const color = Phaser.Math.RND.pick([0x57f5ff, 0xffd24f, 0xff4d6d, 0xf5f1df]);
       g.fillStyle(color, 0.68).fillRect(x, y, 4, 4);
     }
+  }
+
+  drawHotelDoor(hotel) {
+    const g = this.mapGraphics;
+    const doorX = hotel.doorX - 25;
+    const doorY = hotel.doorY - 28;
+    g.fillStyle(0x0b0d14, 1).fillRect(doorX, doorY, 50, 56);
+    g.lineStyle(3, 0xffd24f, 0.86).strokeRect(doorX, doorY, 50, 56);
+    g.fillStyle(0xffd24f, 0.18).fillRect(doorX + 4, doorY + 4, 42, 48);
+    g.lineStyle(2, 0xff4d6d, 0.9).strokeRoundedRect(doorX - 10, doorY - 16, 70, 14, 5);
+    this.addMapLabel(hotel.doorX, doorY - 9, "IN", "#ffd24f", 13);
   }
 
   drawTohoBuilding(cx, baseY) {
@@ -1055,10 +1076,13 @@ export default class MainScene extends Phaser.Scene {
       button.setPosition(buttonX, startY + index * spacing);
     });
 
-    this.joystickCenter = {
+    this.defaultJoystickCenter = {
       x: Math.max(78, Math.min(96, width * 0.23)),
       y: height - 88,
     };
+    if (this.joystickPointerId === null) {
+      this.joystickCenter = { ...this.defaultJoystickCenter };
+    }
     this.drawJoystick();
 
     this.messageText.setWordWrapWidth(Math.min(640, width - 28));
@@ -1113,14 +1137,9 @@ export default class MainScene extends Phaser.Scene {
   registerJoystickInput() {
     this.input.on("pointerdown", (pointer) => {
       if (this.handleHudPointer(pointer)) return;
-      const dist = Phaser.Math.Distance.Between(
-        pointer.x,
-        pointer.y,
-        this.joystickCenter.x,
-        this.joystickCenter.y
-      );
-      if (dist <= 78 && this.joystickPointerId === null) {
+      if (this.joystickPointerId === null) {
         this.joystickPointerId = pointer.id;
+        this.joystickCenter = { x: pointer.x, y: pointer.y };
         this.updateJoystick(pointer);
       }
     });
@@ -1135,6 +1154,7 @@ export default class MainScene extends Phaser.Scene {
       if (pointer.id === this.joystickPointerId) {
         this.joystickPointerId = null;
         this.joystickVector.set(0, 0);
+        this.joystickCenter = { ...this.defaultJoystickCenter };
         this.drawJoystick();
       }
     });
@@ -1177,19 +1197,34 @@ export default class MainScene extends Phaser.Scene {
   update(time, delta) {
     if (!this.player) return;
     const speed = 170;
-    this.player.setVelocity(this.joystickVector.x * speed, this.joystickVector.y * speed);
+    const move = this.getMoveVector();
+    this.player.setVelocity(move.x * speed, move.y * speed);
     this.updatePlayerAnim();
     this.updateNpcs(time, delta);
     this.updateNearestNpc();
+    this.updateHotelState();
     this.updateHud();
   }
 
+  getMoveVector() {
+    this.keyboardVector.set(0, 0);
+    if (this.cursors?.left?.isDown || this.wasd?.A?.isDown) this.keyboardVector.x -= 1;
+    if (this.cursors?.right?.isDown || this.wasd?.D?.isDown) this.keyboardVector.x += 1;
+    if (this.cursors?.up?.isDown || this.wasd?.W?.isDown) this.keyboardVector.y -= 1;
+    if (this.cursors?.down?.isDown || this.wasd?.S?.isDown) this.keyboardVector.y += 1;
+    if (this.keyboardVector.lengthSq() > 0) {
+      return this.keyboardVector.normalize();
+    }
+    return this.joystickVector;
+  }
+
   updatePlayerAnim() {
-    const moving = this.joystickVector.length() > 0.1;
+    const moving = this.getMoveVector().length() > 0.1;
     if (moving) {
       if (!this.player.anims.isPlaying) this.player.anims.play("player-walk", true);
-      if (this.joystickVector.x < -0.1) this.player.setFlipX(true);
-      else if (this.joystickVector.x > 0.1) this.player.setFlipX(false);
+      const move = this.getMoveVector();
+      if (move.x < -0.1) this.player.setFlipX(true);
+      else if (move.x > 0.1) this.player.setFlipX(false);
     } else if (this.player.anims.isPlaying) {
       this.player.anims.stop();
       this.player.setTexture("player-0");
@@ -1273,6 +1308,43 @@ export default class MainScene extends Phaser.Scene {
     }
   }
 
+  updateHotelState() {
+    const hotel = MAPS[this.currentMapKey].hotel;
+    if (!hotel || this.hotelEntered) {
+      this.nearHotel = false;
+      return;
+    }
+    const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, hotel.doorX, hotel.doorY);
+    this.nearHotel = dist <= 58;
+    if (this.nearHotel && !this.hotelPrompted) {
+      this.hotelPrompted = true;
+      const need = Math.max(0, HOTEL_SCORE - this.score);
+      this.showMessage(
+        need > 0
+          ? `ホテル前。あと${need}点で、合意してINできる。`
+          : "ホテル前。条件OK。近づいたまま少し待つとIN。",
+        1600
+      );
+    } else if (!this.nearHotel) {
+      this.hotelPrompted = false;
+    }
+    if (this.nearHotel && this.score >= HOTEL_SCORE) {
+      this.enterHotel();
+    }
+  }
+
+  enterHotel() {
+    if (this.hotelEntered) return;
+    this.hotelEntered = true;
+    this.nearHotel = false;
+    this.player.setVelocity(0, 0);
+    this.joystickVector.set(0, 0);
+    sfx.play("win");
+    this.pushHistory("HOTEL IN");
+    this.showHotelOverlay();
+    this.showMessage("合意してホテルラウンジへIN。CITY APPROACH成功。", 2600);
+  }
+
   updateHud() {
     const map = MAPS[this.currentMapKey];
     const mobile = this.scale.width < 520;
@@ -1306,7 +1378,9 @@ export default class MainScene extends Phaser.Scene {
   }
 
   updateActionHint() {
-    const hint = this.nearNpc
+    const hint = this.nearHotel && !this.hotelEntered
+      ? `ホテル前: ${this.score >= HOTEL_SCORE ? "条件OK / IN待機" : `あと${HOTEL_SCORE - this.score}点`}`
+      : this.nearNpc
       ? this.hintFor(this.nearNpc.profile)
       : "NPCに近づくと相性ヒントが出る";
     this.hintText.setText(hint);
@@ -1549,6 +1623,7 @@ export default class MainScene extends Phaser.Scene {
           portraitTextureKey: target.portraitTextureKey || target.sprite.texture.key,
           streak: this.streak,
           cleared: this.cleared,
+          hotelEntered: this.hotelEntered,
         });
       });
       return;
@@ -1799,6 +1874,69 @@ export default class MainScene extends Phaser.Scene {
         overlay.destroy();
         title.destroy();
         rank.destroy();
+      },
+    });
+  }
+
+  showHotelOverlay() {
+    const w = this.scale.width;
+    const h = this.scale.height;
+    const overlay = this.add.graphics().setScrollFactor(0).setDepth(82);
+    overlay.fillStyle(0x05060a, 0.78).fillRect(0, 0, w, h);
+    overlay.lineStyle(3, 0xffd24f, 0.84).strokeRoundedRect(w / 2 - 154, h * 0.36 - 58, 308, 150, 12);
+    overlay.fillStyle(0xff4d6d, 0.16).fillRoundedRect(w / 2 - 148, h * 0.36 - 52, 296, 138, 10);
+    const title = this.add
+      .text(w / 2, h * 0.36, "HOTEL IN", {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: `${Math.min(48, Math.max(36, w * 0.12))}px`,
+        color: "#ffd24f",
+        fontStyle: "bold",
+        stroke: "#0a0a10",
+        strokeThickness: 7,
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(83);
+    const sub = this.add
+      .text(w / 2, h * 0.36 + 52, "合意成立 / ラウンジへ", {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "19px",
+        color: "#f5f1df",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(83);
+    for (let i = 0; i < 28; i += 1) {
+      const p = this.add
+        .rectangle(
+          w / 2 + Phaser.Math.Between(-160, 160),
+          h * 0.36 + Phaser.Math.Between(-82, 82),
+          5,
+          5,
+          Phaser.Math.RND.pick([0xffd24f, 0xff4d6d, 0x57f5ff]),
+          0.95
+        )
+        .setScrollFactor(0)
+        .setDepth(84);
+      this.tweens.add({
+        targets: p,
+        y: p.y - Phaser.Math.Between(60, 130),
+        alpha: 0,
+        duration: Phaser.Math.Between(900, 1450),
+        ease: "Quad.easeOut",
+        onComplete: () => p.destroy(),
+      });
+    }
+    this.tweens.add({
+      targets: [overlay, title, sub],
+      alpha: 0,
+      delay: 2100,
+      duration: 650,
+      onComplete: () => {
+        overlay.destroy();
+        title.destroy();
+        sub.destroy();
       },
     });
   }

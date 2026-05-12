@@ -104,6 +104,23 @@ function check(name, condition, detail = "") {
   check("action hint shown", typeof main.hintText === "string" && main.hintText.length > 0);
   check("field effects available", main.fieldFxReady);
 
+  const beforeMove = await page.evaluate(() => {
+    const m = window.cityApproachGame.scene.keys.MainScene;
+    return { x: m.player.x, y: m.player.y };
+  });
+  await page.mouse.move(90, 710);
+  await page.mouse.down();
+  await page.mouse.move(190, 710, { steps: 6 });
+  await page.waitForTimeout(420);
+  await page.mouse.up();
+  const afterMove = await page.evaluate(() => {
+    const m = window.cityApproachGame.scene.keys.MainScene;
+    return { x: m.player.x, y: m.player.y, stick: m.joystickVector.length() };
+  });
+  check("drag movement works", afterMove.x > beforeMove.x + 12,
+    `before=${Math.round(beforeMove.x)}, after=${Math.round(afterMove.x)}`);
+  check("joystick releases after drag", afterMove.stick === 0, `stick=${afterMove.stick}`);
+
   const anims = await page.evaluate(() => {
     const g = window.cityApproachGame;
     const m = g.scene.keys.MainScene;
@@ -168,6 +185,29 @@ function check(name, condition, detail = "") {
   check("at least one weak line exists", talk.hasAnyWeak);
   check("TalkScene result score text exists", talk.resultScoreTextExists);
   check("TalkScene effects available", talk.talkFxReady);
+
+  const hotel = await page.evaluate(() => {
+    const g = window.cityApproachGame;
+    g.scene.start("MainScene", {
+      mapKey: "kabukicho",
+      score: 120,
+      history: [],
+    });
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const m = g.scene.keys.MainScene;
+        m.player.setPosition(162, 660);
+        m.updateHotelState();
+        resolve({
+          entered: m.hotelEntered,
+          history: m.history.join(" / "),
+          message: m.messageText?.text || "",
+        });
+      }, 650);
+    });
+  });
+  check("hotel in triggers at door", hotel.entered, hotel.message);
+  check("hotel in writes history", hotel.history.includes("HOTEL IN"), hotel.history);
 
   await browser.close();
 

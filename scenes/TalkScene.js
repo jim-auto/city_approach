@@ -26,6 +26,7 @@ export default class TalkScene extends Phaser.Scene {
     this.history = Array.isArray(data.history) ? data.history.slice(-3) : [];
     this.streak = data.streak || 0;
     this.cleared = Boolean(data.cleared);
+    this.hotelEntered = Boolean(data.hotelEntered);
     this.difficulty =
       DIFFICULTIES.find((d) => d.key === data.difficulty) || getDifficulty();
     this.favor = 42 + Math.round((this.profile.interest - 50) * 0.35);
@@ -466,6 +467,7 @@ export default class TalkScene extends Phaser.Scene {
       lastOutcome: `${this.lastOutcome || "中間"} +${total}`,
       streak: nextStreak,
       cleared: this.cleared,
+      hotelEntered: this.hotelEntered,
     });
   }
 
