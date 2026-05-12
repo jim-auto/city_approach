@@ -1,5 +1,5 @@
 import { sfx } from "../sfx.js";
-import { getBest, getDifficulty, cycleDifficulty, getSpriteMode, cycleSpriteMode } from "../storage.js";
+import { getBest, getDifficulty, cycleDifficulty } from "../storage.js";
 
 const TUTORIAL_LINES = [
   "街を歩く  →  状態を見る  →  オープナーを選ぶ",
@@ -20,7 +20,6 @@ export default class TitleScene extends Phaser.Scene {
 
   create() {
     this.difficulty = getDifficulty();
-    this.spriteMode = getSpriteMode();
     this.best = getBest();
     this.started = false;
 
@@ -68,15 +67,6 @@ export default class TitleScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setDepth(2);
-    this.modeText = this.add
-      .text(0, 0, "", {
-        fontFamily: "system-ui, sans-serif",
-        fontSize: "17px",
-        color: "#9cc4ec",
-        fontStyle: "bold",
-      })
-      .setOrigin(0.5)
-      .setDepth(2);
     this.startText = this.add
       .text(0, 0, "タップで開始", {
         fontFamily: "system-ui, sans-serif",
@@ -93,15 +83,6 @@ export default class TitleScene extends Phaser.Scene {
       this.refreshTexts();
       sfx.play("tick");
     });
-    this.modeButton = this.add.rectangle(0, 0, 240, 48, 0x213d5a, 0.96).setStrokeStyle(2, 0xffffff, 0.45).setDepth(1);
-    this.modeButton.setInteractive({ useHandCursor: true });
-    this.modeButton.on("pointerdown", (pointer, _lx, _ly, event) => {
-      event?.stopPropagation?.();
-      this.spriteMode = cycleSpriteMode(this.spriteMode.key);
-      this.refreshTexts();
-      sfx.play("tick");
-    });
-
     this.input.on("pointerdown", () => this.startGame());
     this.input.keyboard?.on("keydown", () => this.startGame());
     this.scale.on("resize", this.layout, this);
@@ -122,7 +103,6 @@ export default class TitleScene extends Phaser.Scene {
   refreshTexts() {
     this.bestText.setText(`Best ${this.best}`);
     this.diffText.setText(`難度: ${this.difficulty.label}`);
-    this.modeText.setText(`キャラ: ${this.spriteMode.label}`);
   }
 
   layout() {
@@ -146,10 +126,8 @@ export default class TitleScene extends Phaser.Scene {
     this.subText.setPosition(cx, h * 0.305).setWordWrapWidth(Math.min(640, w - 40));
     this.tutorialText.setPosition(cx, h * 0.46).setFontSize(mobile ? 14 : 17);
     this.bestText.setPosition(cx, h * 0.68);
-    this.diffButton.setPosition(cx, h * 0.765);
-    this.diffText.setPosition(cx, h * 0.765);
-    this.modeButton.setPosition(cx, h * 0.845);
-    this.modeText.setPosition(cx, h * 0.845);
+    this.diffButton.setPosition(cx, h * 0.79);
+    this.diffText.setPosition(cx, h * 0.79);
     this.startText.setPosition(cx, h * 0.93);
   }
 
