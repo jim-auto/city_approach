@@ -56,6 +56,7 @@ const MAPS = {
       { x: 380, y: 640, label: "改札前" },
       { x: 380, y: 970, label: "金時計" },
     ],
+    hotel: { x: 585, y: 965, w: 130, h: 130, doorX: 585, doorY: 1088 },
   },
   kabukicho: {
     key: "kabukicho",
@@ -507,7 +508,24 @@ export default class MainScene extends Phaser.Scene {
     this.addMapLabel(380, 1170, "金時計", "#d4a94a", 18);
     this.addMapLabel(157, 644, "改札前", "#f5f1df", 18);
     this.addMapLabel(380, 140, "中央コンコース", "#f5f1df", 16);
+    this.drawNagoyaHotel(MAPS.nagoya.hotel);
     this.drawStopMarkers(MAPS.nagoya.stopPoints, 0xf5f1df);
+  }
+
+  drawNagoyaHotel(hotel) {
+    const g = this.mapGraphics;
+    g.fillStyle(0x141923, 1).fillRect(hotel.x, hotel.y, hotel.w, hotel.h);
+    g.lineStyle(3, 0xf5f1df, 0.22).strokeRect(hotel.x, hotel.y, hotel.w, hotel.h);
+    g.lineStyle(3, 0x57f5ff, 0.72).strokeRect(hotel.x + 8, hotel.y + 8, hotel.w - 16, 24);
+    this.addMapLabel(hotel.x + hotel.w / 2, hotel.y + 21, "HOTEL", "#f5f1df", 14);
+    for (let wy = hotel.y + 44; wy < hotel.y + hotel.h - 18; wy += 16) {
+      for (let wx = hotel.x + 16; wx < hotel.x + hotel.w - 14; wx += 20) {
+        g.fillStyle(((wx + wy) % 3) ? 0xfada50 : 0x2c3440, ((wx + wy) % 3) ? 0.45 : 1);
+        g.fillRect(wx, wy, 5, 7);
+      }
+    }
+    this.drawHotelDoor(hotel);
+    this.addMapLabel(hotel.x + hotel.w / 2, hotel.y - 14, "駅から遠いホテル", "#9cc4ec", 13);
   }
 
   drawClockTower(cx, baseY, colors) {

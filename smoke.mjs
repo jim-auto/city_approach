@@ -209,6 +209,27 @@ function check(name, condition, detail = "") {
   check("hotel in triggers at door", hotel.entered, hotel.message);
   check("hotel in writes history", hotel.history.includes("HOTEL IN"), hotel.history);
 
+  const nagoyaHotel = await page.evaluate(() => {
+    const g = window.cityApproachGame;
+    g.scene.start("MainScene", {
+      mapKey: "nagoya",
+      score: 120,
+      history: [],
+    });
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const m = g.scene.keys.MainScene;
+        m.player.setPosition(585, 1088);
+        m.updateHotelState();
+        resolve({
+          entered: m.hotelEntered,
+          history: m.history.join(" / "),
+        });
+      }, 650);
+    });
+  });
+  check("nagoya hotel in triggers", nagoyaHotel.entered, nagoyaHotel.history);
+
   await browser.close();
 
   if (failures.length) {
