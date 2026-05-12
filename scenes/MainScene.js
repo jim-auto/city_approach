@@ -1297,6 +1297,11 @@ export default class MainScene extends Phaser.Scene {
   }
 
   updateNearestNpc() {
+    if (this.hotelEntered) {
+      this.nearNpc = null;
+      this.nearRing.clear();
+      return;
+    }
     const prev = this.nearNpc;
     let nearest = null;
     let nearestDistance = Number.POSITIVE_INFINITY;
@@ -1357,10 +1362,12 @@ export default class MainScene extends Phaser.Scene {
     this.nearHotel = false;
     this.player.setVelocity(0, 0);
     this.joystickVector.set(0, 0);
+    this.nearNpc = null;
+    this.nearRing.clear();
     sfx.play("win");
     this.pushHistory("HOTEL IN");
     this.showHotelOverlay();
-    this.showMessage("合意してホテルラウンジへIN。CITY APPROACH成功。", 2600);
+    this.showMessage("ホテルIN成功。", 2600);
   }
 
   updateHud() {
@@ -1396,7 +1403,9 @@ export default class MainScene extends Phaser.Scene {
   }
 
   updateActionHint() {
-    const hint = this.nearHotel && !this.hotelEntered
+    const hint = this.hotelEntered
+      ? "HOTEL IN 完了"
+      : this.nearHotel
       ? `ホテル前: ${this.score >= HOTEL_SCORE ? "条件OK / IN待機" : `あと${HOTEL_SCORE - this.score}点`}`
       : this.nearNpc
       ? this.hintFor(this.nearNpc.profile)
