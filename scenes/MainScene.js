@@ -364,6 +364,8 @@ export default class MainScene extends Phaser.Scene {
     this.streak = data.streak || 0;
     this.cleared = Boolean(data.cleared);
     this.hotelEntered = Boolean(data.hotelEntered);
+    this.hotelReadyNotified = Boolean(data.hotelReadyNotified);
+    this.pendingHotelReady = !this.hotelEntered && !this.hotelReadyNotified && this.score >= HOTEL_SCORE;
     this.pendingClear = !this.cleared && this.score >= CLEAR_SCORE;
     this.pendingBest = this.score > this.previousBest;
     this.pendingRankS = this.previousBest < RANKS[0].min && this.score >= RANKS[0].min;
@@ -375,6 +377,7 @@ export default class MainScene extends Phaser.Scene {
     this.nearNpc = null;
     this.nearHotel = false;
     this.hotelPrompted = false;
+    this.hotelReadyMessageUntil = 0;
     this.npcs = [];
     this.ambient = [];
     this.mapLabels = [];
@@ -418,6 +421,9 @@ export default class MainScene extends Phaser.Scene {
     }
     if (this.pendingClear) {
       this.time.delayedCall(260, () => this.checkClear("会話結果で"));
+    }
+    if (this.pendingHotelReady) {
+      this.time.delayedCall(700, () => this.showHotelReady());
     }
   }
 
@@ -1326,7 +1332,7 @@ export default class MainScene extends Phaser.Scene {
       this.nearRing.lineStyle(2, 0xffffff, 0.9);
       this.nearRing.strokeCircle(this.nearNpc.sprite.x, this.nearNpc.sprite.y, ringR - 4);
     }
-    if (this.nearNpc && !prev) {
+    if (this.nearNpc && !prev && this.time.now > this.hotelReadyMessageUntil) {
       this.showMessage("→ 状態を見て選ぶ", 1200);
     }
   }
@@ -1378,14 +1384,19 @@ export default class MainScene extends Phaser.Scene {
       : "近くの相手なし";
     const rank = this.rankFor(this.score);
     const goalText = this.cleared ? "CLEAR" : `${Math.min(this.score, CLEAR_SCORE)}/${CLEAR_SCORE}`;
+    const hotelText = this.hotelEntered
+      ? "HOTEL IN"
+      : this.score >= HOTEL_SCORE
+      ? "HOTEL OK"
+      : `Hotel ${this.score}/${HOTEL_SCORE}`;
     const historyLine = this.history.length
       ? `\n直近: ${this.history[this.history.length - 1]}`
       : "";
     const baseText = mobile
-      ? `${map.label} / ${nearText}\nScore ${this.score}  Best ${this.best}  R${rank}\nGoal ${goalText}  連続${this.streak}`
+      ? `${map.label} / ${nearText}\nScore ${this.score}  Best ${this.best}  R${rank}\nGoal ${goalText}  ${hotelText}  連続${this.streak}`
       : `${map.label} ${map.period} / ${this.difficulty.label}\n` +
         `Score ${this.score} / Best ${this.best} / Rank ${rank}\n` +
-        `Goal ${goalText} / 連続${this.streak} / ${nearText}`;
+        `Goal ${goalText} / ${hotelText} / 連続${this.streak} / ${nearText}`;
     this.infoText.setText(baseText + historyLine);
     this.drawProgress();
     this.updateActionHint();
@@ -1462,11 +1473,15 @@ export default class MainScene extends Phaser.Scene {
     const comboBonus = adjusted > 0 && this.streak >= 2 ? Math.min(30, this.streak * 5) : 0;
     const total = adjusted + comboBonus;
     const oldRank = this.rankFor(this.score);
+    const wasHotelReady = this.score >= HOTEL_SCORE;
     this.score += total;
     const improvedBest = this.updateBest();
     if (total > 0) this.showScoreFloat(total, comboBonus);
     if (improvedBest) this.showBestUpdate();
     if (oldRank !== "S" && this.rankFor(this.score) === "S") this.showRankSOverlay();
+    if (!this.hotelEntered && !wasHotelReady && this.score >= HOTEL_SCORE) {
+      this.showHotelReady();
+    }
     this.checkClear(label);
     return total;
   }
@@ -1610,6 +1625,57 @@ export default class MainScene extends Phaser.Scene {
     this.showMessage(`${label} 目標${CLEAR_SCORE}点達成。Best更新を狙って続行できる。`, 2600);
   }
 
+  showHotelReady() {
+    if (this.hotelEntered || this.hotelReadyNotified || this.score < HOTEL_SCORE) return;
+    this.hotelReadyNotified = true;
+    this.drawHotelReadyOverlay();
+    this.hotelReadyMessageUntil = this.time.now + 2200;
+    this.showMessage("条件OK。ホテル入口へ向かえる。", 2200);
+  }
+
+  drawHotelReadyOverlay() {
+    sfx.play("success");
+    const w = this.scale.width;
+    const h = this.scale.height;
+    const g = this.add.graphics().setScrollFactor(0).setDepth(72);
+    const cy = h * 0.39;
+    g.fillStyle(0x05060a, 0.5).fillRoundedRect(w / 2 - 132, cy - 42, 264, 84, 12);
+    g.lineStyle(3, 0xffd24f, 0.78).strokeRoundedRect(w / 2 - 132, cy - 42, 264, 84, 12);
+    const title = this.add
+      .text(w / 2, cy - 10, "HOTEL READY", {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: `${Math.min(32, Math.max(24, w * 0.075))}px`,
+        color: "#ffd24f",
+        fontStyle: "bold",
+        stroke: "#0a0a10",
+        strokeThickness: 5,
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(73);
+    const sub = this.add
+      .text(w / 2, cy + 22, "ホテル入口へ向かえる", {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "15px",
+        color: "#f5f1df",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(73);
+    this.tweens.add({
+      targets: [g, title, sub],
+      alpha: 0,
+      delay: 1500,
+      duration: 520,
+      onComplete: () => {
+        g.destroy();
+        title.destroy();
+        sub.destroy();
+      },
+    });
+  }
+
   toggleDifficulty() {
     this.difficulty = cycleDifficulty(this.difficulty.key);
     const text = this.difficultyButton.list.find((c) => c.text !== undefined);
@@ -1651,6 +1717,7 @@ export default class MainScene extends Phaser.Scene {
           streak: this.streak,
           cleared: this.cleared,
           hotelEntered: this.hotelEntered,
+          hotelReadyNotified: this.hotelReadyNotified,
         });
       });
       return;
@@ -2146,6 +2213,8 @@ export default class MainScene extends Phaser.Scene {
       history: this.history.slice(),
       streak: this.streak,
       cleared: this.cleared,
+      hotelEntered: this.hotelEntered,
+      hotelReadyNotified: this.hotelReadyNotified,
     });
   }
 }

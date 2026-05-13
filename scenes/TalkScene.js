@@ -27,6 +27,7 @@ export default class TalkScene extends Phaser.Scene {
     this.streak = data.streak || 0;
     this.cleared = Boolean(data.cleared);
     this.hotelEntered = Boolean(data.hotelEntered);
+    this.hotelReadyNotified = Boolean(data.hotelReadyNotified);
     this.difficulty =
       DIFFICULTIES.find((d) => d.key === data.difficulty) || getDifficulty();
     this.favor = 42 + Math.round((this.profile.interest - 50) * 0.35);
@@ -468,6 +469,7 @@ export default class TalkScene extends Phaser.Scene {
       streak: nextStreak,
       cleared: this.cleared,
       hotelEntered: this.hotelEntered,
+      hotelReadyNotified: this.hotelReadyNotified,
     });
   }
 

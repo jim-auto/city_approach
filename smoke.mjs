@@ -64,7 +64,8 @@ function check(name, condition, detail = "") {
 
   // Start the game
   await page.mouse.click(640, 780);
-  await page.waitForTimeout(700);
+  await page.waitForFunction(() => window.cityApproachGame?.scene?.keys?.MainScene?.actionButtons, null, { timeout: 5000 });
+  await page.waitForTimeout(300);
 
   const main = await page.evaluate(() => {
     const g = window.cityApproachGame;
@@ -120,6 +121,20 @@ function check(name, condition, detail = "") {
   check("drag movement works", afterMove.x > beforeMove.x + 12,
     `before=${Math.round(beforeMove.x)}, after=${Math.round(afterMove.x)}`);
   check("joystick releases after drag", afterMove.stick === 0, `stick=${afterMove.stick}`);
+
+  const hotelReady = await page.evaluate(() => {
+    const m = window.cityApproachGame.scene.keys.MainScene;
+    m.score = 110;
+    m.hotelReadyNotified = false;
+    m.awardScore(15, "test");
+    return {
+      score: m.score,
+      notified: m.hotelReadyNotified,
+      message: m.messageText?.text || "",
+    };
+  });
+  check("hotel ready triggers on score threshold", hotelReady.notified, hotelReady.message);
+  check("hotel ready score crossed threshold", hotelReady.score >= 120, `score=${hotelReady.score}`);
 
   const anims = await page.evaluate(() => {
     const g = window.cityApproachGame;
