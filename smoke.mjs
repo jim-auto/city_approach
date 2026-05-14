@@ -201,12 +201,47 @@ function check(name, condition, detail = "") {
   check("TalkScene result score text exists", talk.resultScoreTextExists);
   check("TalkScene effects available", talk.talkFxReady);
 
+  const companion = await page.evaluate(() => {
+    const g = window.cityApproachGame;
+    g.scene.start("MainScene", {
+      mapKey: "nagoya",
+      score: 125,
+      history: [],
+      companion: {
+        profile: { type: "目線あり系", traits: ["目が合う"], interest: 70 },
+        textureKey: "npc-eye-0",
+        portraitTextureKey: "ai_npc_eye_raw",
+      },
+    });
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const m = g.scene.keys.MainScene;
+        const before = { x: m.companion?.sprite?.x, y: m.companion?.sprite?.y };
+        m.player.setPosition(m.player.x + 80, m.player.y + 20);
+        m.updateCompanion();
+        resolve({
+          exists: Boolean(m.companion?.sprite?.active),
+          label: m.companion?.label?.text,
+          moved: m.companion?.sprite?.x !== before.x || m.companion?.sprite?.y !== before.y,
+        });
+      }, 650);
+    });
+  });
+  check("companion spawns after successful talk", companion.exists, JSON.stringify(companion));
+  check("companion label shown", companion.label === "同行中", `label=${companion.label}`);
+  check("companion follows player", companion.moved, JSON.stringify(companion));
+
   const hotel = await page.evaluate(() => {
     const g = window.cityApproachGame;
     g.scene.start("MainScene", {
       mapKey: "kabukicho",
       score: 120,
       history: [],
+      companion: {
+        profile: { type: "目線あり系", traits: ["目が合う"], interest: 70 },
+        textureKey: "npc-eye-0",
+        portraitTextureKey: "ai_npc_eye_raw",
+      },
     });
     return new Promise((resolve) => {
       setTimeout(() => {
@@ -215,6 +250,7 @@ function check(name, condition, detail = "") {
         m.updateHotelState();
         resolve({
           entered: m.hotelEntered,
+          companionGone: !m.companion,
           history: m.history.join(" / "),
           message: m.messageText?.text || "",
         });
@@ -222,6 +258,7 @@ function check(name, condition, detail = "") {
     });
   });
   check("hotel in triggers at door", hotel.entered, hotel.message);
+  check("hotel in clears companion", hotel.companionGone, JSON.stringify(hotel));
   check("hotel in writes history", hotel.history.includes("HOTEL IN"), hotel.history);
 
   const nagoyaHotel = await page.evaluate(() => {

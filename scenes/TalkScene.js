@@ -22,7 +22,9 @@ export default class TalkScene extends Phaser.Scene {
     this.mapKey = data.mapKey || "nagoya";
     this.score = data.score || 0;
     this.best = data.best || 0;
-    this.npcTextureKey = data.portraitTextureKey || data.npcTextureKey || null;
+    this.fieldTextureKey = data.npcTextureKey || null;
+    this.portraitTextureKey = data.portraitTextureKey || this.fieldTextureKey;
+    this.npcTextureKey = this.portraitTextureKey || null;
     this.history = Array.isArray(data.history) ? data.history.slice(-3) : [];
     this.streak = data.streak || 0;
     this.cleared = Boolean(data.cleared);
@@ -470,6 +472,13 @@ export default class TalkScene extends Phaser.Scene {
       cleared: this.cleared,
       hotelEntered: this.hotelEntered,
       hotelReadyNotified: this.hotelReadyNotified,
+      companion: this.resultBonus >= 55
+        ? {
+            profile: this.profile,
+            textureKey: this.fieldTextureKey,
+            portraitTextureKey: this.portraitTextureKey,
+          }
+        : null,
     });
   }
 

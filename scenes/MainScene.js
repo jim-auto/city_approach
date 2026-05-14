@@ -365,6 +365,7 @@ export default class MainScene extends Phaser.Scene {
     this.cleared = Boolean(data.cleared);
     this.hotelEntered = Boolean(data.hotelEntered);
     this.hotelReadyNotified = Boolean(data.hotelReadyNotified);
+    this.companionData = data.companion || null;
     this.pendingHotelReady = !this.hotelEntered && !this.hotelReadyNotified && this.score >= HOTEL_SCORE;
     this.pendingClear = !this.cleared && this.score >= CLEAR_SCORE;
     this.pendingBest = this.score > this.previousBest;
@@ -375,6 +376,7 @@ export default class MainScene extends Phaser.Scene {
     this.joystickPointerId = null;
     this.defaultJoystickCenter = { x: 88, y: 720 };
     this.nearNpc = null;
+    this.companion = null;
     this.nearHotel = false;
     this.hotelPrompted = false;
     this.hotelReadyMessageUntil = 0;
@@ -438,6 +440,9 @@ export default class MainScene extends Phaser.Scene {
       npc.icons.destroy();
     });
     this.ambient.forEach((sprite) => sprite.destroy());
+    this.companion?.sprite?.destroy();
+    this.companion?.label?.destroy();
+    this.companion = null;
     this.npcs = [];
     this.ambient = [];
 
@@ -450,6 +455,7 @@ export default class MainScene extends Phaser.Scene {
     this.player.setPosition(map.playerStart.x, map.playerStart.y);
     this.spawnNpcs(map);
     this.spawnAmbient(map);
+    this.spawnCompanion();
     this.showMessage(
       `${map.label}: 近づいて右下の声かけを選ぶ。相手のサインを見て無理なら離れる。`,
       2600
@@ -846,6 +852,34 @@ export default class MainScene extends Phaser.Scene {
     };
   }
 
+  spawnCompanion() {
+    if (!this.companionData?.textureKey || !this.textures.exists(this.companionData.textureKey)) return;
+    const baseKey = this.companionData.textureKey.replace(/-[01]$/, "");
+    const sprite = this.add
+      .sprite(this.player.x - 42, this.player.y + 28, this.companionData.textureKey)
+      .setScale(1.35)
+      .setDepth(9)
+      .setAlpha(0.92);
+    if (this.anims.exists(`${baseKey}-walk`)) sprite.play(`${baseKey}-walk`);
+    const label = this.add
+      .text(sprite.x, sprite.y - 42, "同行中", {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "13px",
+        color: "#ffd24f",
+        stroke: "#0a0a10",
+        strokeThickness: 4,
+      })
+      .setOrigin(0.5)
+      .setDepth(13);
+    this.companion = {
+      sprite,
+      label,
+      offsetX: -42,
+      offsetY: 28,
+    };
+    this.showMessage("会話成立。相手が同行中。ホテル入口へ向かおう。", 2200);
+  }
+
   makeSituation(base, traits, map) {
     if (traits.includes("イヤホン")) return { ...SITUATION_STATUS.music };
     if (traits.includes("歩くの速い")) return { ...SITUATION_STATUS.moving };
@@ -1224,6 +1258,7 @@ export default class MainScene extends Phaser.Scene {
     const move = this.getMoveVector();
     this.player.setVelocity(move.x * speed, move.y * speed);
     this.updatePlayerAnim();
+    this.updateCompanion();
     this.updateNpcs(time, delta);
     this.updateNearestNpc();
     this.updateHotelState();
@@ -1337,6 +1372,24 @@ export default class MainScene extends Phaser.Scene {
     }
   }
 
+  updateCompanion() {
+    if (!this.companion) return;
+    const targetX = this.player.x + this.companion.offsetX;
+    const targetY = this.player.y + this.companion.offsetY;
+    const sprite = this.companion.sprite;
+    sprite.x += (targetX - sprite.x) * 0.08;
+    sprite.y += (targetY - sprite.y) * 0.08;
+    if (Math.abs(targetX - sprite.x) > 2) sprite.setFlipX(targetX < sprite.x);
+    this.companion.label.setPosition(sprite.x, sprite.y - 42);
+  }
+
+  clearCompanion() {
+    this.companion?.sprite?.destroy();
+    this.companion?.label?.destroy();
+    this.companion = null;
+    this.companionData = null;
+  }
+
   updateHotelState() {
     const hotel = MAPS[this.currentMapKey].hotel;
     if (!hotel || this.hotelEntered) {
@@ -1372,6 +1425,7 @@ export default class MainScene extends Phaser.Scene {
     this.nearRing.clear();
     sfx.play("win");
     this.pushHistory("HOTEL IN");
+    this.clearCompanion();
     this.showHotelOverlay();
     this.showMessage("ホテルIN成功。", 2600);
   }
@@ -1718,6 +1772,7 @@ export default class MainScene extends Phaser.Scene {
           cleared: this.cleared,
           hotelEntered: this.hotelEntered,
           hotelReadyNotified: this.hotelReadyNotified,
+          companion: this.companionData,
         });
       });
       return;
@@ -2215,6 +2270,7 @@ export default class MainScene extends Phaser.Scene {
       cleared: this.cleared,
       hotelEntered: this.hotelEntered,
       hotelReadyNotified: this.hotelReadyNotified,
+      companion: this.companionData,
     });
   }
 }
