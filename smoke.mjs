@@ -122,6 +122,27 @@ function check(name, condition, detail = "") {
     `before=${Math.round(beforeMove.x)}, after=${Math.round(afterMove.x)}`);
   check("joystick releases after drag", afterMove.stick === 0, `stick=${afterMove.stick}`);
 
+  const beforeTap = await page.evaluate(() => {
+    const m = window.cityApproachGame.scene.keys.MainScene;
+    m.player.setPosition(380, 640);
+    m.tapTarget = null;
+    return { x: m.player.x, y: m.player.y };
+  });
+  await page.mouse.click(210, 430);
+  await page.waitForTimeout(520);
+  const afterTap = await page.evaluate(() => {
+    const m = window.cityApproachGame.scene.keys.MainScene;
+    return {
+      x: m.player.x,
+      y: m.player.y,
+      target: Boolean(m.tapTarget),
+      message: m.messageText?.text || "",
+    };
+  });
+  check("field tap sets move target", afterTap.target, JSON.stringify(afterTap));
+  check("field tap moves player", Math.abs(afterTap.x - beforeTap.x) > 8 || Math.abs(afterTap.y - beforeTap.y) > 8,
+    `before=${JSON.stringify(beforeTap)} after=${JSON.stringify(afterTap)}`);
+
   const hotelReady = await page.evaluate(() => {
     const m = window.cityApproachGame.scene.keys.MainScene;
     m.score = 110;
@@ -164,7 +185,7 @@ function check(name, condition, detail = "") {
   check("player and NPC character textures registered", anims.textures.length === 4, anims.textures.join(","));
   check("player-walk animation exists", anims.playerAnim);
   check("NPC walk animation exists", anims.npcAnim);
-  check("player initial texture is player-0", anims.playerTex === "player-0");
+  check("player uses walk texture", ["player-0", "player-1"].includes(anims.playerTex), `texture=${anims.playerTex}`);
   check("NPCs playing npc-walk", anims.npcAnimating);
 
   // Exercise the skip path

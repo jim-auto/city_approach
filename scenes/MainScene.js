@@ -374,6 +374,8 @@ export default class MainScene extends Phaser.Scene {
     this.joystickVector = new Phaser.Math.Vector2();
     this.keyboardVector = new Phaser.Math.Vector2();
     this.joystickPointerId = null;
+    this.pointerStart = null;
+    this.tapTarget = null;
     this.defaultJoystickCenter = { x: 88, y: 720 };
     this.nearNpc = null;
     this.companion = null;
@@ -396,6 +398,7 @@ export default class MainScene extends Phaser.Scene {
       .setDepth(-20);
     this.mapGraphics = this.add.graphics().setDepth(-10);
     this.nearRing = this.add.graphics().setDepth(5);
+    this.tapTargetGraphics = this.add.graphics().setDepth(7);
 
     this.player = this.physics.add
       .sprite(0, 0, "player-0")
@@ -1209,6 +1212,13 @@ export default class MainScene extends Phaser.Scene {
       if (this.handleHudPointer(pointer)) return;
       if (this.joystickPointerId === null) {
         this.joystickPointerId = pointer.id;
+        this.pointerStart = {
+          x: pointer.x,
+          y: pointer.y,
+          worldX: pointer.worldX,
+          worldY: pointer.worldY,
+          time: this.time.now,
+        };
         this.joystickCenter = { x: pointer.x, y: pointer.y };
         this.updateJoystick(pointer);
       }
@@ -1216,16 +1226,26 @@ export default class MainScene extends Phaser.Scene {
 
     this.input.on("pointermove", (pointer) => {
       if (pointer.id === this.joystickPointerId) {
+        this.tapTarget = null;
+        this.tapTargetGraphics.clear();
         this.updateJoystick(pointer);
       }
     });
 
     this.input.on("pointerup", (pointer) => {
       if (pointer.id === this.joystickPointerId) {
+        const moved = this.pointerStart
+          ? Phaser.Math.Distance.Between(pointer.x, pointer.y, this.pointerStart.x, this.pointerStart.y)
+          : 999;
+        const elapsed = this.pointerStart ? this.time.now - this.pointerStart.time : 999;
         this.joystickPointerId = null;
         this.joystickVector.set(0, 0);
         this.joystickCenter = { ...this.defaultJoystickCenter };
         this.drawJoystick();
+        if (moved <= 14 && elapsed <= 360) {
+          this.setTapTarget(pointer.worldX, pointer.worldY);
+        }
+        this.pointerStart = null;
       }
     });
   }
@@ -1275,6 +1295,7 @@ export default class MainScene extends Phaser.Scene {
     this.updateNearestNpc();
     this.updateHotelState();
     this.drawHotelGuide();
+    this.drawTapTarget();
     this.updateHud();
   }
 
@@ -1285,9 +1306,49 @@ export default class MainScene extends Phaser.Scene {
     if (this.cursors?.up?.isDown || this.wasd?.W?.isDown) this.keyboardVector.y -= 1;
     if (this.cursors?.down?.isDown || this.wasd?.S?.isDown) this.keyboardVector.y += 1;
     if (this.keyboardVector.lengthSq() > 0) {
+      this.tapTarget = null;
+      this.tapTargetGraphics.clear();
       return this.keyboardVector.normalize();
     }
+    if (this.joystickVector.lengthSq() > 0) {
+      return this.joystickVector;
+    }
+    if (this.tapTarget) {
+      const dx = this.tapTarget.x - this.player.x;
+      const dy = this.tapTarget.y - this.player.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist <= 12) {
+        this.tapTarget = null;
+        this.tapTargetGraphics.clear();
+        return new Phaser.Math.Vector2();
+      }
+      return new Phaser.Math.Vector2(dx / dist, dy / dist);
+    }
     return this.joystickVector;
+  }
+
+  setTapTarget(worldX, worldY) {
+    const x = Phaser.Math.Clamp(worldX, 18, WORLD.width - 18);
+    const y = Phaser.Math.Clamp(worldY, 18, WORLD.height - 18);
+    if (Phaser.Math.Distance.Between(this.player.x, this.player.y, x, y) < 18) {
+      this.showBigText("OK", "#57f5ff");
+      return;
+    }
+    this.tapTarget = { x, y };
+    this.showMessage("タップ地点へ移動", 900);
+    this.drawTapTarget();
+  }
+
+  drawTapTarget() {
+    if (!this.tapTarget) {
+      this.tapTargetGraphics.clear();
+      return;
+    }
+    const pulse = 0.55 + 0.35 * Math.sin(this.time.now / 140);
+    this.tapTargetGraphics.clear();
+    this.tapTargetGraphics.fillStyle(0x57f5ff, 0.12).fillCircle(this.tapTarget.x, this.tapTarget.y, 24);
+    this.tapTargetGraphics.lineStyle(3, 0x57f5ff, pulse).strokeCircle(this.tapTarget.x, this.tapTarget.y, 24);
+    this.tapTargetGraphics.lineStyle(2, 0xffffff, 0.7).strokeCircle(this.tapTarget.x, this.tapTarget.y, 13);
   }
 
   updatePlayerAnim() {
