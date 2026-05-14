@@ -1009,6 +1009,18 @@ export default class MainScene extends Phaser.Scene {
 
     this.messageBg = this.add.graphics().setScrollFactor(0).setDepth(50);
     this.progressGraphics = this.add.graphics().setScrollFactor(0).setDepth(49);
+    this.hotelGuideGraphics = this.add.graphics().setScrollFactor(0).setDepth(48);
+    this.hotelGuideText = this.add
+      .text(0, 0, "", {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: "13px",
+        color: "#ffd24f",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(49)
+      .setVisible(false);
     this.messageText = this.add
       .text(0, 0, "", {
         fontFamily: "system-ui, sans-serif",
@@ -1262,6 +1274,7 @@ export default class MainScene extends Phaser.Scene {
     this.updateNpcs(time, delta);
     this.updateNearestNpc();
     this.updateHotelState();
+    this.drawHotelGuide();
     this.updateHud();
   }
 
@@ -1503,6 +1516,62 @@ export default class MainScene extends Phaser.Scene {
     this.progressGraphics.fillStyle(this.cleared ? 0x57f5ff : 0xffd24f, 0.92)
       .fillRoundedRect(x + 2, y + 2, (width - 4) * progress, 8, 4);
     this.progressGraphics.lineStyle(1, 0xffffff, 0.24).strokeRoundedRect(x, y, width, 12, 6);
+  }
+
+  drawHotelGuide() {
+    if (!this.hotelGuideGraphics) return;
+    this.hotelGuideGraphics.clear();
+    this.hotelGuideText?.setVisible(false);
+    const hotel = MAPS[this.currentMapKey].hotel;
+    if (!hotel || this.hotelEntered || this.score < HOTEL_SCORE) return;
+
+    const camera = this.cameras.main;
+    const targetX = hotel.doorX - camera.scrollX;
+    const targetY = hotel.doorY - camera.scrollY;
+    const playerX = this.player.x - camera.scrollX;
+    const playerY = this.player.y - camera.scrollY;
+    const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, hotel.doorX, hotel.doorY);
+
+    const width = this.scale.width;
+    const height = this.scale.height;
+    const centerX = Phaser.Math.Clamp(targetX, 30, width - 30);
+    const centerY = Phaser.Math.Clamp(targetY, 84, height - 84);
+    const visible = targetX >= 20 && targetX <= width - 20 && targetY >= 84 && targetY <= height - 70;
+    const pulse = 0.65 + 0.25 * Math.sin(this.time.now / 180);
+    let textX = centerX;
+    let textY = centerY - 48;
+
+    if (visible) {
+      this.hotelGuideGraphics.lineStyle(4, 0xffd24f, pulse).strokeCircle(centerX, centerY, 34);
+      this.hotelGuideGraphics.lineStyle(2, 0xffffff, 0.7).strokeCircle(centerX, centerY, 24);
+      this.hotelGuideGraphics.fillStyle(0xffd24f, 0.12).fillCircle(centerX, centerY, 42);
+    } else {
+      const angle = Phaser.Math.Angle.Between(playerX, playerY, targetX, targetY);
+      const arrowX = Phaser.Math.Clamp(playerX + Math.cos(angle) * 96, 42, width - 42);
+      const arrowY = Phaser.Math.Clamp(playerY + Math.sin(angle) * 96, 112, height - 112);
+      this.hotelGuideGraphics.fillStyle(0x10131a, 0.78).fillCircle(arrowX, arrowY, 30);
+      this.hotelGuideGraphics.lineStyle(2, 0xffd24f, 0.9).strokeCircle(arrowX, arrowY, 30);
+      this.hotelGuideGraphics.fillStyle(0xffd24f, 0.95);
+      this.hotelGuideGraphics.fillTriangle(
+        arrowX + Math.cos(angle) * 22,
+        arrowY + Math.sin(angle) * 22,
+        arrowX + Math.cos(angle + 2.45) * 15,
+        arrowY + Math.sin(angle + 2.45) * 15,
+        arrowX + Math.cos(angle - 2.45) * 15,
+        arrowY + Math.sin(angle - 2.45) * 15
+      );
+      textX = arrowX;
+      textY = Phaser.Math.Clamp(arrowY - 44, 112, height - 94);
+    }
+
+    const label = `HOTEL ${Math.max(0, Math.round(dist))}m`;
+    const firstButtonY = this.actionButtons?.[0]?.y || height;
+    if (width < 560 && textX > width - 180 && textY > firstButtonY - 70) {
+      textX = Math.max(74, width - 250);
+    }
+    this.hotelGuideGraphics.fillStyle(0x10131a, 0.78).fillRoundedRect(textX - 58, textY - 15, 116, 30, 7);
+    this.hotelGuideGraphics.lineStyle(1, 0xffd24f, 0.6).strokeRoundedRect(textX - 58, textY - 15, 116, 30, 7);
+    this.hotelGuideText?.setText(label).setPosition(textX, textY).setVisible(true);
   }
 
   rankFor(score) {

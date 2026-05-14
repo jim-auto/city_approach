@@ -136,6 +136,19 @@ function check(name, condition, detail = "") {
   check("hotel ready triggers on score threshold", hotelReady.notified, hotelReady.message);
   check("hotel ready score crossed threshold", hotelReady.score >= 120, `score=${hotelReady.score}`);
 
+  const hotelGuide = await page.evaluate(() => {
+    const m = window.cityApproachGame.scene.keys.MainScene;
+    m.score = 125;
+    m.hotelEntered = false;
+    m.drawHotelGuide();
+    return {
+      visible: m.hotelGuideText?.visible,
+      label: m.hotelGuideText?.text || "",
+    };
+  });
+  check("hotel guide visible when ready", hotelGuide.visible, JSON.stringify(hotelGuide));
+  check("hotel guide distance label", hotelGuide.label.startsWith("HOTEL "), hotelGuide.label);
+
   const anims = await page.evaluate(() => {
     const g = window.cityApproachGame;
     const m = g.scene.keys.MainScene;
