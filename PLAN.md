@@ -1,5 +1,21 @@
 # city-approach Handoff Plan
 
+## Current update (2026-11-06)
+
+This update supersedes the older hotel, mobile layout and image notes below:
+
+- Mobile follow-up: safe-area-aware canvas size with ResizeObserver, portrait/landscape layouts for all four scenes, Japanese text reflow, 44px+ touch targets, shared touch cancellation/blur reset, multi-touch escort steering and 5-second response windows. The stale `pointer.wasHudButton` guard was removed so subsequent gestures work after tapping HUD controls. Native touch starts are canceled in a non-passive bubbling listener on the game host (after Phaser's canvas handler), preventing compatibility mouse clicks from hitting controls in the next scene. Escort result navigation uses pointerup and stops propagation. Do not move that host listener to capture phase: Phaser ignores already-defaultPrevented touch events. Custom hit rectangles for top-left-drawn Phaser Containers must start at their displayOrigin offsets; the mobile tests tap near the bottom-right edge of first conversation buttons to catch shifted hit areas.
+- `package.json` adds development-only Playwright tests; `npm test` starts its own test servers. `tests/mobile.mjs` covers Chromium/WebKit across six screen sizes, safe-area emulation, conversation/goal rotation, real touch interactions, full-route held touch in one case, and screenshots/JSON/Markdown reports in ignored `test-results/mobile/`. See README for setup and fixture scope.
+
+- TalkScene now includes Listen and response chains. A contextual proposal after building trust is required for cafe success.
+- A conversation result awarding at least 55 points starts `EscortScene` with the same companion texture, city, score, streak and history.
+- EscortScene now stops for four in-field walking conversations at x=650/1300/1950/2630. `explain` reduces doubt by 25 and resets the evasion chain; consecutive `evade` choices add 20/35/50 doubt and end the escort at 100. `check` can lead to a mutual stop when the companion is unsure. The final location question stays pending after evasion, so travel or repeated calls to `finish()` cannot bypass destination confirmation. Failure has no arrival bonus and resets the streak. Both successful and failed dialogue flows are covered with real touch input in the mobile suite, plus deterministic smoke checks for recovery, repeated taps and goal guards.
+- EscortScene is a horizontal walking finale (arrow/A/D keys, held touch buttons, or tap destination), with a following companion and parallax skyline. Reaching the hotel together awards 100 points once and shows a goal screen; the return button starts a new city encounter phase.
+- Field score alone no longer unlocks or completes a hotel visit. The 500-point cumulative CITY CLEAR remains a secondary milestone.
+- `assets/ai/characters-v4.png` is the current transparent 1448×1086 character atlas, generated with the built-in image generation tool. The first eleven cells of its 4×3 grid supply the player and ten NPCs. `characters.js` creates portrait textures and 48px field textures from the same atlas, preserving alpha. The exact prompt is saved beside the image. The v4 edit uses the v3 bottom-right man as the player reference, with black mash hair and an oversized T-shirt (no jacket). Women aged 20–24 have vocational-college, university, jirai-kei, cafe and sports styling. `CHARACTER_STYLE_LABELS` supplies appearance labels shown in the field HUD without changing the behavioral signs or success formula. Earlier atlases remain as references.
+- Smoke coverage includes conversation decisions, transition to escort, keyboard/touch/tap movement, horizontal camera, mobile resize, one-time goal reward, best score persistence and return to the city. Scene resize listeners are removed on shutdown.
+
+
 This file is a long-form handoff note for the next coding agent, especially Claude. It describes the current state of the project, why the implementation is shaped this way, what has already been verified, and what would be useful to improve next.
 
 Last updated: 2026-04-19 JST (+ SNES-JRPG visual polish: shaded characters, tile variation, CRT overlay)

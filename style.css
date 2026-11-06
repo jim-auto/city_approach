@@ -2,6 +2,7 @@ html,
 body {
   width: 100%;
   height: 100%;
+  height: 100dvh;
   margin: 0;
   padding: 0;
   overflow: hidden;
@@ -17,8 +18,15 @@ body {
 }
 
 #game {
-  width: 100%;
-  height: 100%;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  position: absolute;
+  top: var(--safe-top);
+  right: var(--safe-right);
+  bottom: var(--safe-bottom);
+  left: var(--safe-left);
   overflow: hidden;
   touch-action: none;
 }
@@ -28,10 +36,6 @@ canvas {
   width: 100%;
   height: 100%;
   image-rendering: pixelated;
-}
-
-#game {
-  position: relative;
 }
 
 #game::after {
@@ -54,4 +58,38 @@ canvas {
       rgba(0, 0, 0, 0.38) 100%
     );
   mix-blend-mode: multiply;
+}
+
+/* Native activation targets sit outside #game, whose touchstart suppression
+   is only needed for canvas controls. Phaser still paints the card artwork. */
+.game-native-buttons {
+  position: fixed;
+  z-index: 20;
+  pointer-events: none;
+}
+.game-native-button {
+  position: absolute;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: transparent;
+  font-size: 0;
+  touch-action: manipulation;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: rgba(120, 231, 217, 0.25);
+  cursor: pointer;
+}
+.game-native-button:active:not(:disabled) {
+  background: rgba(120, 231, 217, 0.15);
+  box-shadow: inset 0 0 0 2px #78e7d9;
+}
+.game-native-button:focus-visible {
+  outline: 3px solid #78e7d9;
+  outline-offset: 2px;
+}
+.game-native-button:disabled {
+  cursor: default;
 }

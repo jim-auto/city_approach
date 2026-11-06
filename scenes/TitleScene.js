@@ -5,8 +5,8 @@ const TUTORIAL_LINES = [
   "街を歩く  →  状態を見る  →  オープナーを選ぶ",
   "防御サインが強い相手は「離れる」が正解",
   "共感 / 状況いじり / 持ち物 / ユーモア賭け",
-  "会話では 共感 / ツッコミ / 提案 を選択",
-  "Goal 500点で CITY CLEAR",
+  "会話は「聞く」→ 返答で信頼 → 提案",
+  "同行したら横スクロール！ホテルがゴール",
 ];
 
 export default class TitleScene extends Phaser.Scene {
@@ -86,6 +86,7 @@ export default class TitleScene extends Phaser.Scene {
     this.input.on("pointerdown", () => this.startGame());
     this.input.keyboard?.on("keydown", () => this.startGame());
     this.scale.on("resize", this.layout, this);
+    this.events.once("shutdown", () => this.scale.off("resize", this.layout, this));
 
     this.tweens.add({
       targets: this.startText,
@@ -117,18 +118,29 @@ export default class TitleScene extends Phaser.Scene {
     }
 
     const cx = w / 2;
-    const mobile = w < 430;
-    const iconSize = Math.min(mobile ? 104 : 132, h * 0.17);
-    this.iconImage
-      .setPosition(cx, h * 0.105)
-      .setDisplaySize(iconSize, iconSize);
-    this.titleText.setPosition(cx, h * 0.235).setFontSize(mobile ? 34 : 54);
-    this.subText.setPosition(cx, h * 0.305).setWordWrapWidth(Math.min(640, w - 40));
-    this.tutorialText.setPosition(cx, h * 0.46).setFontSize(mobile ? 14 : 17);
-    this.bestText.setPosition(cx, h * 0.68);
-    this.diffButton.setPosition(cx, h * 0.79);
-    this.diffText.setPosition(cx, h * 0.79);
-    this.startText.setPosition(cx, h * 0.93);
+    const landscape = w > h && h < 600;
+    const mobile = w < 600 || landscape;
+    if (landscape) {
+      const left = w * 0.23;
+      this.iconImage.setPosition(left, h * 0.28).setDisplaySize(86, 86);
+      this.titleText.setPosition(left, h * 0.52).setFontSize(Math.min(30, w * 0.039));
+      this.subText.setPosition(left, h * 0.68).setFontSize(12).setWordWrapWidth(w * 0.42);
+      this.tutorialText.setPosition(w * 0.72, h * 0.25).setFontSize(w < 700 ? 11 : 14).setLineSpacing(5);
+      this.bestText.setPosition(w * 0.72, h * 0.52).setFontSize(16);
+      this.diffButton.setPosition(w * 0.72, h * 0.68);
+      this.diffText.setPosition(w * 0.72, h * 0.68);
+      this.startText.setPosition(w * 0.72, h - 25).setFontSize(20);
+    } else {
+      const iconSize = Math.min(104, h * 0.15);
+      this.iconImage.setPosition(cx, h * 0.105).setDisplaySize(iconSize, iconSize);
+      this.titleText.setPosition(cx, h * 0.235).setFontSize(Math.min(mobile ? 34 : 54, (w - 28) / 8.9));
+      this.subText.setPosition(cx, h * 0.305).setFontSize(mobile ? 13 : 15).setWordWrapWidth(w - 32);
+      this.tutorialText.setPosition(cx, h * 0.48).setFontSize(w < 360 ? 12 : mobile ? 14 : 17).setLineSpacing(8);
+      this.bestText.setPosition(cx, h * 0.68).setFontSize(18);
+      this.diffButton.setPosition(cx, h * 0.79);
+      this.diffText.setPosition(cx, h * 0.79);
+      this.startText.setPosition(cx, h - 30).setFontSize(22);
+    }
   }
 
   startGame() {

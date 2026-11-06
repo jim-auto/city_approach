@@ -3,13 +3,13 @@
 //   "pixel" — chibi pixel art drawn with Canvas 2D fillRect, {base, shadow,
 //             highlight} material ramps, 3×3 sparkly eyes, smile, blush.
 //   "icon"  — AI-generated character artwork loaded from assets/ai/, with the
-//             white background chroma-keyed to transparent at build time.
+//             transparent atlas shared by field sprites and conversation portraits.
 // Both modes emit the same texture keys so the rest of the scene doesn't
 // branch on mode.
 
 import { getSpriteMode } from "./storage.js";
 
-const AI_SOURCE_KEYS = {
+const BASE_AI_SOURCE_KEYS = {
   player: "ai_player_raw",
   "npc-waiting": "ai_npc_waiting_raw",
   "npc-busy": "ai_npc_busy_raw",
@@ -23,8 +23,39 @@ const AI_SOURCE_KEYS = {
   "npc-jogger": "ai_npc_jogger_raw",
 };
 
+// Recoloured artwork is shared by field sprites, portraits, and the escort.
+export const NPC_COLORWAYS = [
+  { key: "original", label: "オリジナル", atlas: "character-atlas-v4", path: "assets/ai/characters-v4.png" },
+  { key: "pastel", label: "パステル", atlas: "character-colors-pastel", path: "assets/ai/characters-colors-pastel.png" },
+  { key: "street", label: "ストリート", atlas: "character-colors-street", path: "assets/ai/characters-colors-street.png" },
+  { key: "chic", label: "シック", atlas: "character-colors-chic", path: "assets/ai/characters-colors-chic.png" },
+];
+const AI_SOURCE_KEYS = { ...BASE_AI_SOURCE_KEYS };
+for (const color of NPC_COLORWAYS.slice(1)) {
+  for (const [key, source] of Object.entries(BASE_AI_SOURCE_KEYS)) {
+    if (key !== "player") AI_SOURCE_KEYS[`${key}-${color.key}`] = `${source}_${color.key}`;
+  }
+}
+
+export function npcColorKey(base, colorKey = "original") {
+  return colorKey === "original" ? base : `${base}-${colorKey}`;
+}
+
+export const CHARACTER_STYLE_LABELS = {
+  "npc-waiting": "美容専門学生",
+  "npc-busy": "デザイン専門学生",
+  "npc-friends": "地雷系",
+  "npc-eye": "大学生",
+  "npc-earphones": "音楽専門学生",
+  "npc-tourist": "服飾専門学生",
+  "npc-student": "大学生",
+  "npc-reader": "文系大学生",
+  "npc-cafe": "カフェバイト",
+  "npc-jogger": "スポーツ学生",
+};
+
 export function aiSourceKeyFor(key) {
-  return AI_SOURCE_KEYS[key] || AI_SOURCE_KEYS.npc;
+  return AI_SOURCE_KEYS[key] || BASE_AI_SOURCE_KEYS["npc-waiting"];
 }
 
 const PALETTES = {
@@ -209,28 +240,31 @@ function renderAiFrame(scene, key) {
   canvas.width = AI_CANVAS_SIZE;
   canvas.height = AI_CANVAS_SIZE;
   const ctx = canvas.getContext("2d");
-  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingEnabled = false;
   ctx.drawImage(img, 0, 0, AI_CANVAS_SIZE, AI_CANVAS_SIZE);
-  // Chroma-key near-white pixels to transparent so characters blend into the
-  // dark map instead of sitting on a white card.
-  const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const d = data.data;
-  for (let i = 0; i < d.length; i += 4) {
-    const r = d[i];
-    const g = d[i + 1];
-    const b = d[i + 2];
-    if (r > 232 && g > 232 && b > 232) {
-      d[i + 3] = 0;
-    } else if (r > 210 && g > 210 && b > 210) {
-      // Soft edge fade so there's no hard outline from the chroma-key.
-      d[i + 3] = Math.max(0, d[i + 3] - 128);
-    }
-  }
-  ctx.putImageData(data, 0, 0);
   return canvas;
 }
 
 export function buildCharacterTextures(scene) {
+  for (const color of NPC_COLORWAYS) {
+    if (!scene.textures.exists(color.atlas)) continue;
+    const atlas = scene.textures.get(color.atlas).getSourceImage();
+    const cellWidth = Math.floor(atlas.width / 4);
+    const cellHeight = Math.floor(atlas.height / 3);
+    Object.entries(BASE_AI_SOURCE_KEYS).forEach(([key, baseSource], index) => {
+      // The protagonist always uses the original charcoal T-shirt artwork.
+      if (key === "player" && color.key !== "original") return;
+      const sourceKey = color.key === "original" ? baseSource : `${baseSource}_${color.key}`;
+      if (scene.textures.exists(sourceKey)) return;
+      const canvas = document.createElement("canvas");
+      canvas.width = cellWidth;
+      canvas.height = cellHeight;
+      canvas.getContext("2d").drawImage(atlas,
+        (index % 4) * (atlas.width / 4), Math.floor(index / 4) * (atlas.height / 3),
+        atlas.width / 4, atlas.height / 3, 0, 0, cellWidth, cellHeight);
+      scene.textures.addCanvas(sourceKey, canvas);
+    });
+  }
   const modeKey = getSpriteMode().key;
   const targets = modeKey === "icon"
     ? Object.keys(AI_SOURCE_KEYS)

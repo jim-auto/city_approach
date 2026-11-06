@@ -1,0 +1,25 @@
+Generated with the built-in image_gen tool. Transparent background enabled.
+Edit target: assets/ai/characters-v2.png
+Final prompt:
+Use case: style-transfer.
+Asset type: production transparent character sprite atlas edit for CITY APPROACH.
+Input image 1 is the EDIT TARGET, the existing 4-column by 3-row atlas.
+Primary request: redesign the player to read immediately as a confident Japanese street flirt / nanpa guy, and redesign the ten women to read as stylish adult Japanese women around age twenty, specifically ages 20–24. Make their fashion and faces more grown-up and contemporary than the reference's overly childlike chibis.
+Invariants: KEEP the exact 4 equal columns x 3 equal rows grid, character ORDER, full-body standing front-facing game-icon composition, each subject isolated within its own cell with transparent margins, and genuinely TRANSPARENT background. Preserve atlas aspect ratio 4:3, preferably exact 1448x1086 pixels. One character per cell. No background, cell borders, text, logos or watermark.
+Style: original clean 16-bit-inspired pixel illustration, strong dark outlines and crisp readable silhouettes, polished subtle shading, warm skin tones. Roughly four-head-tall stylized adult proportions with longer legs, less oversized infant-like heads, narrower almond-shaped eyes, subtle adult facial features. Readable downsampled to 48 pixels. Full body and both feet visible. Align feet at the same relative height in every cell, near 94% of cell height, leave top padding. Keep characters comparably sized.
+ROW 1 left to right:
+1 MAIN PLAYER, adult Japanese man age 26: styled ash-brown swept-back center-part hair, confident relaxed half-smile, one small silver earring, slim gold necklace, fashionable short black open-collar shirt under a light beige casual blazer with rolled sleeves, tailored black trousers, clean black loafers, silver watch. One hand casually in pocket and other hand lifted in an easy conversational greeting. Good grooming, charismatic social confidence, slightly flashy city-nightlife fashion. He must look like a streetwise flirt rather than the original innocent cyan-jacket boy. Keep a small cyan watch strap accent for player identification.
+2 waiting woman age 21: glossy chestnut long bob, fitted dusty pink cropped jacket, white top, charcoal high-waisted skirt, small shoulder bag, smartphone.
+3 busy woman age 23: dark ponytail with face-framing strands, mustard lightweight trench, fitted top and dark tailored pants, smartphone.
+4 outgoing woman age 22: auburn softly waved long hair, coral fitted cardigan, white top and high-waisted straight jeans, small hoop earrings, expressive friendly gesture.
+ROW 2:
+5 eye-contact woman age 21: ash-blonde shoulder-length hair, lavender cropped jacket, white ribbed top, black high-waisted trousers, small handbag.
+6 headphones woman age 20: dark long hair, modern over-ear headphones, teal fitted zip hoodie over white top, dark wide-leg jeans, sneakers.
+7 tourist woman age 23: brown shoulder-length hair, orange cropped utility jacket, neutral cargo trousers, small camera and shoulder bag; no oversized childlike hat.
+8 adult university student age 21: black shoulder-length hair, mint cardigan, cream top, dark midi skirt, tote bag and notebook, contemporary university campus fashion, no school uniform.
+ROW 3:
+9 reader woman age 24: long dark hair, thin round glasses, burgundy knit top, charcoal pleated midi skirt, crossbody bag, closed book.
+10 cafe woman age 22: warm brown bob with wispy fringe, cream short trench, black fitted top, beige high-waisted trousers, takeaway coffee.
+11 jogger woman age 21: dark ponytail, cobalt blue cropped sports zip jacket over athletic top, black leggings, running shoes.
+12 secondary adult male passerby age 25: dark textured hair, gray bomber jacket and black casual trousers, visually distinct from the beige-blazer player.
+All eleven primary characters should have distinct adult personalities conveyed by hair, expression and clothing while remaining a coherent sprite set. Preserve each NPC's identifying prop and main clothing color from the reference. No sexualized posing; everyday street-fashion game characters.

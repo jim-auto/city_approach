@@ -4,8 +4,10 @@
 // Exit code 0 on pass, 1 on any failure.
 
 import { chromium } from "playwright";
+import { startTestServer } from "./tests/helpers.mjs";
 
-const URL = process.env.SMOKE_URL || "http://127.0.0.1:8000/";
+const server = await startTestServer();
+const URL = server.url;
 const failures = [];
 
 function check(name, condition, detail = "") {
@@ -54,8 +56,8 @@ function check(name, condition, detail = "") {
     };
   });
   check("game instance exists", title.ok);
-  check("three scenes registered",
-    title.keys?.includes("TitleScene") && title.keys.includes("MainScene") && title.keys.includes("TalkScene"),
+  check("four scenes registered",
+    title.keys?.includes("TitleScene") && title.keys.includes("MainScene") && title.keys.includes("TalkScene") && title.keys.includes("EscortScene"),
     `keys=${title.keys?.join(",")}`);
   check("title scene active on load", title.active === "TitleScene", `active=${title.active}`);
   check("title text set", title.titleText === "CITY APPROACH");
@@ -75,6 +77,7 @@ function check(name, condition, detail = "") {
       buttonLabels: m.actionButtons.map((b) => b.list.find((c) => c.text)?.text),
       hasSkipFn: typeof m.respectfullySkip === "function",
       npcCount: m.npcs?.length ?? 0,
+      hasStyleLabels: m.npcs?.every((n) => typeof n.profile.styleLabel === "string" && n.profile.styleLabel.length > 0),
       historyIsArray: Array.isArray(m.history),
       hasIcons: m.npcs?.every((n) => n.icons?.type === "Graphics"),
       diffMult: m.difficulty?.mult,
@@ -98,6 +101,7 @@ function check(name, condition, detail = "") {
   check("skip button present", main.buttonLabels?.includes("離れる"));
   check("respectfullySkip defined", main.hasSkipFn);
   check("NPCs spawned", main.npcCount > 0);
+  check("NPC identities have style labels", main.hasStyleLabels);
   check("history initialised", main.historyIsArray);
   check("pixel icon Graphics attached", main.hasIcons);
   check("difficulty multiplier loaded", typeof main.diffMult === "number");
@@ -129,7 +133,11 @@ function check(name, condition, detail = "") {
     return { x: m.player.x, y: m.player.y };
   });
   await page.mouse.click(210, 430);
-  await page.waitForTimeout(520);
+  // Wait for observable movement, rather than assuming a headless render speed.
+  await page.waitForFunction(({ x, y }) => {
+    const p = window.cityApproachGame.scene.keys.MainScene.player;
+    return Math.abs(p.x - x) > 8 || Math.abs(p.y - y) > 8;
+  }, beforeTap, { timeout: 5000 });
   const afterTap = await page.evaluate(() => {
     const m = window.cityApproachGame.scene.keys.MainScene;
     return {
@@ -143,32 +151,14 @@ function check(name, condition, detail = "") {
   check("field tap moves player", Math.abs(afterTap.x - beforeTap.x) > 8 || Math.abs(afterTap.y - beforeTap.y) > 8,
     `before=${JSON.stringify(beforeTap)} after=${JSON.stringify(afterTap)}`);
 
-  const hotelReady = await page.evaluate(() => {
+  const noShortcut = await page.evaluate(() => {
     const m = window.cityApproachGame.scene.keys.MainScene;
-    m.score = 110;
-    m.hotelReadyNotified = false;
-    m.awardScore(15, "test");
-    return {
-      score: m.score,
-      notified: m.hotelReadyNotified,
-      message: m.messageText?.text || "",
-    };
+    m.score = 500;
+    m.player.setPosition(585, 1088);
+    m.updateHotelState();
+    return !m.hotelEntered;
   });
-  check("hotel ready triggers on score threshold", hotelReady.notified, hotelReady.message);
-  check("hotel ready score crossed threshold", hotelReady.score >= 120, `score=${hotelReady.score}`);
-
-  const hotelGuide = await page.evaluate(() => {
-    const m = window.cityApproachGame.scene.keys.MainScene;
-    m.score = 125;
-    m.hotelEntered = false;
-    m.drawHotelGuide();
-    return {
-      visible: m.hotelGuideText?.visible,
-      label: m.hotelGuideText?.text || "",
-    };
-  });
-  check("hotel guide visible when ready", hotelGuide.visible, JSON.stringify(hotelGuide));
-  check("hotel guide distance label", hotelGuide.label.startsWith("HOTEL "), hotelGuide.label);
+  check("field score alone does not complete hotel goal", noShortcut);
 
   const anims = await page.evaluate(() => {
     const g = window.cityApproachGame;
@@ -222,6 +212,7 @@ function check(name, condition, detail = "") {
     await new Promise((r) => setTimeout(r, 900));
     const t = g.scene.getScene("TalkScene");
     return {
+      choiceLabels: t.choiceButtons.map((b) => b.list.find((c) => c.text !== undefined)?.text),
       linesCount: t?.lines?.length ?? 0,
       allHaveCue: (t?.lines || []).every((l) => typeof l.cue === "string" && l.cue.length > 0),
       hasAnyWeak: (t?.lines || []).some((l) => l.weak === true),
@@ -229,94 +220,227 @@ function check(name, condition, detail = "") {
       talkFxReady: typeof t?.pulseFeedback === "function" && typeof t?.drawResultPanel === "function",
     };
   });
+  check("four concrete reply flips", talk.choiceLabels.length === 4 && talk.choiceLabels.every(label => label.length > 6));
   check("TalkScene produced at least 3 lines", talk.linesCount >= 3, `got ${talk.linesCount}`);
   check("every line has a cue", talk.allHaveCue);
   check("at least one weak line exists", talk.hasAnyWeak);
   check("TalkScene result score text exists", talk.resultScoreTextExists);
   check("TalkScene effects available", talk.talkFxReady);
 
-  const companion = await page.evaluate(() => {
-    const g = window.cityApproachGame;
-    g.scene.start("MainScene", {
-      mapKey: "nagoya",
-      score: 125,
-      history: [],
-      companion: {
-        profile: { type: "目線あり系", traits: ["目が合う"], interest: 70 },
-        textureKey: "npc-eye-0",
-        portraitTextureKey: "ai_npc_eye_raw",
-      },
-    });
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const m = g.scene.keys.MainScene;
-        const before = { x: m.companion?.sprite?.x, y: m.companion?.sprite?.y };
-        m.player.setPosition(m.player.x + 80, m.player.y + 20);
-        m.updateCompanion();
-        resolve({
-          exists: Boolean(m.companion?.sprite?.active),
-          label: m.companion?.label?.text,
-          moved: m.companion?.sprite?.x !== before.x || m.companion?.sprite?.y !== before.y,
-        });
-      }, 650);
-    });
+  const flipChecks = await page.evaluate(() => {
+    const t = window.cityApproachGame.scene.keys.TalkScene;
+    const lines = t.buildLines(t.profile, "kabukicho");
+    const validHands = lines.length === 5 && lines.every(l => l.cards.length === 4 && l.correct.length === 1 && l.cards.some(c => c.key === l.correct[0]));
+    const uniqueConcerns = new Set(lines.slice(0, 4).map(l => l.concern)).size === 4;
+    const reset = (line, resolved = []) => {
+      t.time.removeAllEvents(); t.lines = [line]; t.lineIndex = 0; t.choiceLocked = false; t.resultShown = false;
+      t.favor = 85; t.discomfort = 20; t.responseChain = 0; t.invitationAccepted = false; t.resolvedConcerns = new Set(resolved);
+    };
+    const concern = lines[0];
+    const wrongListen = { ...concern, correct: ["empathy"] };
+    reset(wrongListen); t.choose("listen");
+    const wrongCardCostsTrust = t.favor === 80 && t.discomfort === 42 && t.resolvedConcerns.size === 0;
+    reset({ ...concern, correct: ["proposal"] }); t.choose("proposal");
+    const noEarlyInvite = !t.resultShown && !t.invitationAccepted && t.resolvedConcerns.size === 1;
+    reset(lines.at(-1), ["safety", "time"]); t.choose("proposal");
+    const unresolvedBlocksInvite = !t.invitationAccepted;
+    reset(lines.at(-1), ["safety", "time", "friend"]); t.choose("proposal");
+    const earnedInvite = t.invitationAccepted && t.resultBonus === 120;
+    t.time.removeAllEvents();
+    return { validHands, uniqueConcerns, wrongCardCostsTrust, noEarlyInvite, unresolvedBlocksInvite, earnedInvite };
   });
-  check("companion spawns after successful talk", companion.exists, JSON.stringify(companion));
-  check("companion label shown", companion.label === "同行中", `label=${companion.label}`);
-  check("companion follows player", companion.moved, JSON.stringify(companion));
+  for (const [name, passed] of Object.entries(flipChecks)) check(`reply flips: ${name}`, passed);
 
-  const hotel = await page.evaluate(() => {
-    const g = window.cityApproachGame;
-    g.scene.start("MainScene", {
-      mapKey: "kabukicho",
-      score: 120,
-      history: [],
-      companion: {
-        profile: { type: "目線あり系", traits: ["目が合う"], interest: 70 },
-        textureKey: "npc-eye-0",
-        portraitTextureKey: "ai_npc_eye_raw",
-      },
-    });
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const m = g.scene.keys.MainScene;
-        m.player.setPosition(162, 660);
-        m.updateHotelState();
-        resolve({
-          entered: m.hotelEntered,
-          companionGone: !m.companion,
-          history: m.history.join(" / "),
-          message: m.messageText?.text || "",
-        });
-      }, 650);
-    });
+  const decisions = await page.evaluate(() => {
+    const t = window.cityApproachGame.scene.keys.TalkScene;
+    const reset = (line, favor = 50, discomfort = 20) => {
+      t.time.removeAllEvents();
+      t.lines = [line];
+      t.lineIndex = 0;
+      t.favor = favor;
+      t.discomfort = discomfort;
+      t.choiceLocked = false;
+      t.resultShown = false;
+      t.invitationAccepted = false;
+      t.responseChain = 0;
+      t.bestResponseChain = 0;
+    };
+    const observe = { text: "今ちょっと手短になら", weak: false, correct: [], cue: "時間制約" };
+    const reply = { text: "時間あるし", weak: true, correct: ["empathy"], cue: "余白" };
+    const invite = { text: "このあとどうしよう", weak: true, correct: ["proposal"], cue: "次の予定" };
+    reset(observe);
+    t.choose("listen");
+    const listeningBuildsTrust = t.favor === 60 && t.discomfort === 14;
+    t.choose("listen");
+    const doubleTapIgnored = t.favor === 60;
+    reset(reply);
+    t.choose("empathy");
+    t.choiceLocked = false;
+    t.choose("empathy");
+    const chainBonus = t.favor === 93 && t.responseChain === 2;
+    t.choiceLocked = false;
+    t.choose("empathy");
+    const noAutomaticWin = t.favor === 100 && !t.resultShown;
+    reset(reply);
+    t.choose("listen");
+    const recovery = t.favor === 50 && t.discomfort === 16;
+    reset(invite, 67);
+    t.choose("proposal");
+    const earlyProposalDoesNotWin = !t.resultShown;
+    reset(invite, 80, 60);
+    t.choose("proposal");
+    const highDiscomfortBlocksProposal = !t.resultShown;
+    reset(invite, 68, 59);
+    t.choose("proposal");
+    const contextualProposalWins = t.resultShown && t.resultBonus === 120;
+    reset(reply, 50, 95);
+    t.timeoutLine();
+    const timeoutEndsFailure = t.resultShown && t.resultBonus === 0;
+    const profiles = [[], ["スマホ"], ["イヤホン", "スマホ", "目が合う", "友達といる", "歩くの速い", "観光中"]];
+    const closingGuaranteed = profiles.every((traits) => ["nagoya", "kabukicho"].every((map) => {
+      const lines = t.buildLines({ traits }, map);
+      return lines.length <= 6 && lines.at(-1).correct.includes("proposal") && lines.filter((l) => l.weak).length >= 2;
+    }));
+    t.time.removeAllEvents();
+    return { listeningBuildsTrust, doubleTapIgnored, chainBonus, noAutomaticWin, recovery,
+      earlyProposalDoesNotWin, highDiscomfortBlocksProposal, contextualProposalWins,
+      timeoutEndsFailure, closingGuaranteed };
   });
-  check("hotel in triggers at door", hotel.entered, hotel.message);
-  check("hotel in clears companion", hotel.companionGone, JSON.stringify(hotel));
-  check("hotel in writes history", hotel.history.includes("HOTEL IN"), hotel.history);
+  for (const [name, passed] of Object.entries(decisions)) check(`conversation: ${name}`, passed);
 
-  const nagoyaHotel = await page.evaluate(() => {
-    const g = window.cityApproachGame;
-    g.scene.start("MainScene", {
-      mapKey: "nagoya",
-      score: 120,
-      history: [],
-    });
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const m = g.scene.keys.MainScene;
-        m.player.setPosition(585, 1088);
-        m.updateHotelState();
-        resolve({
-          entered: m.hotelEntered,
-          history: m.history.join(" / "),
-        });
-      }, 650);
-    });
+  // Exercise the real result button path, including run data transfer.
+  await page.evaluate(() => {
+    const t = window.cityApproachGame.scene.keys.TalkScene;
+    t.time.removeAllEvents();
+    t.favor = 80;
+    t.discomfort = 10;
+    t.showFinal(true);
+    t.returnToField();
   });
-  check("nagoya hotel in triggers", nagoyaHotel.entered, nagoyaHotel.history);
+  await page.waitForFunction(() => window.cityApproachGame.scene.isActive("EscortScene"));
+  const escort = await page.evaluate(() => {
+    const e = window.cityApproachGame.scene.keys.EscortScene;
+    return { partner: e.partner.active, score: e.score, finished: e.finished,
+      atlas: e.textures.exists("character-atlas-v4"),
+      cellWidth: e.textures.get("character-atlas-v4").getSourceImage().width / 4,
+      sourceWidth: e.textures.get("ai_player_raw").getSourceImage().width };
+  });
+  check("successful conversation starts escort", escort.partner && !escort.finished);
+  check("generated atlas supplies character portraits", escort.atlas && escort.sourceWidth > 0 && escort.sourceWidth === escort.cellWidth);
+  const walkDialogue = await page.evaluate(async () => {
+    const g = window.cityApproachGame;
+    const e = g.scene.keys.EscortScene;
+    const score = e.score;
+    e.finish();
+    const unansweredCannotWin = !e.finished;
+    e.beginConversation();
+    const firstQuestion = e.dialogText.text.includes("どこ行くんですか");
+    const x = e.player.x;
+    e.direction = 1;
+    e.update(e.time.now, 50);
+    const stopsForReply = e.player.x === x;
+    e.chooseWalkReply("evade");
+    const firstEvade = e.doubt === 20 && !e.finished;
+    e.chooseWalkReply("evade");
+    const doubleTapIgnored = e.doubt === 20 && e.totalEvasions === 1;
+    e.closeConversation();
+    e.beginConversation();
+    e.chooseWalkReply("evade");
+    const escalating = e.doubt === 55;
+    e.closeConversation();
+    e.beginConversation();
+    e.chooseWalkReply("evade");
+    const breaksAfterThree = e.finished && e.outcome === "breakdown" && e.score === score;
+    e.finish();
+    const noGoalAfterFailure = e.score === score;
+    const data = e.runData;
+    e.scene.restart(data);
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    const fresh = g.scene.keys.EscortScene;
+    fresh.beginConversation();
+    fresh.chooseWalkReply("evade");
+    fresh.closeConversation();
+    fresh.beginConversation();
+    fresh.chooseWalkReply("explain");
+    const repairWorks = fresh.doubt === 0 && fresh.evasionStreak === 0;
+    fresh.closeConversation();
+    fresh.beginConversation();
+    fresh.chooseWalkReply("explain");
+    fresh.closeConversation();
+    fresh.beginConversation();
+    fresh.chooseWalkReply("evade");
+    const finalNotBypassed = !fresh.destinationConfirmed && fresh.questionsAnswered === 3;
+    fresh.closeConversation();
+    fresh.beginConversation();
+    fresh.chooseWalkReply("explain");
+    fresh.closeConversation();
+    return { unansweredCannotWin, firstQuestion, stopsForReply, firstEvade, doubleTapIgnored,
+      escalating, breaksAfterThree, noGoalAfterFailure, repairWorks, finalNotBypassed,
+      consentConfirmed: fresh.destinationConfirmed && fresh.questionsAnswered === 4 };
+  });
+  for (const [name, passed] of Object.entries(walkDialogue)) check(`walk dialogue: ${name}`, passed);
+
+  const startX = await page.evaluate(() => window.cityApproachGame.scene.keys.EscortScene.player.x);
+  await page.keyboard.down("ArrowRight");
+  await page.waitForFunction((x) => window.cityApproachGame.scene.keys.EscortScene.player.x > x + 110, startX);
+  await page.keyboard.up("ArrowRight");
+  const walked = await page.evaluate(() => {
+    const e = window.cityApproachGame.scene.keys.EscortScene;
+    return { x: e.player.x, companionX: e.partner.x };
+  });
+  check("escort keyboard moves right", walked.x > startX + 100);
+  check("escort partner follows", walked.companionX > startX - 40 && walked.companionX < walked.x);
+  await page.evaluate(() => {
+    const e = window.cityApproachGame.scene.keys.EscortScene;
+    e.player.x = 1500;
+    e.partner.x = 1432;
+  });
+  await page.waitForTimeout(500);
+  check("escort camera scrolls horizontally", await page.evaluate(() => window.cityApproachGame.scene.keys.EscortScene.cameras.main.scrollX > 100));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForTimeout(200);
+  const beforeTouch = await page.evaluate(() => window.cityApproachGame.scene.keys.EscortScene.player.x);
+  await page.mouse.move(325, 782);
+  await page.mouse.down();
+  await page.waitForFunction((x) => window.cityApproachGame.scene.keys.EscortScene.player.x > x + 50, beforeTouch);
+  await page.mouse.up();
+  const touch = await page.evaluate(() => {
+    const e = window.cityApproachGame.scene.keys.EscortScene;
+    return { x: e.player.x, direction: e.direction, ground: e.groundY };
+  });
+  check("mobile right button moves and releases", touch.x > beforeTouch + 40 && touch.direction === 0);
+  check("escort resizes to mobile ground", touch.ground === Math.round(844 * 0.69));
+  const tapStart = await page.evaluate(() => window.cityApproachGame.scene.keys.EscortScene.player.x);
+  await page.mouse.click(365, 400);
+  await page.waitForFunction((x) => Math.abs(window.cityApproachGame.scene.keys.EscortScene.player.x - x) > 5, tapStart);
+  check("escort field tap moves", true);
+  const goal = await page.evaluate(() => {
+    const e = window.cityApproachGame.scene.keys.EscortScene;
+    e.releaseAll();
+    const before = e.score;
+    e.player.x = 2890;
+    e.partner.x = 2822;
+    e.update(e.time.now, 16);
+    e.finish();
+    return { finished: e.finished, bonus: e.score - before, button: e.returnButton.visible,
+      best: Number(localStorage.getItem("city_approach_best")) >= e.score };
+  });
+  check("hotel goal awards bonus exactly once", goal.finished && goal.bonus === 100 && goal.button);
+  check("hotel goal saves best", goal.best);
+  const returnPoint = await page.evaluate(() => {
+    const b = window.cityApproachGame.scene.keys.EscortScene.returnButton;
+    return { x: b.x, y: b.y };
+  });
+  await page.mouse.click(returnPoint.x, returnPoint.y);
+  await page.waitForFunction(() => window.cityApproachGame.scene.isActive("MainScene"));
+  const returned = await page.evaluate(() => {
+    const m = window.cityApproachGame.scene.keys.MainScene;
+    return m.companion === null && m.history.includes("HOTEL GOAL");
+  });
+  check("goal returns to city with history", returned);
 
   await browser.close();
+  await server.close();
 
   if (failures.length) {
     console.log(`\n${failures.length} failure(s)`);

@@ -1,7 +1,10 @@
+import { createNativeButtons } from "../native-buttons.js";
+import { buildFlipLines } from "../conversation-flips.js";
 import { sfx } from "../sfx.js";
 import { DIFFICULTIES, getDifficulty } from "../storage.js";
 
 const CHOICES = [
+  { key: "listen", label: "聞く", color: 0x3b4652 },
   { key: "empathy", label: "共感", color: 0x24544f },
   { key: "tsukkomi", label: "ツッコミ", color: 0x5d3340 },
   { key: "proposal", label: "提案", color: 0x38496a },
@@ -34,6 +37,10 @@ export default class TalkScene extends Phaser.Scene {
       DIFFICULTIES.find((d) => d.key === data.difficulty) || getDifficulty();
     this.favor = 42 + Math.round((this.profile.interest - 50) * 0.35);
     this.discomfort = this.mapKey === "kabukicho" ? 24 : 14;
+    this.responseChain = 0;
+    this.bestResponseChain = 0;
+    this.invitationAccepted = false;
+    this.resolvedConcerns = new Set();
     this.lineIndex = -1;
     this.choiceLocked = false;
     this.resultShown = false;
@@ -94,101 +101,26 @@ export default class TalkScene extends Phaser.Scene {
     this.resultButton = this.createChoiceButton("フィールドへ", 0x253543, () => this.returnToField());
     this.resultButton.setVisible(false);
     this.resultButton.disableInteractive();
+    this.nativeButtons = createNativeButtons(this, [
+      ...this.choiceButtons.map((object, i) => ({
+        object, label: () => object.rawLabel || CHOICES[i].label,
+        enabled: () => !this.resultShown && !this.choiceLocked && this.lineIndex >= 0,
+        activate: () => this.choose(CHOICES[i].key),
+      })),
+      { object: this.resultButton,
+        label: () => this.resultButton.cardText.text,
+        enabled: () => this.resultShown,
+        activate: () => this.returnToField() },
+    ]);
 
-    this.input.on("pointerdown", (pointer, objects) => {
-      if (!objects.length && !this.resultShown) {
-        this.skipLine();
-      }
-    });
     this.scale.on("resize", this.layout, this);
+    this.events.once("shutdown", () => this.scale.off("resize", this.layout, this));
     this.layout();
     this.nextLine();
   }
 
   buildLines(profile, mapKey) {
-    const pool = {
-      opening: [
-        { text: "友達待っててさ", weak: false, correct: [], cue: "同伴確認" },
-        { text: "今ちょっと手短になら", weak: false, correct: [], cue: "時間制約" },
-        { text: "普段は返さないんだけど", weak: false, correct: [], cue: "初見の警戒" },
-      ],
-      neutralWeak: [
-        { text: "でもちょっと時間あるし", weak: true, correct: ["proposal", "empathy"], cue: "時間の余白" },
-        { text: "ナンパとか慣れてなくて", weak: true, correct: ["empathy"], cue: "警戒" },
-        { text: "えっと、何の話?", weak: true, correct: ["tsukkomi", "proposal"], cue: "仕切り直し" },
-      ],
-      phone: [
-        { text: "通知見ながらでごめん", weak: true, correct: ["tsukkomi", "empathy"], cue: "注意分散" },
-        { text: "LINE返してからでいい?", weak: true, correct: ["empathy"], cue: "優先順位" },
-      ],
-      eye_contact: [
-        { text: "目合っちゃったね", weak: true, correct: ["empathy", "tsukkomi"], cue: "偶然の合図" },
-        { text: "ちらっと見えちゃったから", weak: true, correct: ["tsukkomi"], cue: "軽いノリ" },
-      ],
-      waiting: [
-        { text: "友達もう遅れてる", weak: true, correct: ["tsukkomi", "empathy"], cue: "待ち時間" },
-        { text: "ここで30分待ってる", weak: true, correct: ["empathy", "proposal"], cue: "余白" },
-      ],
-      friend: [
-        { text: "友達が戻ったらすぐ行くね", weak: true, correct: ["empathy", "proposal"], cue: "相手の予定" },
-        { text: "この子ほんとに急いでて", weak: false, correct: [], cue: "グループ事情" },
-      ],
-      earphones: [
-        { text: "今ちょっと音楽聞いてて", weak: true, correct: ["empathy"], cue: "遮断サイン" },
-        { text: "片耳だけ外した", weak: true, correct: ["empathy", "proposal"], cue: "半開き" },
-      ],
-      fast: [
-        { text: "急いでるんだごめん", weak: false, correct: [], cue: "急ぎ" },
-      ],
-      slow: [
-        { text: "まだ時間あるからゆっくり", weak: true, correct: ["empathy"], cue: "余白" },
-      ],
-      lookingAround: [
-        { text: "ここ初めてで迷っちゃって", weak: true, correct: ["proposal", "tsukkomi"], cue: "情報要求" },
-        { text: "人多くてびっくりしてる", weak: true, correct: ["empathy", "tsukkomi"], cue: "圧" },
-      ],
-      kabukicho: [
-        { text: "この辺、声かけ多くて警戒しちゃう", weak: true, correct: ["empathy"], cue: "夜の警戒" },
-        { text: "ネオン撮りたかったのに人多い", weak: true, correct: ["empathy", "proposal"], cue: "場所の文脈" },
-        { text: "夜ってテンション違うよね", weak: true, correct: ["tsukkomi", "empathy"], cue: "時間帯" },
-      ],
-      nagoya: [
-        { text: "改札前だと人が多いね", weak: true, correct: ["tsukkomi", "proposal"], cue: "場所の文脈" },
-        { text: "金時計で合流予定", weak: false, correct: [], cue: "待ち合わせ" },
-        { text: "エスカの方から来たんだけど", weak: true, correct: ["tsukkomi", "empathy"], cue: "地理" },
-      ],
-    };
-
-    const pickOne = (bucket) => Phaser.Math.RND.pick(bucket);
-    const lines = [pickOne(pool.opening)];
-
-    if (profile.traits.includes("イヤホン") || profile.traits.includes("外界遮断")) {
-      lines.push(pickOne(pool.earphones));
-    }
-    if (profile.traits.includes("スマホ")) {
-      lines.push(pickOne(pool.phone));
-    }
-    if (profile.traits.includes("目が合う")) {
-      lines.push(pickOne(pool.eye_contact));
-    }
-    if (profile.traits.includes("待ち合わせ") || profile.traits.includes("立ち止まり")) {
-      lines.push(pickOne(pool.waiting));
-    }
-    if (profile.traits.includes("友達といる")) {
-      lines.push(pickOne(pool.friend));
-    }
-    if (profile.traits.includes("歩くの速い")) {
-      lines.push(pickOne(pool.fast));
-    }
-    if (profile.traits.includes("歩くの遅い")) {
-      lines.push(pickOne(pool.slow));
-    }
-    if (profile.traits.includes("観光中") || profile.traits.includes("周囲を見る")) {
-      lines.push(pickOne(pool.lookingAround));
-    }
-    lines.push(pickOne(pool.neutralWeak));
-    lines.push(pickOne(mapKey === "kabukicho" ? pool.kabukicho : pool.nagoya));
-    return lines.slice(0, 6);
+    return buildFlipLines(profile, mapKey, items => Phaser.Utils.Array.Shuffle([...items]));
   }
 
   createChoiceButton(label, fillColor, onClick) {
@@ -200,26 +132,35 @@ export default class TalkScene extends Phaser.Scene {
       .text(width / 2, height / 2, label, {
         fontFamily: "system-ui, sans-serif",
         fontSize: "18px",
-        color: "#ffffff",
+        color: "#ffffff", align: "center",
       })
       .setOrigin(0.5);
     container.add([bg, text]);
     container.setSize(width, height);
-    container.setInteractive(new Phaser.Geom.Rectangle(0, 0, width, height), Phaser.Geom.Rectangle.Contains);
+    container.setInteractive(new Phaser.Geom.Rectangle(width / 2, height / 2, width, height), Phaser.Geom.Rectangle.Contains);
     container.on("pointerdown", (pointer) => {
-      pointer.event?.preventDefault();
       onClick();
     });
     container.bg = bg;
+    container.cardText = text;
     container.fillColor = fillColor;
     container.buttonWidth = width;
     container.buttonHeight = height;
     container.redraw = () => {
       bg.clear();
-      bg.fillStyle(fillColor, 0.94);
-      bg.fillRoundedRect(0, 0, width, height, 8);
-      bg.lineStyle(2, 0xffffff, 0.38);
-      bg.strokeRoundedRect(0, 0, width, height, 8);
+      bg.fillStyle(0xf4eedf, 1);
+      bg.fillRoundedRect(0, 0, container.buttonWidth, container.buttonHeight, 8);
+      bg.lineStyle(2, fillColor, 1);
+      bg.strokeRoundedRect(0, 0, container.buttonWidth, container.buttonHeight, 8);
+    };
+    container.resize = (newWidth, newHeight) => {
+      container.buttonWidth = newWidth;
+      container.buttonHeight = newHeight;
+      container.setSize(newWidth, newHeight);
+      container.input.hitArea.setTo(newWidth / 2, newHeight / 2, newWidth, newHeight);
+      text.setPosition(newWidth / 2, newHeight / 2).setFontSize(newWidth < 160 ? 12 : 14).setColor("#1b2b40");
+      if (container.rawLabel) text.setText(this.wrapText(container.rawLabel, Math.max(8, Math.floor((newWidth - 14) / (newWidth < 160 ? 12 : 14)))));
+      container.redraw();
     };
     container.redraw();
     return container;
@@ -238,40 +179,56 @@ export default class TalkScene extends Phaser.Scene {
   layout() {
     const width = this.scale.width;
     const height = this.scale.height;
+    const landscape = width > height && height < 600;
     this.drawBackground(width, height);
-
-    // Portrait of the NPC we're talking to, large and centered in the upper
-    // half. The rest of the UI gets pushed down beneath it.
-    let portraitBottom = 64;
+    const contentLeft = landscape ? Math.round(width * 0.36) : 16;
+    const contentWidth = width - contentLeft - 16;
+    const centerX = contentLeft + contentWidth / 2;
+    this.contentLeft = contentLeft;
+    this.contentWidth = contentWidth;
+    const buttonY = height - 72;
+    this.buttonY = buttonY;
+    let contentTop = 76;
+    this.portraitHalo.clear();
     if (this.portraitImage) {
-      const size = Math.min(width * 0.58, height * 0.34);
-      const centerY = 72 + size / 2;
-      const scale = size / this.portraitImage.width;
-      this.portraitImage.setPosition(width / 2, centerY).setScale(scale);
-      this.portraitHalo.clear();
-      this.portraitHalo.fillStyle(0xffc8d8, 0.32);
-      this.portraitHalo.fillCircle(width / 2, centerY, size * 0.58);
-      this.portraitHalo.fillStyle(0xffffff, 0.14);
-      this.portraitHalo.fillCircle(width / 2, centerY, size * 0.46);
-      portraitBottom = centerY + size / 2 + 8;
+      const size = landscape ? Math.min(width * 0.28, height * 0.53) : Math.min(width * 0.46, height * 0.20);
+      const portraitX = landscape ? width * 0.18 : width / 2;
+      const centerY = landscape ? 75 + (height - 100) / 2 : 72 + size / 2;
+      this.portraitImage.setPosition(portraitX, centerY).setScale(size / this.portraitImage.width);
+      this.portraitHalo.fillStyle(0xffc8d8, 0.22).fillCircle(portraitX, centerY, size * 0.53);
+      if (!landscape) contentTop = 72 + size + 12;
     }
-
-    this.topicText.setPosition(width / 2, portraitBottom + 18);
-    this.lineText.setWordWrapWidth(Math.min(880, width - 32));
-    this.lineText.setPosition(width / 2, portraitBottom + 80);
-    this.feedbackText.setPosition(width / 2, Math.min(height - 148, height * 0.72));
-    this.resultScoreText.setPosition(width / 2, Math.min(height - 112, height * 0.79));
-
-    const gap = 10;
-    const buttonWidth = Math.min(132, Math.floor((width - 48) / 3));
-    const startX = (width - buttonWidth * 3 - gap * 2) / 2;
-    const y = height - 76;
+    const feedbackY = height - (this.resultShown ? (landscape ? 132 : 168) : (landscape ? 150 : 196));
+    this.topicText.setOrigin(0.5, 0).setPosition(centerX, contentTop).setFontSize(Math.min(14, contentWidth / 23));
+    this.feedbackText.setPosition(centerX, feedbackY).setFontSize(contentWidth < 330 ? 13 : 15);
+    this.feedbackText.setWordWrapWidth(contentWidth);
+    this.resultScoreText.setPosition(centerX, height - 100).setFontSize(contentWidth < 330 ? 14 : 17);
+    const gap = 8;
+    const buttonWidth = (contentWidth - gap) / 2;
+    const cardHeight = landscape ? 50 : 66;
+    const cardsY = height - (landscape ? 116 : 156);
     this.choiceButtons.forEach((button, index) => {
-      button.setPosition(startX + index * (buttonWidth + gap), y);
-      button.scaleX = buttonWidth / button.buttonWidth;
+      button.resize(buttonWidth, cardHeight);
+      button.setPosition(contentLeft + (index % 2) * (buttonWidth + gap), cardsY + Math.floor(index / 2) * (cardHeight + gap));
     });
-    this.resultButton.setPosition((width - this.resultButton.buttonWidth) / 2, height - 84);
+    this.buttonY = this.resultShown ? buttonY : cardsY;
+    this.resultButton.setPosition(centerX - this.resultButton.buttonWidth / 2, buttonY);
+    const rawText = this.resultShown ? this.resultBody : this.lines[this.lineIndex]?.text;
+    if (rawText) {
+      let fontSize = this.resultShown ? (landscape ? 22 : 26) : (landscape ? 25 : 29);
+      const lineTop = contentTop + (this.resultShown ? 30 : 38);
+      const maxHeight = Math.max(36, feedbackY - 24 - lineTop);
+      do {
+        this.lineText.setFontSize(fontSize).setWordWrapWidth(contentWidth);
+        this.lineText.setText(this.wrapText(rawText, Math.max(8, Math.floor(contentWidth / fontSize))));
+        if (this.lineText.height <= maxHeight || fontSize <= 16) break;
+        fontSize -= 1;
+      } while (true);
+      this.lineText.setPosition(centerX, lineTop + this.lineText.height / 2);
+    }
     this.drawGauges();
+    if (this.resultShown) this.drawResultPanel(this.resultBonus === 120, this.resultBonus === 0);
+    this.nativeButtons?.sync();
   }
 
   drawBackground(width, height) {
@@ -309,7 +266,7 @@ export default class TalkScene extends Phaser.Scene {
   }
 
   update() {
-    if (this.resultShown || this.lineIndex < 0) return;
+    if (this.resultShown || this.choiceLocked || this.lineIndex < 0) return;
     this.drawBackground(this.scale.width, this.scale.height);
     this.drawGauges();
     const elapsed = this.time.now - this.lineStartedAt;
@@ -322,7 +279,7 @@ export default class TalkScene extends Phaser.Scene {
 
   drawTimer(progress) {
     const width = this.scale.width;
-    const y = this.scale.height * 0.77 - 8;
+    const y = (this.buttonY || this.scale.height - 72) - 16;
     this.timerGraphics.clear();
     this.timerGraphics.fillStyle(0xffc857, 0.92).fillRect(20, y, (width - 40) * (1 - progress), 5);
   }
@@ -337,12 +294,20 @@ export default class TalkScene extends Phaser.Scene {
     }
 
     const line = this.lines[this.lineIndex];
+    if (line.isClosing && this.resolvedConcerns.size < 3) line.text = "まだちょっと不安かも。今日はどうしよう……。";
     const baseSize = this.scale.width < 430 ? 29 : 40;
     this.lineText.setFontSize(line.text.length > 16 ? baseSize - 6 : baseSize);
     this.lineText.setText(this.wrapText(line.text, this.scale.width < 430 ? 12 : 22));
-    this.topicText.setText(line.weak ? `反応ポイント: ${line.cue}` : `観察: ${line.cue}`);
+    const phase = line.concern ? (line.isClosing ? "LAST / 次の予定を決めよう" : `不安 ${this.lineIndex + 1}/4 / フリップで返そう`) : `返答: ${line.cue}`;
+    this.topicText.setText(`${phase}\n${line.concern ? `安心できた話題 ${this.resolvedConcerns.size}/4` : "相手の気持ちを読もう"}`);
+    this.topicText.setAlign("center");
+    this.choiceButtons.forEach((button, i) => {
+      button.rawLabel = line.cards?.[i]?.text || CHOICES[i].label;
+      button.setAlpha(1).setScale(1);
+    });
     this.lineStartedAt = this.time.now;
-    this.lineDuration = line.weak ? 3800 : 3000;
+    this.lineDuration = line.concern ? 14000 : (line.weak ? 5000 : 4000);
+    this.layout();
     sfx.play("tick");
   }
 
@@ -350,30 +315,57 @@ export default class TalkScene extends Phaser.Scene {
     if (this.resultShown || this.choiceLocked) return;
     this.choiceLocked = true;
     const line = this.lines[this.lineIndex];
-    const correct = line.weak && line.correct.includes(choiceKey);
-
+    if (!CHOICES.some((choice) => choice.key === choiceKey)) {
+      this.choiceLocked = false;
+      return;
+    }
+    const readyToInvite = this.favor >= 68 && this.discomfort < 60;
+    const correct = line.weak ? line.correct.includes(choiceKey) : choiceKey === "listen";
     if (correct) {
-      this.favor = Phaser.Math.Clamp(this.favor + 24, 0, 100);
+      this.responseChain += 1;
+      this.bestResponseChain = Math.max(this.bestResponseChain, this.responseChain);
+      const gain = (line.weak ? 20 : 10) + Math.min(9, (this.responseChain - 1) * 3);
+      this.favor = Phaser.Math.Clamp(this.favor + gain, 0, 100);
       this.discomfort = Phaser.Math.Clamp(this.discomfort - 6, 0, 100);
-      this.feedbackText.setText("刺さった。相手の文脈に合っている。");
+      this.invitationAccepted = choiceKey === "proposal" && readyToInvite && (!line.concern || (line.isClosing && this.resolvedConcerns.size >= 3));
+      if (line.concern && !line.isClosing) this.resolvedConcerns.add(line.concern);
+      this.feedbackText.setText(this.wrapText(
+        `${line.weak ? "文脈に合った返答" : "相手の話を聞けた"}！ 好感+${gain} / ${this.responseChain}連続` +
+        (choiceKey === "proposal" && !readyToInvite ? "。まずは信頼を深めよう。" : ""),
+        this.scale.width < 430 ? 20 : 42));
       this.pulseFeedback("hit");
       sfx.play("hit");
-    } else if (line.weak) {
-      this.favor = Phaser.Math.Clamp(this.favor - 5, 0, 100);
-      this.discomfort = Phaser.Math.Clamp(this.discomfort + 22, 0, 100);
-      this.feedbackText.setText("ズレた。弱点ではなく不安を押している。");
-      this.pulseFeedback("miss");
-      sfx.play("miss");
-    } else {
-      this.favor = Phaser.Math.Clamp(this.favor + (choiceKey === "empathy" ? 7 : 1), 0, 100);
-      this.discomfort = Phaser.Math.Clamp(this.discomfort + (choiceKey === "tsukkomi" ? 5 : 0), 0, 100);
-      this.feedbackText.setText("観察フェーズ。急がず反応を見る。");
+    } else if (choiceKey === "listen" && !line.concern) {
+      this.responseChain = 0;
+      this.discomfort = Phaser.Math.Clamp(this.discomfort - 4, 0, 100);
+      this.feedbackText.setText(this.wrapText("ひと呼吸。違和感-4 / 好感は変わらない", this.scale.width < 430 ? 20 : 42));
       this.pulseFeedback("watch");
       sfx.play("tick");
+    } else {
+      this.responseChain = 0;
+      this.favor = Phaser.Math.Clamp(this.favor - 5, 0, 100);
+      this.discomfort = Phaser.Math.Clamp(this.discomfort + (line.weak ? 22 : 14), 0, 100);
+      const advice = line.weak
+        ? `「${line.cue}」には${line.correct.map((key) => CHOICES.find((choice) => choice.key === key).label).join("・")}が合う。`
+        : "相手が話している時は「聞く」で待とう。";
+      this.feedbackText.setText(this.wrapText(advice, this.scale.width < 430 ? 20 : 42));
+      this.pulseFeedback("miss");
+      sfx.play("miss");
     }
 
+    if (line.concern) {
+      this.topicText.setText(`${line.isClosing ? "LAST / 次の予定を決めよう" : `不安 ${this.lineIndex + 1}/4 / フリップで返そう`}\n安心できた話題 ${this.resolvedConcerns.size}/4`);
+      const accepted = correct && (!line.isClosing || this.invitationAccepted);
+      this.feedbackText.setText(this.wrapText(accepted ? `「${line.reply}」` : correct ? "まだ不安が残るな。今日はここまでにしよう。" : `「${line.miss}」`, this.scale.width < 430 ? 21 : 30));
+      const index = CHOICES.findIndex(c => c.key === choiceKey);
+      const card = this.choiceButtons[index];
+      this.choiceButtons.forEach((button, i) => button.setAlpha(i === index ? 1 : .35));
+      this.tweens.add({ targets: card, scaleX: .92, scaleY: .92, yoyo: true, duration: 130 });
+      this.layout();
+    }
+    this.nativeButtons?.sync();
     this.drawGauges();
-    if (this.favor >= 100) {
+    if (this.invitationAccepted) {
       this.showFinal(true);
       return;
     }
@@ -381,17 +373,25 @@ export default class TalkScene extends Phaser.Scene {
       this.showFinal(false, true);
       return;
     }
-    this.time.delayedCall(620, () => this.nextLine());
+    this.time.delayedCall(line.concern ? 1800 : 620, () => { if (!this.resultShown) this.nextLine(); });
   }
 
   timeoutLine() {
     if (this.choiceLocked) return;
     this.choiceLocked = true;
+    this.nativeButtons?.sync();
     const line = this.lines[this.lineIndex];
+    this.responseChain = 0;
     if (line.weak) {
       this.discomfort = Phaser.Math.Clamp(this.discomfort + 10, 0, 100);
-      this.feedbackText.setText("タイミングを逃した。違和感が少し上がる。");
+      this.feedbackText.setText(line.concern ? "考えているうちに、話題が変わってしまった。" : "タイミングを逃した。違和感が少し上がる。");
       this.pulseFeedback("timeout");
+      if (this.discomfort >= 100) {
+        this.showFinal(false, true);
+        return;
+      }
+    } else {
+      this.feedbackText.setText("次は「聞く」で信頼を深めよう。");
     }
     this.time.delayedCall(450, () => {
       if (!this.resultShown) this.nextLine();
@@ -417,8 +417,8 @@ export default class TalkScene extends Phaser.Scene {
 
     let outcomeTag = "中間";
     if (success) {
-      title = "カフェ成功";
-      body = "短く文脈に合わせた提案が通った。";
+      title = "安心が伝わった！";
+      body = "不安を聞いて、二人で次の予定を決められた。";
       this.resultBonus = 120;
       this.streakDelta = 2;
       outcomeTag = "カフェ成功";
@@ -430,7 +430,7 @@ export default class TalkScene extends Phaser.Scene {
       this.streakDelta = -this.streak;
       outcomeTag = "違和感で失敗";
       sfx.play("lose");
-    } else if (this.favor >= 68) {
+    } else if (this.favor >= 68 && !this.lines.some(line => line.concern)) {
       body = "短い雑談は成立。場所とタイミング次第で次に進める。";
       this.resultBonus = 55;
       this.streakDelta = 1;
@@ -441,27 +441,30 @@ export default class TalkScene extends Phaser.Scene {
       this.streakDelta = 0;
       sfx.play("skip");
     }
+    this.resultBody = body;
     this.lastOutcome = `${outcomeTag} 好${this.favor}/違${this.discomfort}`;
     const preview = this.previewScoreResult();
 
     this.topicText.setText(title);
     this.lineText.setFontSize(this.scale.width < 430 ? 30 : 42);
     this.lineText.setText(this.wrapText(body, this.scale.width < 430 ? 12 : 24));
-    this.feedbackText.setText(`好感度 ${this.favor} / 違和感 ${this.discomfort}`);
+    this.feedbackText.setText(`好感度 ${this.favor} / 違和感 ${this.discomfort}\n最高 ${this.bestResponseChain}連続`);
     this.resultScoreText
       .setText(`獲得 +${preview.total} / 連続 ${this.streak} → ${preview.nextStreak}`)
       .setVisible(true);
     this.drawResultPanel(success, failedByDiscomfort);
+    this.resultButton.list.find((child) => child.text !== undefined).setText(this.resultBonus >= 55 ? "ホテルへ歩く" : "フィールドへ");
     this.resultButton.setVisible(true);
     this.resultButton.setInteractive(
-      new Phaser.Geom.Rectangle(0, 0, this.resultButton.buttonWidth, this.resultButton.buttonHeight),
+      new Phaser.Geom.Rectangle(this.resultButton.buttonWidth / 2, this.resultButton.buttonHeight / 2, this.resultButton.buttonWidth, this.resultButton.buttonHeight),
       Phaser.Geom.Rectangle.Contains
     );
+    this.layout();
   }
 
   returnToField() {
     const { total, nextStreak } = this.previewScoreResult();
-    this.scene.start("MainScene", {
+    this.scene.start(this.resultBonus >= 55 ? "EscortScene" : "MainScene", {
       mapKey: this.mapKey,
       score: this.score + total,
       best: this.best,
@@ -525,13 +528,11 @@ export default class TalkScene extends Phaser.Scene {
   }
 
   drawResultPanel(success, failedByDiscomfort) {
-    const width = this.scale.width;
-    const height = this.scale.height;
-    const panelWidth = Math.min(width - 28, 540);
+    const panelWidth = Math.min(this.contentWidth + 12, 540);
     const lineBounds = this.lineText.getBounds();
     const panelHeight = Math.min(170, Math.max(104, lineBounds.height + 42));
-    const x = (width - panelWidth) / 2;
-    const y = Math.max(110, Math.min(lineBounds.y - 18, height - panelHeight - 118));
+    const x = this.contentLeft + (this.contentWidth - panelWidth) / 2;
+    const y = lineBounds.y - 12;
     const accent = success ? 0x57f5ff : failedByDiscomfort ? 0xff4d6d : 0xffd24f;
     this.resultPanel.clear();
     this.resultPanel.setVisible(true);
@@ -553,11 +554,14 @@ export default class TalkScene extends Phaser.Scene {
   }
 
   wrapText(text, maxChars) {
-    if (text.length <= maxChars) return text;
-    const lines = [];
-    for (let i = 0; i < text.length; i += maxChars) {
-      lines.push(text.slice(i, i + maxChars));
-    }
-    return lines.join("\n");
+    return text.split("\n").map((paragraph) => {
+      const lines = [];
+      const rows = Math.ceil(paragraph.length / maxChars);
+      // Keep a trailing character or punctuation from becoming a line on its own.
+      const count = rows > 1 && paragraph.length % maxChars > 0 && paragraph.length % maxChars <= 2
+        ? Math.ceil(paragraph.length / rows) : maxChars;
+      for (let i = 0; i < paragraph.length; i += count) lines.push(paragraph.slice(i, i + count));
+      return lines.join("\n");
+    }).join("\n");
   }
 }

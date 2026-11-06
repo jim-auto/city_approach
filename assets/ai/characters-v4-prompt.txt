@@ -1,0 +1,25 @@
+Generated with the built-in image_gen tool. Transparent background enabled.
+Edit target/reference: assets/ai/characters-v3.png; main player based on its bottom-right man.
+Final prompt:
+Use case: style-transfer.
+Asset type: production transparent 4x3 character atlas for CITY APPROACH.
+Input image 1 is the reference and edit target atlas. Preserve the clean polished pixel-illustration rendering, four-head-tall adult proportions, crisp dark outlines and readable full-body silhouettes. Output one coherent atlas, exactly 4 EQUAL COLUMNS by 3 EQUAL ROWS, 12 independent cells, exact 4:3 landscape aspect ratio preferably 1448x1086. Transparent RGBA background throughout. Each person centered in their own cell, isolated without overlap or clipping, feet aligned at 94% of each cell's height with small clear padding. No cell borders, lettering, logos, scenery or cast shadows.
+PRIMARY REQUEST: the player must use the FACE AND MOOD of the man currently in the BOTTOM-RIGHT cell of the reference, not the beige-blazer man. Put this selected man in the TOP-LEFT playable-character cell. Give him a proper smooth black Japanese MASH / mushroom haircut, a rounded silhouette and dense full fringe over the forehead above eyebrows, neat sides, no center part, no swept-back or spiky hair. He wears ONLY an oversized charcoal-black SHORT-SLEEVE T-SHIRT, black tapered trousers and clean black shoes. NO JACKET, NO BLAZER, NO COAT OR OUTER LAYER on the player. Keep his relaxed confident mildly flirty smile, small silver earrings and silver chain necklace from the selected reference, plus a small cyan wristwatch accent. One hand in a pocket, other hand in an easy conversational gesture. Adult man age 24–26, same appealing face as reference bottom-right.
+Redesign the ten women as distinct contemporary Japanese adult young women age 20–24, around-twenty vocational-college and university students, including a distinctly recognizable JIRAI-KEI fashion character. Adult faces and everyday street fashion, not school uniforms or childlike designs. Different hairstyles, bags, accessories, outfits, expressions. Make differences obvious at 48px game-sprite size. Keep subjects the same scale as the player.
+Exact cell order:
+ROW 1:
+1 the selected dark-haired male player described above.
+2 BEAUTY VOCATIONAL STUDENT, age 21: ash-beige shoulder-length layered hair with neat bangs, dusty pink short-sleeve fitted knit top, charcoal denim midi skirt, cream shoulder bag, smartphone, neat subtle makeup.
+3 DESIGN VOCATIONAL STUDENT, age 22: short dark layered wolf-cut hair with silver inner streak, mustard-yellow loose short-sleeve shirt, white top, charcoal cargo trousers, black art-school tote with rolled paper, looking at smartphone.
+4 JIRAI-KEI woman age 21: long black twin-tails with dusty pink ribbons, black and pink lace-trimmed blouse, black high-waisted flared skirt, black platform ankle boots, small heart-shaped black shoulder bag, thin black choker, rosy eye makeup. Clearly an adult alternative-fashion wearer; no school uniform, no sexualized pose.
+ROW 2:
+5 UNIVERSITY STUDENT age 21: soft brown shoulder-length waves, lavender cropped cardigan over white ribbed top, light blue wide-leg jeans, black shoulder bag, friendly eye contact.
+6 MUSIC VOCATIONAL STUDENT age 20: dark straight hair with a blue inner streak, large headphones, oversized teal T-shirt over a long-sleeve neutral layer, dark loose trousers, sneakers.
+7 FASHION VOCATIONAL STUDENT age 22: warm auburn layered bob, orange textured knit vest over a cream T-shirt, beige wide-leg cargo trousers, compact camera and olive shoulder bag.
+8 UNIVERSITY STUDENT age 20: glossy black bob and airy bangs, mint cardigan, white blouse, long charcoal pleated skirt, cream tote and notebook.
+ROW 3:
+9 HUMANITIES UNIVERSITY STUDENT age 23: dark long straight hair, thin round glasses, burgundy knit top, charcoal midi skirt, small brown crossbody bag, closed book.
+10 CAFE PART-TIME WORKER age 22: warm brown bob with wispy fringe, cream loose short-sleeve shirt over black top, beige high-waisted trousers, takeaway coffee, small crossbody bag.
+11 SPORTS UNIVERSITY STUDENT age 21: dark ponytail, cobalt athletic zip top and black leggings, running shoes and compact earbuds.
+12 SECONDARY MALE PASSERBY age 25: brown layered hair, casual slate gray T-shirt, dark jeans and sneakers, visibly different face and hairstyle from the selected main player. No jacket.
+Keep all figures readable, cohesive, contemporary and fully contained within the same 4x3 atlas. Avoid duplicated women, giant baby heads, monochrome indistinguishable outfits, exaggerated sexual posing, captions, opaque background and any jacket on the main player.

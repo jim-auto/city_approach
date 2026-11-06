@@ -1,6 +1,7 @@
+import { bindTouchReset } from "../mobile.js";
 import { sfx } from "../sfx.js";
 import { getBest, setBest, getDifficulty, cycleDifficulty, getSpriteMode } from "../storage.js";
-import { aiSourceKeyFor, buildCharacterTextures, registerCharacterAnimations } from "../characters.js";
+import { NPC_COLORWAYS, npcColorKey, CHARACTER_STYLE_LABELS, aiSourceKeyFor, buildCharacterTextures, registerCharacterAnimations } from "../characters.js";
 
 const NPC_VARIANT_KEYS = {
   "待ち合わせ系": "npc-waiting",
@@ -29,7 +30,6 @@ const AMBIENT_VARIANTS = [
 
 const WORLD = { width: 760, height: 1280 };
 const CLEAR_SCORE = 500;
-const HOTEL_SCORE = 120;
 const RANKS = [
   { min: 450, label: "S" },
   { min: 320, label: "A" },
@@ -340,20 +340,16 @@ export default class MainScene extends Phaser.Scene {
 
   preload() {
     this.load.image("tiles", "assets/tiles.png");
-    this.load.image("ai_player_raw", "assets/ai/player.png");
-    this.load.image("ai_npc_waiting_raw", "assets/ai/npc-waiting.png");
-    this.load.image("ai_npc_busy_raw", "assets/ai/npc-busy.png");
-    this.load.image("ai_npc_friends_raw", "assets/ai/npc-friends.png");
-    this.load.image("ai_npc_eye_raw", "assets/ai/npc-eye.png");
-    this.load.image("ai_npc_earphones_raw", "assets/ai/npc-earphones.png");
-    this.load.image("ai_npc_tourist_raw", "assets/ai/npc-tourist.png");
-    this.load.image("ai_npc_student_raw", "assets/ai/npc-student.png");
-    this.load.image("ai_npc_reader_raw", "assets/ai/npc-reader.png");
-    this.load.image("ai_npc_cafe_raw", "assets/ai/npc-cafe.png");
-    this.load.image("ai_npc_jogger_raw", "assets/ai/npc-jogger.png");
+    NPC_COLORWAYS.forEach(color => {
+      if (!this.textures.exists(color.atlas)) this.load.image(color.atlas, color.path);
+    });
   }
 
   create(data = {}) {
+    if (data.companion) {
+      this.scene.start("EscortScene", data);
+      return;
+    }
     this.currentMapKey = data.mapKey || "nagoya";
     this.score = data.score || 0;
     this.previousBest = getBest();
@@ -366,7 +362,6 @@ export default class MainScene extends Phaser.Scene {
     this.hotelEntered = Boolean(data.hotelEntered);
     this.hotelReadyNotified = Boolean(data.hotelReadyNotified);
     this.companionData = data.companion || null;
-    this.pendingHotelReady = !this.hotelEntered && !this.hotelReadyNotified && this.score >= HOTEL_SCORE;
     this.pendingClear = !this.cleared && this.score >= CLEAR_SCORE;
     this.pendingBest = this.score > this.previousBest;
     this.pendingRankS = this.previousBest < RANKS[0].min && this.score >= RANKS[0].min;
@@ -378,6 +373,7 @@ export default class MainScene extends Phaser.Scene {
     this.tapTarget = null;
     this.defaultJoystickCenter = { x: 88, y: 720 };
     this.nearNpc = null;
+    this.approachPending = false;
     this.companion = null;
     this.nearHotel = false;
     this.hotelPrompted = false;
@@ -412,10 +408,10 @@ export default class MainScene extends Phaser.Scene {
     this.buildMap();
     this.cursors = this.input.keyboard?.createCursorKeys();
     this.wasd = this.input.keyboard?.addKeys("W,A,S,D");
-    this.input.addPointer(3);
     this.registerJoystickInput();
 
     this.scale.on("resize", this.layoutHud, this);
+    this.events.once("shutdown", () => this.scale.off("resize", this.layoutHud, this));
     this.layoutHud();
     this.updateBest();
     if (this.pendingBest) {
@@ -426,9 +422,6 @@ export default class MainScene extends Phaser.Scene {
     }
     if (this.pendingClear) {
       this.time.delayedCall(260, () => this.checkClear("会話結果で"));
-    }
-    if (this.pendingHotelReady) {
-      this.time.delayedCall(700, () => this.showHotelReady());
     }
   }
 
@@ -789,6 +782,7 @@ export default class MainScene extends Phaser.Scene {
 
   spawnNpcs(map) {
     const usedStops = Phaser.Utils.Array.Shuffle([...map.stopPoints]);
+    const colorDeck = Phaser.Utils.Array.Shuffle([...NPC_COLORWAYS]);
     for (let i = 0; i < map.npcCount; i += 1) {
       const profile = this.makeProfile(map);
       const stop = usedStops[i % usedStops.length];
@@ -800,6 +794,7 @@ export default class MainScene extends Phaser.Scene {
         map.key === "nagoya"
           ? stop.y + Phaser.Math.Between(-28, 28)
           : Phaser.Math.Between(530, 1100);
+      profile.colorway = colorDeck[i % colorDeck.length].key;
       const variantKey = this.npcVariantKey(profile);
       const sprite = this.add.sprite(x, y, `${variantKey}-0`).setScale(1.45).setDepth(8);
       if (this.spriteMode !== "icon") sprite.setTint(this.npcTintFor(profile));
@@ -845,6 +840,7 @@ export default class MainScene extends Phaser.Scene {
 
     return {
       type: base.type,
+      styleLabel: CHARACTER_STYLE_LABELS[NPC_VARIANT_KEYS[base.type]] || "",
       traits,
       difficulty: base.difficulty,
       effective_actions: base.effective_actions,
@@ -907,7 +903,7 @@ export default class MainScene extends Phaser.Scene {
           ? Phaser.Math.Between(150, 1140)
           : Phaser.Math.Between(530, 1100);
       const ambientKey = this.spriteMode === "icon"
-        ? Phaser.Math.RND.pick(AMBIENT_VARIANTS)
+        ? npcColorKey(Phaser.Math.RND.pick(AMBIENT_VARIANTS), Phaser.Math.RND.pick(NPC_COLORWAYS).key)
         : "npc";
       const sprite = this.add
         .sprite(sx, sy, `${ambientKey}-0`)
@@ -929,7 +925,7 @@ export default class MainScene extends Phaser.Scene {
 
   npcVariantKey(profile) {
     if (this.spriteMode !== "icon") return "npc";
-    return NPC_VARIANT_KEYS[profile.type] || "npc-waiting";
+    return npcColorKey(NPC_VARIANT_KEYS[profile.type] || "npc-waiting", profile.colorway);
   }
 
   npcTintFor(profile) {
@@ -1081,17 +1077,16 @@ export default class MainScene extends Phaser.Scene {
       .setOrigin(0.5);
     container.add([bg, text]);
     container.setSize(width, height);
-    container.setInteractive(new Phaser.Geom.Rectangle(0, 0, width, height), Phaser.Geom.Rectangle.Contains);
+    container.setInteractive(new Phaser.Geom.Rectangle(width / 2, height / 2, width, height), Phaser.Geom.Rectangle.Contains);
     container.press = (pointer) => {
-      pointer?.event?.preventDefault?.();
       // Loud press feedback: bright white flash of the bg + scale pop so the
       // tap is undeniable even on mobile where subtle effects get missed.
       bg.clear();
-      bg.fillStyle(0xffffff, 1).fillRoundedRect(0, 0, width, height, 8);
-      bg.lineStyle(3, 0xffffff, 1).strokeRoundedRect(0, 0, width, height, 8);
+      bg.fillStyle(0xffffff, 1).fillRoundedRect(0, 0, container.buttonWidth, container.buttonHeight, 8);
+      bg.lineStyle(3, 0xffffff, 1).strokeRoundedRect(0, 0, container.buttonWidth, container.buttonHeight, 8);
       this.time.delayedCall(110, () => container.redraw && container.redraw(Boolean(this.nearNpc)));
       this.tweens.killTweensOf(container);
-      container.setScale(0.84);
+      container.setScale(0.96);
       this.tweens.add({
         targets: container,
         scaleX: 1,
@@ -1113,9 +1108,9 @@ export default class MainScene extends Phaser.Scene {
     container.redraw = (enabled = true) => {
       bg.clear();
       bg.fillStyle(fillColor, enabled ? 0.92 : 0.34);
-      bg.fillRoundedRect(0, 0, width, height, 8);
+      bg.fillRoundedRect(0, 0, container.buttonWidth, container.buttonHeight, 8);
       bg.lineStyle(2, 0xffffff, enabled ? 0.38 : 0.16);
-      bg.strokeRoundedRect(0, 0, width, height, 8);
+      bg.strokeRoundedRect(0, 0, container.buttonWidth, container.buttonHeight, 8);
     };
     container.redraw(true);
     return container;
@@ -1124,54 +1119,47 @@ export default class MainScene extends Phaser.Scene {
   layoutHud() {
     const width = this.scale.width;
     const height = this.scale.height;
-    const mobile = width < 520;
-    if (mobile) {
-      this.mapButton.setPosition(width - this.mapButton.buttonWidth - 14, 14);
-      this.difficultyButton.setPosition(14, 14);
-      this.infoText.setPosition(16, 68);
-      this.infoText.setFontSize(14);
-    } else {
-      this.infoText.setPosition(16, 14);
-      this.infoText.setFontSize(16);
-      this.mapButton.setPosition(width - this.mapButton.buttonWidth - 14, 14);
-      this.difficultyButton.setPosition(
-        width - this.mapButton.buttonWidth - this.difficultyButton.buttonWidth - 22,
-        14
-      );
-    }
-    this.drawProgress();
-
-    const buttonX = width - 160;
-    const spacing = 54;
-    const totalStack = spacing * (this.actionButtons.length - 1) + 48;
-    const startY = Math.max(84, height - totalStack - 14);
+    const landscape = width > height && height < 600;
+    const mobile = width < 600 || landscape;
+    this.resetMovement();
+    this.mapButton.setPosition(width - 130, 12);
+    this.difficultyButton.setPosition(12, 12);
+    this.infoText.setPosition(12, mobile ? 66 : 68).setFontSize(mobile ? 13 : 16);
+    this.infoText.setWordWrapWidth(width - 44);
+    const columns = landscape ? 2 : 1;
+    const buttonWidth = landscape ? 140 : Math.min(148, Math.floor(width * 0.46));
+    const rows = Math.ceil(this.actionButtons.length / columns);
+    const panelWidth = columns * buttonWidth + (columns - 1) * 8;
+    const startX = width - panelWidth - 12;
+    const startY = height - rows * 54 - 12;
     this.actionButtons.forEach((button, index) => {
-      button.setPosition(buttonX, startY + index * spacing);
+      button.buttonWidth = buttonWidth;
+      button.setSize(buttonWidth, 48);
+      button.input.hitArea.setTo(buttonWidth / 2, 24, buttonWidth, 48);
+      button.list[1].setPosition(buttonWidth / 2, 24).setFontSize(buttonWidth < 145 ? 14 : 15);
+      button.setPosition(startX + (index % columns) * (buttonWidth + 8), startY + Math.floor(index / columns) * 54);
+      button.redraw(Boolean(this.nearNpc));
     });
-
-    this.defaultJoystickCenter = {
-      x: Math.max(78, Math.min(96, width * 0.23)),
-      y: height - 88,
-    };
-    if (this.joystickPointerId === null) {
-      this.joystickCenter = { ...this.defaultJoystickCenter };
-    }
+    this.defaultJoystickCenter = { x: 76, y: height - 82 };
+    this.joystickCenter = { ...this.defaultJoystickCenter };
     this.drawJoystick();
-
-    this.messageText.setWordWrapWidth(Math.min(640, width - 28));
-    this.messageText.setPosition(width / 2, width < 430 ? 148 : 96);
+    this.cameras.main.setFollowOffset(landscape ? -panelWidth * 0.35 : -20, landscape ? 0 : -55);
+    this.messageText.setFontSize(14).setOrigin(0.5, 0).setWordWrapWidth(width - 48);
+    this.messageText.setPosition(width / 2, mobile ? 174 : 170);
+    if (landscape) this.messageText.setPosition((width - panelWidth) / 2, 164).setWordWrapWidth(width - panelWidth - 40);
     this.drawMessageBox();
     this.layoutHint();
+    this.drawProgress();
   }
 
   layoutHint() {
     const width = this.scale.width;
-    const mobile = width < 560;
-    const hintWidth = mobile ? 160 : Math.min(360, width - 24);
-    const x = mobile ? width - 86 : width - hintWidth / 2 - 14;
-    const y = (this.actionButtons?.[0]?.y || this.scale.height - 330) - (mobile ? 30 : 36);
-    this.hintText.setWordWrapWidth(hintWidth - 24);
-    this.hintText.setPosition(x, y);
+    const landscape = width > this.scale.height && this.scale.height < 600;
+    const hintWidth = landscape ? 288 : Math.min(340, width - 24);
+    const x = landscape ? width - hintWidth / 2 - 12 : width / 2;
+    const bottom = this.actionButtons[0].y - 16;
+    this.hintText.setFontSize(13).setOrigin(0.5, 1).setWordWrapWidth(hintWidth - 24);
+    this.hintText.setPosition(x, bottom);
     this.drawHintBox();
   }
 
@@ -1232,6 +1220,8 @@ export default class MainScene extends Phaser.Scene {
       }
     });
 
+    bindTouchReset(this, this.resetMovement);
+    this.input.on("pointerupoutside", () => this.resetMovement());
     this.input.on("pointerup", (pointer) => {
       if (pointer.id === this.joystickPointerId) {
         const moved = this.pointerStart
@@ -1250,8 +1240,18 @@ export default class MainScene extends Phaser.Scene {
     });
   }
 
+  resetMovement() {
+    this.joystickPointerId = null;
+    this.pointerStart = null;
+    this.tapTarget = null;
+    this.joystickVector.set(0, 0);
+    this.player?.setVelocity(0, 0);
+    this.joystickCenter = { ...this.defaultJoystickCenter };
+    this.tapTargetGraphics?.clear();
+    if (this.joystickBase) this.drawJoystick();
+  }
+
   handleHudPointer(pointer) {
-    if (pointer.wasHudButton) return true;
     const buttons = [
       this.mapButton,
       this.difficultyButton,
@@ -1264,7 +1264,6 @@ export default class MainScene extends Phaser.Scene {
       const right = left + button.buttonWidth;
       const bottom = top + button.buttonHeight;
       if (pointer.x >= left && pointer.x <= right && pointer.y >= top && pointer.y <= bottom) {
-        pointer.wasHudButton = true;
         button.press(pointer);
         return true;
       }
@@ -1465,28 +1464,8 @@ export default class MainScene extends Phaser.Scene {
   }
 
   updateHotelState() {
-    const hotel = MAPS[this.currentMapKey].hotel;
-    if (!hotel || this.hotelEntered) {
-      this.nearHotel = false;
-      return;
-    }
-    const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, hotel.doorX, hotel.doorY);
-    this.nearHotel = dist <= 58;
-    if (this.nearHotel && !this.hotelPrompted) {
-      this.hotelPrompted = true;
-      const need = Math.max(0, HOTEL_SCORE - this.score);
-      this.showMessage(
-        need > 0
-          ? `ホテル前。あと${need}点で、合意してINできる。`
-          : "ホテル前。条件OK。近づいたまま少し待つとIN。",
-        1600
-      );
-    } else if (!this.nearHotel) {
-      this.hotelPrompted = false;
-    }
-    if (this.nearHotel && this.score >= HOTEL_SCORE) {
-      this.enterHotel();
-    }
+    // The hotel is now the finale of EscortScene, unlocked by a companion.
+    this.nearHotel = false;
   }
 
   enterHotel() {
@@ -1506,17 +1485,13 @@ export default class MainScene extends Phaser.Scene {
 
   updateHud() {
     const map = MAPS[this.currentMapKey];
-    const mobile = this.scale.width < 520;
+    const mobile = this.scale.width < 600 || this.scale.height < 600;
     const nearText = this.nearNpc
       ? this.profileSummary(this.nearNpc.profile, mobile)
       : "近くの相手なし";
     const rank = this.rankFor(this.score);
     const goalText = this.cleared ? "CLEAR" : `${Math.min(this.score, CLEAR_SCORE)}/${CLEAR_SCORE}`;
-    const hotelText = this.hotelEntered
-      ? "HOTEL IN"
-      : this.score >= HOTEL_SCORE
-      ? "HOTEL OK"
-      : `Hotel ${this.score}/${HOTEL_SCORE}`;
+    const hotelText = "会話成立 → ホテルへ";
     const historyLine = this.history.length
       ? `\n直近: ${this.history[this.history.length - 1]}`
       : "";
@@ -1525,7 +1500,10 @@ export default class MainScene extends Phaser.Scene {
       : `${map.label} ${map.period} / ${this.difficulty.label}\n` +
         `Score ${this.score} / Best ${this.best} / Rank ${rank}\n` +
         `Goal ${goalText} / ${hotelText} / 連続${this.streak} / ${nearText}`;
-    this.infoText.setText(baseText + historyLine);
+    const situation = this.nearNpc?.profile.situation;
+    const state = situation ? `${situation.label} / 余${ROOM_LABELS[situation.room]} 警${CAUTION_LABELS[situation.caution]}\n${this.nearNpc.profile.styleLabel || "きっかけ"} / ${situation.hook}` : "街をタップ / ドラッグで移動";
+    const compact = `${map.label} / ${this.difficulty.label}　${goalText}\nScore ${this.score} / Best ${this.best} / R${rank}\n${state}`;
+    this.infoText.setText(mobile ? compact : baseText + historyLine);
     this.drawProgress();
     this.updateActionHint();
     this.actionButtons.forEach((button) => button.redraw(Boolean(this.nearNpc)));
@@ -1536,16 +1514,14 @@ export default class MainScene extends Phaser.Scene {
     const room = ROOM_LABELS[s.room] || "中";
     const caution = CAUTION_LABELS[s.caution] || "中";
     if (compact) {
-      return `${profile.type} / ${s.label} / 余${room} 警${caution} / ${s.hook}`;
+      return `${profile.styleLabel || profile.type} / ${s.label} / 余${room} 警${caution} / ${s.hook}`;
     }
-    return `${profile.type} / ${s.label} / 余裕${room} / 警戒${caution} / きっかけ:${s.hook}`;
+    return `${profile.styleLabel || profile.type} / ${s.label} / 余裕${room} / 警戒${caution} / きっかけ:${s.hook}`;
   }
 
   updateActionHint() {
     const hint = this.hotelEntered
       ? "HOTEL IN 完了"
-      : this.nearHotel
-      ? `ホテル前: ${this.score >= HOTEL_SCORE ? "条件OK / IN待機" : `あと${HOTEL_SCORE - this.score}点`}`
       : this.nearNpc
       ? this.hintFor(this.nearNpc.profile)
       : "NPCに近づくと相性ヒントが出る";
@@ -1580,59 +1556,8 @@ export default class MainScene extends Phaser.Scene {
   }
 
   drawHotelGuide() {
-    if (!this.hotelGuideGraphics) return;
     this.hotelGuideGraphics.clear();
-    this.hotelGuideText?.setVisible(false);
-    const hotel = MAPS[this.currentMapKey].hotel;
-    if (!hotel || this.hotelEntered || this.score < HOTEL_SCORE) return;
-
-    const camera = this.cameras.main;
-    const targetX = hotel.doorX - camera.scrollX;
-    const targetY = hotel.doorY - camera.scrollY;
-    const playerX = this.player.x - camera.scrollX;
-    const playerY = this.player.y - camera.scrollY;
-    const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, hotel.doorX, hotel.doorY);
-
-    const width = this.scale.width;
-    const height = this.scale.height;
-    const centerX = Phaser.Math.Clamp(targetX, 30, width - 30);
-    const centerY = Phaser.Math.Clamp(targetY, 84, height - 84);
-    const visible = targetX >= 20 && targetX <= width - 20 && targetY >= 84 && targetY <= height - 70;
-    const pulse = 0.65 + 0.25 * Math.sin(this.time.now / 180);
-    let textX = centerX;
-    let textY = centerY - 48;
-
-    if (visible) {
-      this.hotelGuideGraphics.lineStyle(4, 0xffd24f, pulse).strokeCircle(centerX, centerY, 34);
-      this.hotelGuideGraphics.lineStyle(2, 0xffffff, 0.7).strokeCircle(centerX, centerY, 24);
-      this.hotelGuideGraphics.fillStyle(0xffd24f, 0.12).fillCircle(centerX, centerY, 42);
-    } else {
-      const angle = Phaser.Math.Angle.Between(playerX, playerY, targetX, targetY);
-      const arrowX = Phaser.Math.Clamp(playerX + Math.cos(angle) * 96, 42, width - 42);
-      const arrowY = Phaser.Math.Clamp(playerY + Math.sin(angle) * 96, 112, height - 112);
-      this.hotelGuideGraphics.fillStyle(0x10131a, 0.78).fillCircle(arrowX, arrowY, 30);
-      this.hotelGuideGraphics.lineStyle(2, 0xffd24f, 0.9).strokeCircle(arrowX, arrowY, 30);
-      this.hotelGuideGraphics.fillStyle(0xffd24f, 0.95);
-      this.hotelGuideGraphics.fillTriangle(
-        arrowX + Math.cos(angle) * 22,
-        arrowY + Math.sin(angle) * 22,
-        arrowX + Math.cos(angle + 2.45) * 15,
-        arrowY + Math.sin(angle + 2.45) * 15,
-        arrowX + Math.cos(angle - 2.45) * 15,
-        arrowY + Math.sin(angle - 2.45) * 15
-      );
-      textX = arrowX;
-      textY = Phaser.Math.Clamp(arrowY - 44, 112, height - 94);
-    }
-
-    const label = `HOTEL ${Math.max(0, Math.round(dist))}m`;
-    const firstButtonY = this.actionButtons?.[0]?.y || height;
-    if (width < 560 && textX > width - 180 && textY > firstButtonY - 70) {
-      textX = Math.max(74, width - 250);
-    }
-    this.hotelGuideGraphics.fillStyle(0x10131a, 0.78).fillRoundedRect(textX - 58, textY - 15, 116, 30, 7);
-    this.hotelGuideGraphics.lineStyle(1, 0xffd24f, 0.6).strokeRoundedRect(textX - 58, textY - 15, 116, 30, 7);
-    this.hotelGuideText?.setText(label).setPosition(textX, textY).setVisible(true);
+    this.hotelGuideText.setVisible(false);
   }
 
   rankFor(score) {
@@ -1657,15 +1582,11 @@ export default class MainScene extends Phaser.Scene {
     const comboBonus = adjusted > 0 && this.streak >= 2 ? Math.min(30, this.streak * 5) : 0;
     const total = adjusted + comboBonus;
     const oldRank = this.rankFor(this.score);
-    const wasHotelReady = this.score >= HOTEL_SCORE;
     this.score += total;
     const improvedBest = this.updateBest();
     if (total > 0) this.showScoreFloat(total, comboBonus);
     if (improvedBest) this.showBestUpdate();
     if (oldRank !== "S" && this.rankFor(this.score) === "S") this.showRankSOverlay();
-    if (!this.hotelEntered && !wasHotelReady && this.score >= HOTEL_SCORE) {
-      this.showHotelReady();
-    }
     this.checkClear(label);
     return total;
   }
@@ -1809,57 +1730,6 @@ export default class MainScene extends Phaser.Scene {
     this.showMessage(`${label} 目標${CLEAR_SCORE}点達成。Best更新を狙って続行できる。`, 2600);
   }
 
-  showHotelReady() {
-    if (this.hotelEntered || this.hotelReadyNotified || this.score < HOTEL_SCORE) return;
-    this.hotelReadyNotified = true;
-    this.drawHotelReadyOverlay();
-    this.hotelReadyMessageUntil = this.time.now + 2200;
-    this.showMessage("条件OK。ホテル入口へ向かえる。", 2200);
-  }
-
-  drawHotelReadyOverlay() {
-    sfx.play("success");
-    const w = this.scale.width;
-    const h = this.scale.height;
-    const g = this.add.graphics().setScrollFactor(0).setDepth(72);
-    const cy = h * 0.39;
-    g.fillStyle(0x05060a, 0.5).fillRoundedRect(w / 2 - 132, cy - 42, 264, 84, 12);
-    g.lineStyle(3, 0xffd24f, 0.78).strokeRoundedRect(w / 2 - 132, cy - 42, 264, 84, 12);
-    const title = this.add
-      .text(w / 2, cy - 10, "HOTEL READY", {
-        fontFamily: "system-ui, sans-serif",
-        fontSize: `${Math.min(32, Math.max(24, w * 0.075))}px`,
-        color: "#ffd24f",
-        fontStyle: "bold",
-        stroke: "#0a0a10",
-        strokeThickness: 5,
-      })
-      .setOrigin(0.5)
-      .setScrollFactor(0)
-      .setDepth(73);
-    const sub = this.add
-      .text(w / 2, cy + 22, "ホテル入口へ向かえる", {
-        fontFamily: "system-ui, sans-serif",
-        fontSize: "15px",
-        color: "#f5f1df",
-        fontStyle: "bold",
-      })
-      .setOrigin(0.5)
-      .setScrollFactor(0)
-      .setDepth(73);
-    this.tweens.add({
-      targets: [g, title, sub],
-      alpha: 0,
-      delay: 1500,
-      duration: 520,
-      onComplete: () => {
-        g.destroy();
-        title.destroy();
-        sub.destroy();
-      },
-    });
-  }
-
   toggleDifficulty() {
     this.difficulty = cycleDifficulty(this.difficulty.key);
     const text = this.difficultyButton.list.find((c) => c.text !== undefined);
@@ -1868,6 +1738,7 @@ export default class MainScene extends Phaser.Scene {
   }
 
   tryApproach(actionKey) {
+    if (this.approachPending) return;
     if (!this.nearNpc) {
       this.showBigText("もっと近づいて！", "#ffd24f");
       this.showMessage("まだ距離が遠い。相手の近くまで寄ってからオープナーを選ぶ。", 1500);
@@ -1881,6 +1752,8 @@ export default class MainScene extends Phaser.Scene {
     this.showApproachRead(target, rate);
 
     if (roll <= rate) {
+      this.approachPending = true;
+      this.resetMovement();
       sfx.play("success");
       this.bounceSprite(target.sprite);
       this.showConnectionBurst(target, actionLabel);
@@ -2221,6 +2094,7 @@ export default class MainScene extends Phaser.Scene {
   }
 
   respectfullySkip() {
+    if (this.approachPending) return;
     if (!this.nearNpc) {
       this.showMessage("離れる相手がいない。まずサインを観察してから。", 1500);
       return;
@@ -2371,8 +2245,10 @@ export default class MainScene extends Phaser.Scene {
   }
 
   showMessage(text, duration = 1800) {
-    const maxChars = this.scale.width < 430 ? 17 : 42;
-    this.messageText.setText(this.wrapText(text, maxChars)).setVisible(true);
+    const maxChars = Math.max(16, Math.floor(this.messageText.style.wordWrapWidth / 14));
+    const maxLines = this.scale.height < 650 ? 2 : 3;
+    const shortened = text.length > maxChars * maxLines ? `${text.slice(0, maxChars * maxLines - 1)}…` : text;
+    this.messageText.setText(this.wrapText(shortened, maxChars)).setVisible(true);
     this.drawMessageBox();
     this.messageTimer?.remove(false);
     this.messageTimer = this.time.delayedCall(duration, () => {
@@ -2382,15 +2258,15 @@ export default class MainScene extends Phaser.Scene {
   }
 
   wrapText(text, maxChars) {
-    if (text.length <= maxChars) return text;
-    const lines = [];
-    for (let i = 0; i < text.length; i += maxChars) {
-      lines.push(text.slice(i, i + maxChars));
-    }
-    return lines.join("\n");
+    return text.split("\n").map((paragraph) => {
+      const lines = [];
+      for (let i = 0; i < paragraph.length; i += maxChars) lines.push(paragraph.slice(i, i + maxChars));
+      return lines.join("\n");
+    }).join("\n");
   }
 
   switchMap() {
+    if (this.approachPending) return;
     const next = this.currentMapKey === "nagoya" ? "kabukicho" : "nagoya";
     this.scene.restart({
       mapKey: next,
