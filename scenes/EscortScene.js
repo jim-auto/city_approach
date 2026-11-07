@@ -1,8 +1,8 @@
-import { createNativeButtons } from "../native-buttons.js?v=20261107-love1";
-import { drawCitySky, drawCityStreet } from "../scenery.js?v=20261107-love1";
-import { bindTouchReset } from "../mobile.js?v=20261107-love1";
-import { sfx } from "../sfx.js?v=20261107-love1";
-import { getBest, setBest } from "../storage.js?v=20261107-love1";
+import { createNativeButtons } from "../native-buttons.js?v=20261107-goal1";
+import { drawCitySky, drawCityStreet } from "../scenery.js?v=20261107-goal1";
+import { bindTouchReset } from "../mobile.js?v=20261107-goal1";
+import { sfx } from "../sfx.js?v=20261107-goal1";
+import { getBest, setBest } from "../storage.js?v=20261107-goal1";
 
 const START_X = 150;
 const HOTEL_X = 2900;
@@ -34,6 +34,8 @@ export default class EscortScene extends Phaser.Scene {
     this.score = data.score || 0;
     this.finished = false;
     this.outcome = null;
+    this.goalTitle = null;
+    this.goalConfetti = [];
     this.doubt = 0;
     this.evasionStreak = 0;
     this.totalEvasions = 0;
@@ -410,7 +412,7 @@ export default class EscortScene extends Phaser.Scene {
     this.layoutConversation();
     this.finishShade = this.add.graphics().setScrollFactor(0).setDepth(60);
     this.resultBody = success
-      ? `LOVE HOTEL\nGOAL!\n二人でラブホテルに到着\n\n到着ボーナス +100\nScore ${this.score}`
+      ? `二人でラブホテルに到着\n到着ボーナス +100\nScore ${this.score}`
       : `同行終了\n${reason}\n\n到着ボーナスなし\nScore ${this.score}`;
     this.finishText = this.add.text(0, 0, "", {
       fontFamily: "system-ui, sans-serif", fontSize: "26px", color: success ? "#ffe0a0" : "#ffb4a6", align: "center", lineSpacing: 14,
@@ -431,14 +433,49 @@ export default class EscortScene extends Phaser.Scene {
         history: [...(this.runData.history || []), success ? "HOTEL GOAL" : "同行終了"].slice(-3),
       });
     });
+    if (success) {
+      this.goalTitle = this.add.text(0, 0, "ゴール！", {
+        fontFamily: "system-ui, sans-serif", fontSize: "64px", color: "#ffe584", fontStyle: "bold",
+        stroke: "#723e29", strokeThickness: 7,
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(63);
+    }
     this.layoutFinish();
+    if (success) this.playGoalCelebration();
+  }
+
+  playGoalCelebration() {
+    this.goalConfetti = [];
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    this.goalTitle.setScale(0.25).setAlpha(0);
+    this.tweens.add({ targets: this.goalTitle, scale: 1, alpha: 1, duration: 650, ease: "Back.easeOut" });
+    this.cameras.main.flash(180, 255, 223, 157);
+    const w = this.scale.width, h = this.scale.height;
+    const colors = [0xffd766, 0xff8fbb, 0x7be6dd, 0xfff5ce];
+    for (let i = 0; i < 40; i++) {
+      const fromLeft = i % 2 === 0;
+      const piece = this.add.rectangle(fromLeft ? 0 : w, h * .24,
+        4 + i % 4, 3 + i % 3, colors[i % colors.length])
+        .setScrollFactor(0).setDepth(60.5).setRotation(i);
+      this.goalConfetti.push(piece);
+      this.tweens.add({ targets: piece, x: w * (.08 + (i * .137 % .84)), y: h * (.55 + i % 7 * .055),
+        angle: 180 + i * 37, alpha: 0, duration: 1200 + i % 6 * 140, ease: "Quad.easeOut",
+        onComplete: () => piece.destroy() });
+    }
   }
 
   layoutFinish() {
     const w = this.scale.width, h = this.scale.height;
     this.finishShade.clear().fillStyle(0x080e18, 0.9).fillRect(0, 0, w, h);
+    if (this.goalTitle) {
+      const size = Math.min(64, w * .16, h * .18);
+      const titleY = h * (h < 450 ? .22 : .25);
+      this.goalTitle.setPosition(w / 2, titleY).setFontSize(size);
+      this.finishShade.fillStyle(0xffc96a, .12).fillRect(0, titleY - size * .75, w, size * 1.5)
+        .lineStyle(1, 0xffd477, .6).lineBetween(0, titleY - size * .75, w, titleY - size * .75)
+        .lineBetween(0, titleY + size * .75, w, titleY + size * .75);
+    }
     const fontSize = h < 450 ? 18 : w < 360 ? 22 : 25;
-    this.finishText.setPosition(w / 2, h * 0.38).setFontSize(fontSize).setLineSpacing(h < 450 ? 3 : 12)
+    this.finishText.setPosition(w / 2, h * (this.goalTitle ? .49 : .38)).setFontSize(fontSize).setLineSpacing(h < 450 ? 3 : 12)
       .setText(this.wrapDialogue(this.resultBody, Math.floor((w - 36) / fontSize)));
     this.returnButton.setPosition(w / 2, h - 60);
   }

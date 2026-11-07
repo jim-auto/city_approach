@@ -33,7 +33,7 @@ export function setBest(n) {
 
 export function getDifficulty() {
   const key = safeGet(DIFF_KEY);
-  return DIFFICULTIES.find((d) => d.key === key) || DIFFICULTIES[1];
+  return DIFFICULTIES.find((d) => d.key === key) || DIFFICULTIES[0];
 }
 
 export function setDifficulty(key) {

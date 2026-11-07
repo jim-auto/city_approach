@@ -1,5 +1,5 @@
-import { sfx } from "../sfx.js?v=20261107-love1";
-import { getBest, getDifficulty, cycleDifficulty } from "../storage.js?v=20261107-love1";
+import { sfx } from "../sfx.js?v=20261107-goal1";
+import { getBest, getDifficulty, cycleDifficulty } from "../storage.js?v=20261107-goal1";
 
 const TUTORIAL_LINES = [
   "街を歩く  →  状態を見る  →  オープナーを選ぶ",

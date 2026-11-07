@@ -271,12 +271,16 @@ try {
             return e.finished && e.outcome === "goal" && e.questionsAnswered === 4 && e.destinationConfirmed;
           }), "walking conversation did not reach confirmed goal");
           check(await page.evaluate((score) => window.cityApproachGame.scene.keys.EscortScene.score === score + 100, beforeGoal), "goal bonus incorrect");
-          await audit(page, "EscortScene", ["finishText"], ["returnButton"]);
+          await audit(page, "EscortScene", ["goalTitle", "finishText"], ["returnButton"]);
+          await page.waitForFunction(() => {
+            const e = window.cityApproachGame.scene.keys.EscortScene;
+            return !e.goalTitle || !e.tweens.isTweening(e.goalTitle);
+          });
           await shot(page, `${name}-goal`);
           // Rotate while the goal screen is open; its action must stay reachable.
           await page.setViewportSize({ width: size.height, height: size.width });
           await page.waitForFunction(() => window.cityApproachGame.scale.width === document.getElementById("game").clientWidth);
-          await audit(page, "EscortScene", ["finishText"], ["returnButton"]);
+          await audit(page, "EscortScene", ["goalTitle", "finishText"], ["returnButton"]);
           await tap(page, "EscortScene", "returnButton");
           await state(page, "MainScene");
           await page.waitForTimeout(150);
@@ -296,7 +300,7 @@ try {
             const e = window.cityApproachGame.scene.keys.EscortScene;
             return e.finished && e.outcome === "breakdown" && e.doubt === 100 && e.score === 200;
           }), "repeated evasion did not break escort without reward");
-          await audit(page, "EscortScene", ["finishText"], ["returnButton"]);
+          await audit(page, "EscortScene", ["goalTitle", "finishText"], ["returnButton"]);
           await shot(page, `${name}-breakdown`);
           await tap(page, "EscortScene", "returnButton");
           await state(page, "MainScene");

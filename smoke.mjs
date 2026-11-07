@@ -62,7 +62,7 @@ function check(name, condition, detail = "") {
   check("title scene active on load", title.active === "TitleScene", `active=${title.active}`);
   check("title text set", title.titleText === "CITY APPROACH");
   check("best shown", (title.bestText || "").startsWith("Best "));
-  check("difficulty label loaded", Boolean(title.diffLabel));
+  check("difficulty defaults to easy", title.diffLabel === "やさしい");
 
   // Start the game
   await page.mouse.click(640, 780);
