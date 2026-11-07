@@ -7,7 +7,7 @@
 // Both modes emit the same texture keys so the rest of the scene doesn't
 // branch on mode.
 
-import { getSpriteMode } from "./storage.js";
+import { getSpriteMode } from "./storage.js?v=20261107-love1";
 
 const BASE_AI_SOURCE_KEYS = {
   player: "ai_player_raw",
@@ -36,6 +36,9 @@ for (const color of NPC_COLORWAYS.slice(1)) {
     if (key !== "player") AI_SOURCE_KEYS[`${key}-${color.key}`] = `${source}_${color.key}`;
   }
 }
+
+export const PRIN_STUDENT_TEXTURE = "npc-prin-student";
+AI_SOURCE_KEYS[PRIN_STUDENT_TEXTURE] = "ai_npc_prin_student_raw";
 
 export function npcColorKey(base, colorKey = "original") {
   return colorKey === "original" ? base : `${base}-${colorKey}`;
@@ -264,6 +267,12 @@ export function buildCharacterTextures(scene) {
         atlas.width / 4, atlas.height / 3, 0, 0, cellWidth, cellHeight);
       scene.textures.addCanvas(sourceKey, canvas);
     });
+  }
+  if (scene.textures.exists("character-prin-student") && !scene.textures.exists(AI_SOURCE_KEYS[PRIN_STUDENT_TEXTURE])) {
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 362;
+    canvas.getContext("2d").drawImage(scene.textures.get("character-prin-student").getSourceImage(), 0, 0, 362, 362);
+    scene.textures.addCanvas(AI_SOURCE_KEYS[PRIN_STUDENT_TEXTURE], canvas);
   }
   const modeKey = getSpriteMode().key;
   const targets = modeKey === "icon"

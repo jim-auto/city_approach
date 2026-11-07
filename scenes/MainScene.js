@@ -1,7 +1,7 @@
-import { bindTouchReset } from "../mobile.js";
-import { sfx } from "../sfx.js";
-import { getBest, setBest, getDifficulty, cycleDifficulty, getSpriteMode } from "../storage.js";
-import { NPC_COLORWAYS, npcColorKey, CHARACTER_STYLE_LABELS, aiSourceKeyFor, buildCharacterTextures, registerCharacterAnimations } from "../characters.js";
+import { bindTouchReset } from "../mobile.js?v=20261107-love1";
+import { sfx } from "../sfx.js?v=20261107-love1";
+import { getBest, setBest, getDifficulty, cycleDifficulty, getSpriteMode } from "../storage.js?v=20261107-love1";
+import { NPC_COLORWAYS, npcColorKey, CHARACTER_STYLE_LABELS, aiSourceKeyFor, buildCharacterTextures, registerCharacterAnimations } from "../characters.js?v=20261107-love1";
 
 const NPC_VARIANT_KEYS = {
   "待ち合わせ系": "npc-waiting",
@@ -11,6 +11,7 @@ const NPC_VARIANT_KEYS = {
   "イヤホン系": "npc-earphones",
   "観光・迷い中系": "npc-tourist",
   "学生系": "npc-student",
+  "暇なプリン髪大学生": "npc-prin-student",
   "読書系": "npc-reader",
   "カフェ系": "npc-cafe",
   "ランニング系": "npc-jogger",
@@ -77,6 +78,12 @@ const MAPS = {
     ],
     hotel: { x: 70, y: 520, w: 185, h: 150, doorX: 162, doorY: 660 },
   },
+};
+
+const PRIN_STUDENT = {
+  type: "暇なプリン髪大学生", traits: ["大学生", "プリン髪", "暇", "立ち止まり", "目が合う"],
+  difficulty: "低", effective_actions: ["軽いノリ", "自然な提案"], bad_actions: ["決めつけ", "強引"],
+  baseInterest: 72, flags: ["waiting", "eye_contact"],
 };
 
 const CHARACTER_TYPES = [
@@ -340,6 +347,7 @@ export default class MainScene extends Phaser.Scene {
 
   preload() {
     this.load.image("tiles", "assets/tiles.png");
+    if (!this.textures.exists("character-prin-student")) this.load.image("character-prin-student", "assets/ai/character-prin-student.png");
     NPC_COLORWAYS.forEach(color => {
       if (!this.textures.exists(color.atlas)) this.load.image(color.atlas, color.path);
     });
@@ -784,7 +792,7 @@ export default class MainScene extends Phaser.Scene {
     const usedStops = Phaser.Utils.Array.Shuffle([...map.stopPoints]);
     const colorDeck = Phaser.Utils.Array.Shuffle([...NPC_COLORWAYS]);
     for (let i = 0; i < map.npcCount; i += 1) {
-      const profile = this.makeProfile(map);
+      const profile = this.makeProfile(map, i === 0 ? PRIN_STUDENT : null);
       const stop = usedStops[i % usedStops.length];
       const x =
         map.key === "nagoya"
@@ -794,7 +802,7 @@ export default class MainScene extends Phaser.Scene {
         map.key === "nagoya"
           ? stop.y + Phaser.Math.Between(-28, 28)
           : Phaser.Math.Between(530, 1100);
-      profile.colorway = colorDeck[i % colorDeck.length].key;
+      profile.colorway = profile.type === PRIN_STUDENT.type ? "original" : colorDeck[i % colorDeck.length].key;
       const variantKey = this.npcVariantKey(profile);
       const sprite = this.add.sprite(x, y, `${variantKey}-0`).setScale(1.45).setDepth(8);
       if (this.spriteMode !== "icon") sprite.setTint(this.npcTintFor(profile));
@@ -819,8 +827,8 @@ export default class MainScene extends Phaser.Scene {
     }
   }
 
-  makeProfile(map) {
-    const base = Phaser.Math.RND.pick(CHARACTER_TYPES);
+  makeProfile(map, forced = null) {
+    const base = forced || Phaser.Math.RND.pick(CHARACTER_TYPES);
     const mapTrait = Phaser.Math.RND.pick(MAP_TRAITS[map.key]);
     const extraTrait =
       map.key === "kabukicho"
@@ -840,7 +848,8 @@ export default class MainScene extends Phaser.Scene {
 
     return {
       type: base.type,
-      styleLabel: CHARACTER_STYLE_LABELS[NPC_VARIANT_KEYS[base.type]] || "",
+      styleLabel: base === PRIN_STUDENT ? "大学生 / プリン髪" : CHARACTER_STYLE_LABELS[NPC_VARIANT_KEYS[base.type]] || "",
+      age: base === PRIN_STUDENT ? 21 : Phaser.Math.Between(20, 24),
       traits,
       difficulty: base.difficulty,
       effective_actions: base.effective_actions,
@@ -880,6 +889,7 @@ export default class MainScene extends Phaser.Scene {
   }
 
   makeSituation(base, traits, map) {
+    if (traits.includes("暇")) return { ...SITUATION_STATUS.break, label: "暇つぶし", hook: "軽いノリ", room: 3, caution: 0, actions: { joke: .18, outfit: .10, weather: .06, item: .04 } };
     if (traits.includes("イヤホン")) return { ...SITUATION_STATUS.music };
     if (traits.includes("歩くの速い")) return { ...SITUATION_STATUS.moving };
     if (traits.includes("友達といる")) return { ...SITUATION_STATUS.chat };
@@ -925,7 +935,8 @@ export default class MainScene extends Phaser.Scene {
 
   npcVariantKey(profile) {
     if (this.spriteMode !== "icon") return "npc";
-    return npcColorKey(NPC_VARIANT_KEYS[profile.type] || "npc-waiting", profile.colorway);
+    const base = NPC_VARIANT_KEYS[profile.type] || "npc-waiting";
+    return base === "npc-prin-student" ? base : npcColorKey(base, profile.colorway);
   }
 
   npcTintFor(profile) {
@@ -1491,7 +1502,7 @@ export default class MainScene extends Phaser.Scene {
       : "近くの相手なし";
     const rank = this.rankFor(this.score);
     const goalText = this.cleared ? "CLEAR" : `${Math.min(this.score, CLEAR_SCORE)}/${CLEAR_SCORE}`;
-    const hotelText = "会話成立 → ホテルへ";
+    const hotelText = "会話成立 → ラブホテルへ";
     const historyLine = this.history.length
       ? `\n直近: ${this.history[this.history.length - 1]}`
       : "";
@@ -2050,7 +2061,7 @@ export default class MainScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(83);
     const sub = this.add
-      .text(w / 2, h * 0.36 + 52, "合意成立 / ラウンジへ", {
+      .text(w / 2, h * 0.36 + 52, "二人でラブホテルへ", {
         fontFamily: "system-ui, sans-serif",
         fontSize: "19px",
         color: "#f5f1df",

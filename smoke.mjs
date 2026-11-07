@@ -239,7 +239,7 @@ function check(name, condition, detail = "") {
     const concern = lines[0];
     const wrongListen = { ...concern, correct: ["empathy"] };
     reset(wrongListen); t.choose("listen");
-    const wrongCardCostsTrust = t.favor === 80 && t.discomfort === 42 && t.resolvedConcerns.size === 0;
+    const wrongCardCostsTrust = t.favor === 80 && t.discomfort === 20 + t.encounter.mistake && t.resolvedConcerns.size === 0;
     reset({ ...concern, correct: ["proposal"] }); t.choose("proposal");
     const noEarlyInvite = !t.resultShown && !t.invitationAccepted && t.resolvedConcerns.size === 1;
     reset(lines.at(-1), ["safety", "time"]); t.choose("proposal");
@@ -339,6 +339,8 @@ function check(name, condition, detail = "") {
     e.direction = 1;
     e.update(e.time.now, 50);
     const stopsForReply = e.player.x === x;
+    const loveHotelExplained = e.currentQuestion.playerLines.explain.includes("ラブホテル");
+    const loveHotelSign = e.decorations.list.some(item => item.text === "LOVE HOTEL");
     e.chooseWalkReply("evade");
     const firstEvade = e.doubt === 20 && !e.finished;
     e.chooseWalkReply("evade");
@@ -374,7 +376,7 @@ function check(name, condition, detail = "") {
     fresh.beginConversation();
     fresh.chooseWalkReply("explain");
     fresh.closeConversation();
-    return { unansweredCannotWin, firstQuestion, stopsForReply, firstEvade, doubleTapIgnored,
+    return { unansweredCannotWin, firstQuestion, stopsForReply, loveHotelExplained, loveHotelSign, firstEvade, doubleTapIgnored,
       escalating, breaksAfterThree, noGoalAfterFailure, repairWorks, finalNotBypassed,
       consentConfirmed: fresh.destinationConfirmed && fresh.questionsAnswered === 4 };
   });

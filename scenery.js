@@ -122,7 +122,7 @@ export function drawCityStreet(scene, worldWidth, hotelX) {
     g.fillStyle(0x3c3331).fillRect(x, y - 35, 80, 7).fillRect(x, y - 49, 80, 5);
     g.fillStyle(0x263544).fillRect(x + 7, y - 28, 5, 16).fillRect(x + 68, y - 28, 5, 16);
   }
-  const names = night ? ['ネオン横丁', '月あかり広場', 'ホテル通り'] : ['名駅・駅前通り', 'こもれび広場', 'ホテル通り'];
+  const names = night ? ['ネオン横丁', '月あかり広場', 'ラブホテル通り'] : ['名駅・駅前通り', 'こもれび広場', 'ラブホテル通り'];
   names.forEach((name, i) => {
     const x = 600 + i * 850, top = Math.max(118, y - 240);
     g.fillStyle(0x273e4b).fillRect(x - 80, top, 160, 30);
@@ -148,6 +148,13 @@ export function drawCityStreet(scene, worldWidth, hotelX) {
     g.fillStyle(0x9f927c).fillRect(x - 10, y - 34, 20, 20);
     g.fillStyle(0x426657).fillRect(x - 13, y - 57, 26, 26);
   }
-  scene.label(hotelX, top + 30, 'HOTEL', '#ffe0a8', scene.compact ? 20 : 27);
+  g.lineStyle(2, 0xff80b3, .8).strokeRect(hotelX - 141, top, 282, y - top - 14);
+  for (const x of [hotelX - 109, hotelX + 109]) {
+    g.fillStyle(0xff78ac, .08).fillCircle(x, top + 29, 28);
+    g.fillStyle(0xff8cbd).fillCircle(x - 4, top + 25, 5).fillCircle(x + 4, top + 25, 5)
+      .fillTriangle(x - 9, top + 26, x + 9, top + 26, x, top + 38);
+  }
+  scene.label(hotelX, top + 30, 'LOVE HOTEL', '#ffb2d2', scene.compact ? 18 : 24);
+  scene.label(hotelX - 83, y - 54, 'REST', '#ffd5e7', 10);
   scene.label(hotelX, top - 16, 'GOAL', '#9eede0', 16);
 }

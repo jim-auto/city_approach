@@ -1,7 +1,7 @@
-import TitleScene from "./scenes/TitleScene.js";
-import MainScene from "./scenes/MainScene.js";
-import EscortScene from "./scenes/EscortScene.js?v=20261107-tap1";
-import TalkScene from "./scenes/TalkScene.js?v=20261107-tap1";
+import TitleScene from "./scenes/TitleScene.js?v=20261107-love1";
+import MainScene from "./scenes/MainScene.js?v=20261107-love1";
+import EscortScene from "./scenes/EscortScene.js?v=20261107-love1";
+import TalkScene from "./scenes/TalkScene.js?v=20261107-love1";
 
 document.addEventListener(
   "touchmove",

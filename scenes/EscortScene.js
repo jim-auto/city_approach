@@ -1,8 +1,8 @@
-import { createNativeButtons } from "../native-buttons.js";
-import { drawCitySky, drawCityStreet } from "../scenery.js";
-import { bindTouchReset } from "../mobile.js";
-import { sfx } from "../sfx.js";
-import { getBest, setBest } from "../storage.js";
+import { createNativeButtons } from "../native-buttons.js?v=20261107-love1";
+import { drawCitySky, drawCityStreet } from "../scenery.js?v=20261107-love1";
+import { bindTouchReset } from "../mobile.js?v=20261107-love1";
+import { sfx } from "../sfx.js?v=20261107-love1";
+import { getBest, setBest } from "../storage.js?v=20261107-love1";
 
 const START_X = 150;
 const HOTEL_X = 2900;
@@ -14,14 +14,14 @@ const WALK_REPLIES = [
   { key: "check", label: "やめる？と聞く" },
 ];
 const WALK_QUESTIONS = [
-  { x: 650, text: "どこ行くんですか？", explained: "ラウンジなんだ。短い時間ならいいよ。",
-    playerLines: { explain: "ホテルのラウンジで少し休もう", evade: "まあまあまあ", check: "嫌ならここでやめようか？" } },
+  { x: 650, text: "どこ行くんですか？", explained: "ラブホテルなんだ。行くかは話してから決めたいな。",
+    playerLines: { explain: "ラブホテルに行かない？嫌ならやめよう", evade: "まあまあまあ", check: "嫌ならここでやめようか？" } },
   { x: 1300, text: "まだ歩くんですか？", explained: "もう少しね。じゃあ、ゆっくり行こう。",
     playerLines: { explain: "あと少し。疲れたらここで休もう", evade: "まあまあまあ", check: "疲れた？ ここまでにする？" } },
   { x: 1950, text: "帰りの時間、大丈夫かな……", explained: "分かった。時間になったら帰るね。",
-    playerLines: { explain: "ラウンジで少しだけ。帰る時間に合わせよう", evade: "まあまあまあ", check: "無理せず、今日は帰る？" } },
-  { x: 2630, text: "ここ、ホテルですよね？", final: true, explained: "ラウンジだけね。少し休もう。",
-    playerLines: { explain: "ホテルのラウンジだよ。入るのは嫌？", evade: "まあまあまあ", check: "ラウンジだけだけど、やめておく？" } },
+    playerLines: { explain: "帰る時間に合わせよう。無理ならやめよう", evade: "まあまあまあ", check: "無理せず、今日は帰る？" } },
+  { x: 2630, text: "ここ、ラブホテルですよね？", final: true, explained: "うん、入ろう。気が変わったら帰るね。",
+    playerLines: { explain: "そう。今から入る？嫌ならやめよう", evade: "まあまあまあ", check: "ここまでにする？無理はしなくていいよ" } },
 ];
 
 // A separate, side-scrolling finale: the companion, not a score gate, unlocks it.
@@ -62,7 +62,7 @@ export default class EscortScene extends Phaser.Scene {
     }).setScrollFactor(0).setDepth(40);
     this.hudBackdrop = this.add.graphics().setScrollFactor(0).setDepth(39);
     this.progress = this.add.graphics().setScrollFactor(0).setDepth(40);
-    this.caption = this.add.text(0, 0, "二人でホテルへ。右へ進もう →", {
+    this.caption = this.add.text(0, 0, "二人でラブホテルへ。右へ進もう →", {
       fontFamily: "system-ui, sans-serif", fontSize: "16px", color: "#ffd24f", align: "center",
     }).setOrigin(0.5).setScrollFactor(0).setDepth(40);
     this.leftButton = this.control("←", -1);
@@ -162,7 +162,7 @@ export default class EscortScene extends Phaser.Scene {
   updateHud() {
     const progress = Phaser.Math.Clamp((this.player.x - START_X) / (HOTEL_X - START_X), 0, 1);
     const distance = Math.max(0, Math.ceil((HOTEL_X - this.player.x) / 10));
-    const hudText = `HOTEL WALK / ${this.mapKey === "kabukicho" ? "歌舞伎町" : "名古屋"}\nあと ${distance}m / 不信感 ${this.doubt}/100`;
+    const hudText = `LOVE HOTEL WALK / ${this.mapKey === "kabukicho" ? "歌舞伎町" : "名古屋"}\nあと ${distance}m / 不信感 ${this.doubt}/100`;
     if (this.hud.text !== hudText) this.hud.setText(hudText);
     const w = this.scale.width - 40;
     this.progress.clear().fillStyle(0x354457).fillRect(20, this.compact ? 66 : 82, w, 5)
@@ -212,7 +212,7 @@ export default class EscortScene extends Phaser.Scene {
     const checkpoint = Math.min(3, Math.floor((this.player.x - START_X) / 800));
     if (checkpoint > this.checkpoint) {
       this.checkpoint = checkpoint;
-      this.caption.setText(["", "少し歩くと、街の景色が変わってきた。", "二人のペースで、もう少し先へ。", "ホテルが見えてきた！ →"][checkpoint]);
+      this.caption.setText(["", "少し歩くと、街の景色が変わってきた。", "二人のペースで、もう少し先へ。", "ラブホテルが見えてきた！ →"][checkpoint]);
       sfx.play("tick");
     }
     this.updateHud();
@@ -348,7 +348,7 @@ export default class EscortScene extends Phaser.Scene {
         failure = "うん、今日はここまでにするね。";
       } else {
         this.doubt = Math.max(0, this.doubt - 10);
-        response = question.final ? "ラウンジだけね。少し休もう。" : "大丈夫。でも行き先は教えてね。";
+        response = question.final ? "うん、入ってみよう。嫌になったら帰るね。" : "大丈夫。でも行き先は教えてね。";
         if (question.final) this.destinationConfirmed = true;
       }
     }
@@ -410,7 +410,7 @@ export default class EscortScene extends Phaser.Scene {
     this.layoutConversation();
     this.finishShade = this.add.graphics().setScrollFactor(0).setDepth(60);
     this.resultBody = success
-      ? `HOTEL GOAL!\n二人でホテルに到着\n\n到着ボーナス +100\nScore ${this.score}`
+      ? `LOVE HOTEL\nGOAL!\n二人でラブホテルに到着\n\n到着ボーナス +100\nScore ${this.score}`
       : `同行終了\n${reason}\n\n到着ボーナスなし\nScore ${this.score}`;
     this.finishText = this.add.text(0, 0, "", {
       fontFamily: "system-ui, sans-serif", fontSize: "26px", color: success ? "#ffe0a0" : "#ffb4a6", align: "center", lineSpacing: 14,

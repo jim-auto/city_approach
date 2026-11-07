@@ -1,12 +1,12 @@
-import { sfx } from "../sfx.js";
-import { getBest, getDifficulty, cycleDifficulty } from "../storage.js";
+import { sfx } from "../sfx.js?v=20261107-love1";
+import { getBest, getDifficulty, cycleDifficulty } from "../storage.js?v=20261107-love1";
 
 const TUTORIAL_LINES = [
   "街を歩く  →  状態を見る  →  オープナーを選ぶ",
   "防御サインが強い相手は「離れる」が正解",
   "共感 / 状況いじり / 持ち物 / ユーモア賭け",
-  "会話は「聞く」→ 返答で信頼 → 提案",
-  "同行したら横スクロール！ホテルがゴール",
+  "属性を読む → 相性フリップ → 二人で決める",
+  "同行したら横スクロール！ラブホテルがゴール",
 ];
 
 export default class TitleScene extends Phaser.Scene {

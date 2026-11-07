@@ -3,11 +3,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node smoke.mjs && node tests/talk-taps.mjs && node tests/colorways.mjs && node tests/mobile.mjs",
+    "test": "node smoke.mjs && node tests/encounters.mjs && node tests/talk-taps.mjs && node tests/colorways.mjs && node tests/mobile.mjs",
     "test:smoke": "node smoke.mjs",
     "test:mobile": "node tests/mobile.mjs",
     "test:colorways": "node tests/colorways.mjs",
-    "test:taps": "node tests/talk-taps.mjs"
+    "test:taps": "node tests/talk-taps.mjs",
+    "test:encounters": "node tests/encounters.mjs"
   },
   "devDependencies": {
     "playwright": "1.65.0"
