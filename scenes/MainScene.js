@@ -1,7 +1,8 @@
-import { bindTouchReset } from "../mobile.js?v=20261108-conversation1";
-import { sfx } from "../sfx.js?v=20261108-conversation1";
-import { getBest, setBest, getDifficulty, cycleDifficulty, getSpriteMode } from "../storage.js?v=20261108-conversation1";
-import { NPC_COLORWAYS, npcColorKey, CHARACTER_STYLE_LABELS, aiSourceKeyFor, buildCharacterTextures, registerCharacterAnimations } from "../characters.js?v=20261108-conversation1";
+import { PLAYER_CAST_KEY, PLAYER_CAST_PATH, buildPlayerCast, playerForDifficulty } from "../player-appearance.js?v=20261108-cast1";
+import { bindTouchReset } from "../mobile.js?v=20261108-cast1";
+import { sfx } from "../sfx.js?v=20261108-cast1";
+import { getBest, setBest, getDifficulty, cycleDifficulty, getSpriteMode } from "../storage.js?v=20261108-cast1";
+import { NPC_COLORWAYS, npcColorKey, CHARACTER_STYLE_LABELS, aiSourceKeyFor, buildCharacterTextures, registerCharacterAnimations } from "../characters.js?v=20261108-cast1";
 
 const NPC_VARIANT_KEYS = {
   "待ち合わせ系": "npc-waiting",
@@ -347,6 +348,7 @@ export default class MainScene extends Phaser.Scene {
 
   preload() {
     this.load.image("tiles", "assets/tiles.png");
+    if (!this.textures.exists(PLAYER_CAST_KEY)) this.load.image(PLAYER_CAST_KEY, PLAYER_CAST_PATH);
     if (!this.textures.exists("character-prin-student")) this.load.image("character-prin-student", "assets/ai/character-prin-student.png");
     NPC_COLORWAYS.forEach(color => {
       if (!this.textures.exists(color.atlas)) this.load.image(color.atlas, color.path);
@@ -390,6 +392,8 @@ export default class MainScene extends Phaser.Scene {
     this.ambient = [];
     this.mapLabels = [];
 
+    buildPlayerCast(this);
+    this.playerAppearance = playerForDifficulty(this.difficulty.key);
     buildCharacterTextures(this);
     registerCharacterAnimations(this);
 
@@ -405,7 +409,7 @@ export default class MainScene extends Phaser.Scene {
     this.tapTargetGraphics = this.add.graphics().setDepth(7);
 
     this.player = this.physics.add
-      .sprite(0, 0, "player-0")
+      .sprite(0, 0, this.playerAppearance.spriteKey)
       .setScale(1.6)
       .setDepth(10);
     this.player.body.setSize(14, 20).setOffset(9, 10);
@@ -1058,7 +1062,7 @@ export default class MainScene extends Phaser.Scene {
 
     this.mapButton = this.createHudButton("街切替", () => this.switchMap(), 118, 46, 0x223340);
     this.difficultyButton = this.createHudButton(
-      `難度:${this.difficulty.label}`,
+      `${this.difficulty.label}\n${this.difficulty.persona}`,
       () => this.toggleDifficulty(),
       148,
       46,
@@ -1082,8 +1086,8 @@ export default class MainScene extends Phaser.Scene {
     const text = this.add
       .text(width / 2, height / 2, label, {
         fontFamily: "system-ui, sans-serif",
-        fontSize: label.length >= 6 ? "15px" : "18px",
-        color: "#ffffff",
+        fontSize: label.includes("\n") ? "13px" : label.length >= 6 ? "15px" : "18px",
+        color: "#ffffff", align: "center",
       })
       .setOrigin(0.5);
     container.add([bg, text]);
@@ -1364,13 +1368,13 @@ export default class MainScene extends Phaser.Scene {
   updatePlayerAnim() {
     const moving = this.getMoveVector().length() > 0.1;
     if (moving) {
-      if (!this.player.anims.isPlaying) this.player.anims.play("player-walk", true);
+      if (!this.player.anims.isPlaying) this.player.anims.play(this.playerAppearance.animationKey, true);
       const move = this.getMoveVector();
       if (move.x < -0.1) this.player.setFlipX(true);
       else if (move.x > 0.1) this.player.setFlipX(false);
     } else if (this.player.anims.isPlaying) {
       this.player.anims.stop();
-      this.player.setTexture("player-0");
+      this.player.setTexture(this.playerAppearance.spriteKey);
     }
   }
 
@@ -1513,7 +1517,7 @@ export default class MainScene extends Phaser.Scene {
         `Goal ${goalText} / ${hotelText} / 連続${this.streak} / ${nearText}`;
     const situation = this.nearNpc?.profile.situation;
     const state = situation ? `${situation.label} / 余${ROOM_LABELS[situation.room]} 警${CAUTION_LABELS[situation.caution]}\n${this.nearNpc.profile.styleLabel || "きっかけ"} / ${situation.hook}` : "街をタップ / ドラッグで移動";
-    const compact = `${map.label} / ${this.difficulty.label}　${goalText}\nScore ${this.score} / Best ${this.best} / R${rank}\n${state}`;
+    const compact = `${map.label} / ${this.difficulty.persona}　${goalText}\nScore ${this.score} / Best ${this.best} / R${rank}\n${state}`;
     this.infoText.setText(mobile ? compact : baseText + historyLine);
     this.drawProgress();
     this.updateActionHint();
@@ -1743,9 +1747,12 @@ export default class MainScene extends Phaser.Scene {
 
   toggleDifficulty() {
     this.difficulty = cycleDifficulty(this.difficulty.key);
+    this.playerAppearance = playerForDifficulty(this.difficulty.key);
+    this.player.anims.stop();
+    this.player.setTexture(this.playerAppearance.spriteKey);
     const text = this.difficultyButton.list.find((c) => c.text !== undefined);
-    if (text) text.setText(`難度:${this.difficulty.label}`);
-    this.showMessage(`難度: ${this.difficulty.label}`, 1100);
+    if (text) text.setText(`${this.difficulty.label}\n${this.difficulty.persona}`);
+    this.showMessage(`${this.difficulty.label} / ${this.difficulty.persona}`, 1100);
   }
 
   tryApproach(actionKey) {

@@ -326,7 +326,7 @@ function check(name, condition, detail = "") {
       sourceWidth: e.textures.get("ai_player_raw").getSourceImage().width };
   });
   check("successful conversation starts escort", escort.partner && !escort.finished);
-  check("generated atlas supplies character portraits", escort.atlas && escort.sourceWidth > 0 && escort.sourceWidth === escort.cellWidth);
+  check("generated atlas supplies character portraits", escort.atlas && escort.sourceWidth > 0 && escort.sourceWidth === 512);
   const walkDialogue = await page.evaluate(async () => {
     const g = window.cityApproachGame;
     const e = g.scene.keys.EscortScene;

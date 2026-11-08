@@ -2,44 +2,44 @@
   "description": "Actual browser play, recorded with Playwright and edited into chronological excerpts. No game state or outcomes were altered.",
   "width": 1100,
   "height": 800,
-  "duration": 20.7,
+  "duration": 23.16,
   "gifFps": 10,
   "gifWidth": 480,
   "gifHeight": 800,
   "clips": [
     {
-      "start": 14.146999999999998,
-      "end": 16.096999999999998,
+      "start": 6.893,
+      "end": 8.843,
       "caption": "街で声をかける。\nそこから始まる会話ゲーム。"
     },
     {
-      "start": 17.054000000000002,
-      "end": 20.42,
+      "start": 9.978000000000002,
+      "end": 13.837,
       "caption": "相手の不安に、どう返す？\n4枚のフリップからタップ。"
     },
     {
-      "start": 33.308,
-      "end": 35.455,
+      "start": 28.805,
+      "end": 31.055,
       "caption": "連れ出したあとも、\n歩きながら会話は続く。"
     },
     {
-      "start": 35.754999999999995,
-      "end": 39.876,
+      "start": 34.472,
+      "end": 39.478,
       "caption": "「まあまあまあ」で流す。\nでも、連発すると同行終了。"
     },
     {
-      "start": 43.848,
-      "end": 47.923,
+      "start": 47.17,
+      "end": 51.815000000000005,
       "caption": "相手に合う返しで、\n会話が盛り上がる。"
     },
     {
-      "start": 64.441,
-      "end": 66.135,
+      "start": 74.074,
+      "end": 76.174,
       "caption": "入口でも、気持ちを確認。\n二人で決めて、ゴールへ。"
     },
     {
-      "start": 66.235,
-      "end": 69.58500000000001,
+      "start": 76.274,
+      "end": 79.62400000000001,
       "caption": "ホテルの客室で、記念CG。\nラストは黒バニー。"
     }
   ],

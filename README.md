@@ -2,19 +2,31 @@
 
 **「まあまあまあ」は、何回まで通じる？**
 
-[![実プレイ：声かけ、4枚の会話フリップ、横スクロールの同行、相手別のゴールCG](./assets/demo.gif?v=bunny1)](https://jim-auto.github.io/city_approach/)
+[![実プレイ：声かけ、4枚の会話フリップ、横スクロールの同行、相手別のゴールCG](./assets/demo.gif?v=cast1)](https://jim-auto.github.io/city_approach/)
 
 **[▶ ブラウザで遊ぶ](https://jim-auto.github.io/city_approach/)** · **[投稿用MP4](./assets/demo.mp4)** · [WebM](./assets/demo.webm)
 
 街で声をかけ、相手の不安に4枚の返答で応える会話ゲーム。連れ出したあとも会話は続く。相手に合う軽口はウケるけど、流しすぎると同行終了。二人でホテルに着いたら、相手ごとのゴールCGへ。
 
-スマホ・PC対応。インストール不要。上のGIFは実際のブラウザ操作を約21秒に編集したものです。
+スマホ・PC対応。インストール不要。上のGIFは実際のブラウザ操作を約23秒に編集したものです。
 
 ## GitHub About
 
 - Description: 街で相手のサインを読み、距離感と会話の文脈を判断するブラウザ2Dゲーム
 - Website: GitHub Pagesの公開URL
 - Topics: `phaser`, `browser-game`, `javascript`, `pixel-art`, `github-pages`, `city-game`
+
+## 難易度と主人公
+
+| 難易度 | 主人公 | 声かけの通りやすさ |
+| --- | --- | --- |
+| やさしい | ガチイケ | 高め |
+| ふつう | フツメン | 標準 |
+| むずかしい | おじさん | 低め |
+
+タイトル・街の難度ボタンで切り替えると、主人公の立ち絵、街と同行の歩行キャラ、ゴールCGが連動する。初回はガチイケで、選択は保存される。会話にも選択した難易度を引き継ぐ。
+
+男性3人の画像は内蔵画像生成ツールで制作。`assets/ai/player-cast.png` は左からガチイケ・フツメン・おじさんの3列、プロンプトは `assets/ai/player-cast-prompt.txt`。全員ジャケットなし。`npm run test:difficulty` でChromium／WebKitのタップ選択、3人の描き分け、歩行、会話・CGへの引き継ぎ、縦横の切り替え、選択保存を検証する。
 
 ## ゲーム内容
 
@@ -224,4 +236,4 @@ npm run demo:build
 
 Playwrightが自然に出現したプリン髪の相手へ実際のキー入力・タップで声をかけ、会話からホテル客室のバニーCGまで録画する。声かけに失敗したテイクは通常のリロードからやり直す。ゲーム状態・成功率・得点は書き換えない。録画と区切り時刻は `test-results/demo/` に保存し、FFmpegで時系列の見どころを切り出す。生成にはFFmpegとNoto Sans CJKフォントが必要。
 
-README用GIFはゲーム画面だけの480×800・10fps・ループ再生。投稿用MP4は1100×800・H.264・約21秒。WebMも同じ内容。MP4／WebMの左側の字幕は編集で加えた説明で、ゲーム画面は実際の録画。編集区間は `assets/demo.json` に記録する。Xへの投稿はMP4を使用できる。
+README用GIFはゲーム画面だけの480×800・10fps・ループ再生。投稿用MP4は1100×800・H.264・約23秒。WebMも同じ内容。MP4／WebMの左側の字幕は編集で加えた説明で、ゲーム画面は実際の録画。編集区間は `assets/demo.json` に記録する。Xへの投稿はMP4を使用できる。

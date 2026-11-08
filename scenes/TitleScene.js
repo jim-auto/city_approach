@@ -1,5 +1,6 @@
-import { sfx } from "../sfx.js?v=20261108-conversation1";
-import { getBest, getDifficulty, cycleDifficulty } from "../storage.js?v=20261108-conversation1";
+import { PLAYER_CAST_KEY, PLAYER_CAST_PATH, buildPlayerCast, playerForDifficulty } from "../player-appearance.js?v=20261108-cast1";
+import { sfx } from "../sfx.js?v=20261108-cast1";
+import { getBest, getDifficulty, cycleDifficulty } from "../storage.js?v=20261108-cast1";
 
 const TUTORIAL_LINES = [
   "街を歩く  →  状態を見る  →  オープナーを選ぶ",
@@ -16,10 +17,12 @@ export default class TitleScene extends Phaser.Scene {
 
   preload() {
     this.load.image("app-icon", "assets/app-icon.png");
+    if (!this.textures.exists(PLAYER_CAST_KEY)) this.load.image(PLAYER_CAST_KEY, PLAYER_CAST_PATH);
   }
 
   create() {
     this.difficulty = getDifficulty();
+    buildPlayerCast(this);
     this.best = getBest();
     this.started = false;
 
@@ -61,7 +64,7 @@ export default class TitleScene extends Phaser.Scene {
     this.diffText = this.add
       .text(0, 0, "", {
         fontFamily: "system-ui, sans-serif",
-        fontSize: "17px",
+        fontSize: "16px",
         color: "#ffd24f",
         fontStyle: "bold",
       })
@@ -103,7 +106,8 @@ export default class TitleScene extends Phaser.Scene {
 
   refreshTexts() {
     this.bestText.setText(`Best ${this.best}`);
-    this.diffText.setText(`難度: ${this.difficulty.label}`);
+    this.diffText.setText(`${this.difficulty.label} / ${this.difficulty.persona} ↻`);
+    this.iconImage.setTexture(playerForDifficulty(this.difficulty.key).portraitKey);
   }
 
   layout() {

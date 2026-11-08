@@ -8,9 +8,9 @@ export const SPRITE_MODES = [
 ];
 
 export const DIFFICULTIES = [
-  { key: "easy",   label: "やさしい", baseMod:  0.06, noiseMod: -0.02, mult: 0.7 },
-  { key: "normal", label: "ふつう",   baseMod:  0,    noiseMod:  0,    mult: 1.0 },
-  { key: "hard",   label: "きびしい", baseMod: -0.04, noiseMod:  0.04, mult: 1.4 },
+  { key: "easy",   label: "やさしい", persona: "ガチイケ", baseMod:  0.06, noiseMod: -0.02, mult: 0.7 },
+  { key: "normal", label: "ふつう", persona: "フツメン", baseMod:  0,    noiseMod:  0,    mult: 1.0 },
+  { key: "hard",   label: "むずかしい", persona: "おじさん", baseMod: -0.04, noiseMod:  0.04, mult: 1.4 },
 ];
 
 function safeGet(key) {

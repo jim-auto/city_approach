@@ -1,11 +1,12 @@
-import { WALK_REPLY_KEYS, WALK_QUESTION_X, walkQuestion, walkReplyEffect } from "../escort-conversation.js?v=20261108-conversation1";
-import { encounterFor } from "../encounter-rules.js?v=20261108-conversation1";
-import { goalCostumeFor, buildGoalPortrait, goalPortraitBounds } from "../goal-costumes.js?v=20261108-bunny1";
-import { createNativeButtons } from "../native-buttons.js?v=20261108-conversation1";
-import { drawCitySky, drawCityStreet } from "../scenery.js?v=20261108-conversation1";
-import { bindTouchReset } from "../mobile.js?v=20261108-conversation1";
-import { sfx } from "../sfx.js?v=20261108-conversation1";
-import { getBest, setBest } from "../storage.js?v=20261108-conversation1";
+import { PLAYER_CAST_KEY, PLAYER_CAST_PATH, buildPlayerCast, playerForDifficulty } from "../player-appearance.js?v=20261108-cast1";
+import { WALK_REPLY_KEYS, WALK_QUESTION_X, walkQuestion, walkReplyEffect } from "../escort-conversation.js?v=20261108-cast1";
+import { encounterFor } from "../encounter-rules.js?v=20261108-cast1";
+import { goalCostumeFor, buildGoalPortrait, goalPortraitBounds } from "../goal-costumes.js?v=20261108-cast1";
+import { createNativeButtons } from "../native-buttons.js?v=20261108-cast1";
+import { drawCitySky, drawCityStreet } from "../scenery.js?v=20261108-cast1";
+import { bindTouchReset } from "../mobile.js?v=20261108-cast1";
+import { sfx } from "../sfx.js?v=20261108-cast1";
+import { DIFFICULTIES, getDifficulty, getBest, setBest } from "../storage.js?v=20261108-cast1";
 
 const START_X = 150;
 const HOTEL_X = 2900;
@@ -17,10 +18,13 @@ export default class EscortScene extends Phaser.Scene {
 
   init(data = {}) {
     this.goalSelection = goalCostumeFor(data.companion?.textureKey);
+    this.difficulty = DIFFICULTIES.find(d => d.key === data.difficulty) || getDifficulty();
+    this.playerAppearance = playerForDifficulty(this.difficulty.key);
   }
 
   preload() {
     const assets = [
+      [PLAYER_CAST_KEY, PLAYER_CAST_PATH],
       [this.goalSelection.atlasKey, this.goalSelection.atlasPath],
       [this.goalSelection.roomKey, this.goalSelection.roomPath],
     ].filter(([key]) => !this.textures.exists(key));
@@ -33,7 +37,8 @@ export default class EscortScene extends Phaser.Scene {
   }
 
   create(data = {}) {
-    this.runData = data;
+    this.runData = { ...data, difficulty: this.difficulty.key };
+    buildPlayerCast(this);
     buildGoalPortrait(this, this.goalSelection);
     this.mapKey = data.mapKey || "nagoya";
     this.score = data.score || 0;
@@ -69,7 +74,7 @@ export default class EscortScene extends Phaser.Scene {
     this.sky = this.add.graphics().setScrollFactor(0).setDepth(-10);
     this.street = this.add.graphics().setDepth(-5);
     this.decorations = this.add.container(0, 0);
-    this.player = this.add.sprite(START_X, 0, "player-0").setOrigin(0.5, 1).setScale(2.6).setDepth(10);
+    this.player = this.add.sprite(START_X, 0, this.playerAppearance.spriteKey).setOrigin(0.5, 1).setScale(2.6).setDepth(10);
     const texture = data.companion?.textureKey;
     this.partner = this.add.sprite(START_X - 68, 0,
       texture && this.textures.exists(texture) ? texture : "npc-waiting-0")
@@ -180,7 +185,7 @@ export default class EscortScene extends Phaser.Scene {
   updateHud() {
     const progress = Phaser.Math.Clamp((this.player.x - START_X) / (HOTEL_X - START_X), 0, 1);
     const distance = Math.max(0, Math.ceil((HOTEL_X - this.player.x) / 10));
-    const hudText = `LOVE HOTEL WALK / ${this.mapKey === "kabukicho" ? "歌舞伎町" : "名古屋"}\nあと ${distance}m / 不信感 ${this.doubt}/100`;
+    const hudText = `${this.difficulty.persona} / ${this.mapKey === "kabukicho" ? "歌舞伎町" : "名古屋"}\nあと ${distance}m / 不信感 ${this.doubt}/100`;
     if (this.hud.text !== hudText) this.hud.setText(hudText);
     this.vibeText.setPosition(20, this.compact ? 52 : 63).setFontSize(this.compact ? 11 : 12)
       .setText(`盛り上がり ${this.vibe}/100 / 会話 +${this.conversationBonus}点`);
@@ -219,7 +224,7 @@ export default class EscortScene extends Phaser.Scene {
     const dt = Math.min(delta, 50) / 1000;
     this.player.x = Phaser.Math.Clamp(this.player.x + move * 230 * dt, START_X, HOTEL_X);
     this.player.y = this.groundY + (move ? Math.sin(this.time.now / 95) * 2 : 0);
-    if (move) { this.player.setFlipX(move < 0); this.player.play("player-walk", true); }
+    if (move) { this.player.setFlipX(move < 0); this.player.play(this.playerAppearance.animationKey, true); }
     else this.player.anims.stop();
     const target = Math.max(START_X - 68, this.player.x - 68);
     this.partner.x += (target - this.partner.x) * (1 - Math.exp(-8 * dt));
@@ -515,7 +520,7 @@ export default class EscortScene extends Phaser.Scene {
     const cropWidth = width / cover, cropHeight = height / cover;
     backdrop.setCrop((backdrop.width - cropWidth) / 2, (backdrop.height - cropHeight) / 2, cropWidth, cropHeight)
       .setScale(cover);
-    const keys = ["ai_player_raw", this.goalArtCompanionKey];
+    const keys = [this.playerAppearance.portraitKey, this.goalArtCompanionKey];
     const bounds = keys.map(key => goalPortraitBounds(this, key));
     const ratios = bounds.map(b => b.width / b.height);
     // Wide dresses and tall hats must fit beside the protagonist without clipping.
