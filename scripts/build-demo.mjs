@@ -5,18 +5,32 @@ import { execFileSync } from 'node:child_process';
 const dir='test-results/demo';
 const take=JSON.parse(await readFile(`${dir}/take.json`,'utf8'));
 const marks=Object.fromEntries(take.marks.map(m=>[m.name,m.time]));
-assert(['goal','question-3','reaction-3','question-4','reaction-4','reaction-5','arrival-walk'].every(key=>Number.isFinite(marks[key])), 'Record a successful six-question take before building the demo');
+const required = ['goal','walk','talk-result',
+  ...Array.from({length:5}, (_, i) => [`talk-question-${i}`,`talk-reaction-${i}`]).flat(),
+  ...Array.from({length:6}, (_, i) => [`question-${i}`,`reaction-${i}`]).flat()];
+assert(required.every(key=>Number.isFinite(marks[key])), 'Record the complete conversation and all six walking exchanges before editing');
 const approach=take.marks.filter(m=>m.name.startsWith('approach-')).at(-1).time;
-const cuts=[
-  [approach-1.3,approach+.65,'街で声をかける。\nそこから始まる会話ゲーム。'],
-  [marks.talk+.3,marks['talk-reaction']+1.25,'ウケを狙わず、自然に返す。\n無難な返しでも先へ進める。'],
-  [marks.walk+.15,Math.min(marks['question-0']-.15,marks.walk+2.4),'連れ出したあとも、\n歩きながら会話は続く。'],
-  [marks['question-0']+.15,marks['reaction-0']+2.25,'「まあまあまあ」で流す。\nでも、連発すると同行終了。'],
-  [marks['question-3']+.15,marks['reaction-3']+2.1,'入口で「まだ迷ってる（笑）」\nここでも、返しを選ぶ。'],
-  [marks['question-4']+.15,marks['reaction-4']+1.8,'料金？ 終電？ 友達？\n相手ごとの迷いに返す。'],
-  [Math.max(marks['arrival-walk']+.15,marks.goal-1.65),marks.goal+.45,'入口でも、気持ちを確認。\n二人で決めて、ゴールへ。'],
-  [marks.goal+.55,marks.goal+3.9,'ホテルの客室で、記念CG。\nラストは黒バニー。'],
+const walkCaptions = [
+  '「まあまあまあ」で流す。\n返答とリアクションまで見せる。',
+  '次の質問には、ちゃんと返す。\n歩きながら会話は続く。',
+  '相手に合わせて、話題を選ぶ。\n雑談も、ひと往復ずつ。',
+  '入口で「まだ迷ってる（笑）」\n気になることを聞いてみる。',
+  '相手ごとの迷いにも返す。\n急がず、もうひと往復。',
+  '最後に、入るかを確認。\n返答を待ってからゴールへ。',
 ];
+const cuts=[
+  [approach-1.3,approach+.8,'街で声をかける。\nそこから始まる会話ゲーム。'],
+  // Keep the conversation and its invitation in one uninterrupted shot.
+  [marks['talk-question-0'],marks.walk+.15,'会話から、お誘いまで。\nやり取りを飛ばさず見せる。'],
+  [marks.walk+.15,Math.min(marks['question-0']-.1,marks.walk+1.9),'二人で歩き出す。\nこのあとも会話は続く。'],
+  ...walkCaptions.map((caption, i) => [marks[`question-${i}`],
+    i===5 ? marks.goal+.45 : marks[`reaction-${i}`]+2.8,caption]),
+  [marks.goal+.45,marks.goal+4,'ホテルの客室で、記念CG。\nラストは黒バニー。'],
+];
+for(let i=0;i<cuts.length;i++) {
+  assert(cuts[i][1]>cuts[i][0], `clip ${i} must have positive duration`);
+  if(i) assert(cuts[i][0]>=cuts[i-1][1]-.001, `clip ${i} must follow the preceding shot`);
+}
 const font='/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc';
 const regular='/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc';
 const textFiles={brand:'CITY APPROACH',hook:'その返し、\nアリ？ ナシ？',badge:'実プレイ / ダイジェスト',sub:'「まあまあまあ」は何回まで通じる？',cta:'スマホ・ブラウザですぐ遊べる',url:'jim-auto.github.io/city_approach/'};
@@ -50,11 +64,13 @@ ffmpeg(['-i',take.video,'-filter_complex_threads','1','-filter_complex_script',`
   '-map','[out]','-an','-c:v','libx264','-preset','medium','-crf','20','-pix_fmt','yuv420p','-movflags','+faststart','assets/demo.mp4']);
 ffmpeg(['-i','assets/demo.mp4','-vf','crop=480:800:620:0,fps=10,split[a][b];[a]palettegen=stats_mode=diff:max_colors=128[p];[b][p]paletteuse=dither=none:diff_mode=rectangle',
   '-filter_complex_threads','1','-loop','0','assets/demo.gif']);
-ffmpeg(['-i','assets/demo.mp4','-an','-c:v','libvpx-vp9','-crf','34','-b:v','0','-row-mt','1','-threads','2','assets/demo.webm']);
+ffmpeg(['-i','assets/demo.mp4','-an','-c:v','libvpx-vp9','-cpu-used','4','-crf','34','-b:v','0','-row-mt','1','-threads','2','assets/demo.webm']);
 ffmpeg(['-ss','3','-i','assets/demo.mp4','-frames:v','1','-update','1',`${dir}/hero-preview.png`]);
 await writeFile('assets/demo.json',JSON.stringify({
-  description:'Actual browser play, recorded with Playwright and edited into chronological excerpts. No game state or outcomes were altered.',
+  description:'Actual browser play, recorded with Playwright and edited into chronological excerpts, keeping the initial conversation uninterrupted and every walking exchange through its reaction. No game state or outcomes were altered.',
   width:1100,height:800,duration:Number(offset.toFixed(2)),gifFps:10,gifWidth:480,gifHeight:800,
+  initialConversation:{start:cuts[1][0],end:cuts[1][1],rounds:5,uninterrupted:true},
+  walkingExchanges:6,
   clips:cuts.map(([start,end,caption])=>({start,end,caption})),
   capture:'npm run demo:record',edit:'npm run demo:build',
 },null,2)+'\n');

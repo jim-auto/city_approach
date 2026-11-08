@@ -22,7 +22,8 @@ async function tapObject(scene,property,index){
     const r=s.game.canvas.getBoundingClientRect(),b=o.getBounds();
     return {x:r.x+(o.buttonWidth?o.x+o.buttonWidth/2:b.centerX),y:r.y+(o.buttonHeight?o.y+o.buttonHeight/2:b.centerY)};
   },{scene,property,index});
-  await page.touchscreen.tap(p.x,p.y);
+  if(scene==='MainScene') await page.mouse.click(p.x,p.y);
+  else await page.touchscreen.tap(p.x,p.y);
 }
 try {
   await page.goto(server.url);
@@ -30,7 +31,7 @@ try {
   await tapObject('TitleScene','startText');
   await page.waitForFunction(()=>window.cityApproachGame.scene.keys.MainScene?.player?.active);
   mark('street');
-  // Follow the first naturally spawned NPC with keyboard input. Failed takes
+  // Follow the first naturally spawned NPC with keyboard input. Failed or narratively disconnected takes
   // start a new normal run; success rates and random results are never altered.
   let talking=false;
   for(let attempt=0;attempt<5&&!talking;attempt++){
@@ -55,7 +56,12 @@ try {
     await page.waitForTimeout(650);mark(`approach-${attempt}`);
     await tapObject('MainScene','actionButtons',action.index);
     await page.waitForTimeout(1100);
-    talking=await page.evaluate(()=>window.cityApproachGame.scene.isActive('TalkScene') && window.cityApproachGame.scene.keys.TalkScene.fieldTextureKey.startsWith('npc-prin-student'));
+    talking=await page.evaluate(()=>{const g=window.cityApproachGame,t=g.scene.keys.TalkScene;
+      // Select a real take whose late topic doesn't introduce an unshown contact request or waiting friend.
+      return g.scene.isActive('TalkScene') && t.fieldTextureKey.startsWith('npc-prin-student')
+        && t.lineIndex===0 && !t.choiceLocked
+        && !['pace','friend'].includes(t.lines[3]?.concern);
+    });
     if(!talking && attempt<4){
       // Begin a new unmodified run after a failed opener or a different nearby NPC.
       await page.reload();
@@ -74,16 +80,19 @@ try {
       const line=t.lines[t.lineIndex];return {line:t.lineIndex,guard:t.discomfort,index:line.cards.findIndex(c=>line.isClosing?c.key===line.correct[0]:c.safe&&!line.correct.includes(c.key))};});
     if(decision.done)break;
     assert(decision.index>=0,'each conversation needs a calm reply or the final invitation');
-    await page.waitForTimeout(turn===0?1500:650);
+    mark(`talk-question-${decision.line}`);
+    await page.waitForTimeout(2300);
     const ready=await page.evaluate(line=>{const t=window.cityApproachGame.scene.keys.TalkScene;return !t.resultShown&&!t.choiceLocked&&t.lineIndex===line;},decision.line);
     if(!ready){turn--;continue;}
     await page.locator('.game-native-buttons[data-scene="TalkScene"] button').nth(decision.index).tap({timeout:5000});
     assert(await page.evaluate(guard=>window.cityApproachGame.scene.keys.TalkScene.discomfort<=guard,decision.guard),'calm replies must not increase discomfort');
+    mark(`talk-reaction-${decision.line}`);
     if(turn===0)mark('talk-reaction');
     await page.waitForFunction(line=>{const t=window.cityApproachGame.scene.keys.TalkScene;return t.resultShown||t.lineIndex>line;},decision.line);
   }
   assert(await page.evaluate(()=>window.cityApproachGame.scene.keys.TalkScene.resultBonus===120),'conversation must earn the invitation');
-  await page.waitForTimeout(900);
+  mark('talk-result');
+  await page.waitForTimeout(2300);
   await tapObject('TalkScene','resultButton');
   await page.waitForFunction(()=>window.cityApproachGame.scene.keys.EscortScene?.player?.active);
   mark('walk');
@@ -92,8 +101,8 @@ try {
     await page.waitForFunction(()=>window.cityApproachGame.scene.keys.EscortScene.dialogState==='asking',null,{timeout:60000});
     await page.keyboard.up('ArrowRight');
     mark(`question-${i}`);
-    await page.waitForTimeout(1300);
-    const key=i===0?'evade':i===1?'check':'explain';
+    await page.waitForTimeout(2200);
+    const key=i===0?'evade':i===1?'check':i===2?'spark':'explain';
     await page.locator(`.game-native-buttons[data-scene="EscortScene"] button[data-choice="${key}"]`).tap();
     mark(`reaction-${i}`);
     await page.waitForFunction(()=>!window.cityApproachGame.scene.keys.EscortScene.currentQuestion);

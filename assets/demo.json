@@ -1,50 +1,67 @@
 {
-  "description": "Actual browser play, recorded with Playwright and edited into chronological excerpts. No game state or outcomes were altered.",
+  "description": "Actual browser play, recorded with Playwright and edited into chronological excerpts, keeping the initial conversation uninterrupted and every walking exchange through its reaction. No game state or outcomes were altered.",
   "width": 1100,
   "height": 800,
-  "duration": 22.9,
+  "duration": 68.22,
   "gifFps": 10,
   "gifWidth": 480,
   "gifHeight": 800,
+  "initialConversation": {
+    "start": 87.153,
+    "end": 111.622,
+    "rounds": 5,
+    "uninterrupted": true
+  },
+  "walkingExchanges": 6,
   "clips": [
     {
-      "start": 4.74,
-      "end": 6.69,
+      "start": 84.443,
+      "end": 86.54299999999999,
       "caption": "街で声をかける。\nそこから始まる会話ゲーム。"
     },
     {
-      "start": 7.617,
-      "end": 10.615,
-      "caption": "ウケを狙わず、自然に返す。\n無難な返しでも先へ進める。"
+      "start": 87.153,
+      "end": 111.622,
+      "caption": "会話から、お誘いまで。\nやり取りを飛ばさず見せる。"
     },
     {
-      "start": 22.858999999999998,
-      "end": 24.866,
-      "caption": "連れ出したあとも、\n歩きながら会話は続く。"
+      "start": 111.622,
+      "end": 113.372,
+      "caption": "二人で歩き出す。\nこのあとも会話は続く。"
     },
     {
-      "start": 25.165999999999997,
-      "end": 29.345,
-      "caption": "「まあまあまあ」で流す。\nでも、連発すると同行終了。"
+      "start": 113.954,
+      "end": 119.654,
+      "caption": "「まあまあまあ」で流す。\n返答とリアクションまで見せる。"
     },
     {
-      "start": 49.125,
-      "end": 53.089,
-      "caption": "入口で「まだ迷ってる（笑）」\nここでも、返しを選ぶ。"
+      "start": 122.778,
+      "end": 128.52100000000002,
+      "caption": "次の質問には、ちゃんと返す。\n歩きながら会話は続く。"
     },
     {
-      "start": 54.734,
-      "end": 58.436,
-      "caption": "料金？ 終電？ 友達？\n相手ごとの迷いに返す。"
+      "start": 131.627,
+      "end": 137.818,
+      "caption": "相手に合わせて、話題を選ぶ。\n雑談も、ひと往復ずつ。"
     },
     {
-      "start": 64.989,
-      "end": 65.73700000000001,
-      "caption": "入口でも、気持ちを確認。\n二人で決めて、ゴールへ。"
+      "start": 142.387,
+      "end": 148.461,
+      "caption": "入口で「まだ迷ってる（笑）」\n気になることを聞いてみる。"
     },
     {
-      "start": 65.837,
-      "end": 69.18700000000001,
+      "start": 149.353,
+      "end": 155.299,
+      "caption": "相手ごとの迷いにも返す。\n急がず、もうひと往復。"
+    },
+    {
+      "start": 155.962,
+      "end": 162.66,
+      "caption": "最後に、入るかを確認。\n返答を待ってからゴールへ。"
+    },
+    {
+      "start": 162.66,
+      "end": 166.21,
       "caption": "ホテルの客室で、記念CG。\nラストは黒バニー。"
     }
   ],
