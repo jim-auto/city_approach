@@ -45,13 +45,13 @@ await writeFile(`${dir}/edit.ffscript`,filter);
 function ffmpeg(args){execFileSync('ffmpeg',['-hide_banner','-loglevel','warning','-y',...args],{stdio:'inherit'});}
 ffmpeg(['-i',take.video,'-filter_complex_threads','1','-filter_complex_script',`${dir}/edit.ffscript`,
   '-map','[out]','-an','-c:v','libx264','-preset','medium','-crf','20','-pix_fmt','yuv420p','-movflags','+faststart','assets/demo.mp4']);
-ffmpeg(['-i','assets/demo.mp4','-vf','fps=10,scale=880:-1:flags=lanczos,split[a][b];[a]palettegen=stats_mode=diff:max_colors=128[p];[b][p]paletteuse=dither=none:diff_mode=rectangle',
+ffmpeg(['-i','assets/demo.mp4','-vf','crop=480:800:620:0,fps=10,split[a][b];[a]palettegen=stats_mode=diff:max_colors=128[p];[b][p]paletteuse=dither=none:diff_mode=rectangle',
   '-filter_complex_threads','1','-loop','0','assets/demo.gif']);
 ffmpeg(['-i','assets/demo.mp4','-an','-c:v','libvpx-vp9','-crf','34','-b:v','0','-row-mt','1','-threads','2','assets/demo.webm']);
 ffmpeg(['-ss','3','-i','assets/demo.mp4','-frames:v','1','-update','1',`${dir}/hero-preview.png`]);
 await writeFile('assets/demo.json',JSON.stringify({
   description:'Actual browser play, recorded with Playwright and edited into chronological excerpts. No game state or outcomes were altered.',
-  width:1100,height:800,duration:Number(offset.toFixed(2)),gifFps:10,
+  width:1100,height:800,duration:Number(offset.toFixed(2)),gifFps:10,gifWidth:480,gifHeight:800,
   clips:cuts.map(([start,end,caption])=>({start,end,caption})),
   capture:'npm run demo:record',edit:'npm run demo:build',
 },null,2)+'\n');

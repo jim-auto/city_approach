@@ -2,7 +2,7 @@
 
 **「まあまあまあ」は、何回まで通じる？**
 
-[![実プレイ：声かけ、4枚の会話フリップ、横スクロールの同行、相手別のゴールCG](./assets/demo.gif)](https://jim-auto.github.io/city_approach/)
+[![実プレイ：声かけ、4枚の会話フリップ、横スクロールの同行、相手別のゴールCG](./assets/demo.gif?v=game-only1)](https://jim-auto.github.io/city_approach/)
 
 **[▶ ブラウザで遊ぶ](https://jim-auto.github.io/city_approach/)** · **[投稿用MP4](./assets/demo.mp4)** · [WebM](./assets/demo.webm)
 
@@ -222,4 +222,4 @@ npm run demo:build
 
 Playwrightが自然に出現した相手へ実際のキー入力・タップで声をかけ、会話からホテル到着まで録画する。ゲーム状態・成功率・得点は書き換えない。録画と区切り時刻は `test-results/demo/` に保存し、FFmpegで時系列の見どころを切り出す。生成にはFFmpegとNoto Sans CJKフォントが必要。
 
-README用GIFは880×640・10fps・ループ再生。投稿用MP4は1100×800・H.264・約21秒。WebMも同じ内容。字幕は編集で加えた説明で、ゲーム画面は実際の録画。編集区間は `assets/demo.json` に記録する。Xへの投稿はMP4を使用できる。
+README用GIFはゲーム画面だけの480×800・10fps・ループ再生。投稿用MP4は1100×800・H.264・約21秒。WebMも同じ内容。MP4／WebMの左側の字幕は編集で加えた説明で、ゲーム画面は実際の録画。編集区間は `assets/demo.json` に記録する。Xへの投稿はMP4を使用できる。

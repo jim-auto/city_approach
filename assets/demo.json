@@ -42,5 +42,7 @@
     }
   ],
   "capture": "npm run demo:record",
-  "edit": "npm run demo:build"
+  "edit": "npm run demo:build",
+  "gifWidth": 480,
+  "gifHeight": 800
 }
