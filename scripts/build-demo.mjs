@@ -8,11 +8,11 @@ const approach=take.marks.filter(m=>m.name.startsWith('approach-')).at(-1).time;
 const cuts=[
   [approach-1.3,approach+.65,'街で声をかける。\nそこから始まる会話ゲーム。'],
   [marks.talk+.3,marks['talk-reaction']+1.25,'相手の不安に、どう返す？\n4枚のフリップからタップ。'],
-  [marks.walk+.15,marks['question-0']-.15,'連れ出したあとも、\n歩きながら会話は続く。'],
+  [marks.walk+.15,Math.min(marks['question-0']-.15,marks.walk+2.4),'連れ出したあとも、\n歩きながら会話は続く。'],
   [marks['question-0']+.15,marks['reaction-0']+2.25,'「まあまあまあ」で流す。\nでも、連発すると同行終了。'],
   [marks['question-1']+.15,marks['reaction-1']+2.1,'相手に合う返しで、\n会話が盛り上がる。'],
-  [marks['arrival-walk']+.15,marks.goal+.45,'入口でも、気持ちを確認。\n二人で決めて、ゴールへ。'],
-  [marks.goal+.55,marks.goal+3.9,'到着すると、相手ごとのCG。\n次は、どんな出会い？'],
+  [Math.max(marks['arrival-walk']+.15,marks.goal-1.65),marks.goal+.45,'入口でも、気持ちを確認。\n二人で決めて、ゴールへ。'],
+  [marks.goal+.55,marks.goal+3.9,'ホテルの客室で、記念CG。\nラストは黒バニー。'],
 ];
 const font='/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc';
 const regular='/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc';

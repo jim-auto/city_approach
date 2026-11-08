@@ -1,0 +1,18 @@
+{
+  "tool": "built-in image_gen",
+  "transparent": false,
+  "jobs": [
+    {
+      "id": "bedroom-neon",
+      "reference": "assets/ai/room-neon.png",
+      "assetPath": "assets/ai/bedroom-neon.png",
+      "prompt": "Use case: precise-object-edit. Asset: square background illustration for a game ending CG. Edit this hotel lounge reference into an unmistakable private Japanese love-hotel BEDROOM, keeping the detailed anime background-painting style and violet/cyan night lighting. Replace the sofa with a clearly visible large neatly made double bed, white duvet and stacked pillows, padded headboard and bedside lamps. The bed should span the center rear at roughly 25-55 percent of image height, with the headboard and pillows readable ABOVE two foreground standing game characters. Keep warm lighting on white bedding so the room reads clearly. Keep a small nightstand, framed art, curtains and subtle decorative LED strips. Lower 40 percent is uncluttered carpet/floor space where two full-body character cutouts will stand. Room interior only: no entry doorway, reception counter, signs, lobby or entrance architecture. Camera faces the bed straight on, elegant cozy guest room, no people or silhouettes, no mirrors, no text, no logos. Furniture and bedding are ordinary interior design; no adult activity or explicit objects."
+    },
+    {
+      "id": "bedroom-rose",
+      "reference": "assets/ai/room-rose.png",
+      "assetPath": "assets/ai/bedroom-rose.png",
+      "prompt": "Use case: precise-object-edit. Asset: square background illustration for a game ending CG. Edit this rosy hotel lounge reference into an unmistakable private Japanese love-hotel BEDROOM, keeping the detailed anime background-painting style and warm pink/gold palette. Replace lounge seating with a clearly visible large neatly made double bed, white duvet, blush pillows, curved upholstered headboard and warm bedside lamps. The bed spans the center rear at roughly 25-55 percent of image height, with headboard and pillows readable ABOVE two foreground standing game characters. White bedding should be softly lit and clearly recognizable. Include pink curtains, two small nightstands, framed floral artwork, a tidy hotel guest room atmosphere. Lower 40 percent is uncluttered light carpet/floor space where two full-body character cutouts will stand. Room interior only: no entry doorway, reception counter, signs, lobby or entrance architecture. Camera faces the bed straight on, cozy elegant guest bedroom, no people or silhouettes, no mirrors, no text, no logos. Furniture and bedding are ordinary interior design; no adult activity or explicit objects."
+    }
+  ]
+}

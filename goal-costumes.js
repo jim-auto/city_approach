@@ -11,7 +11,7 @@ export const GOAL_COSTUMES = {
   'npc-reader': { cell: 8, family: 'nurse', label: '白ナース', room: 'rose', quote: 'ドラマの衣装みたい。似合ってる？' },
   'npc-cafe': { cell: 9, family: 'maid', label: 'カフェメイド', room: 'rose', quote: '写真が撮れたら、お茶にしよう。' },
   'npc-jogger': { cell: 10, family: 'gym', label: '体操服＆ブルマ', room: 'neon', quote: 'レトロな体操服、意外と動きやすい！' },
-  'npc-prin-student': { cell: null, family: 'police', label: '金髪ミニスカポリス', room: 'neon', quote: '一回だけ、敬礼ポーズね！' },
+  'npc-prin-student': { cell: null, family: 'bunny', label: '金髪ブラックバニー', room: 'neon', quote: 'うさ耳、ちょっと気に入ったかも。' },
 };
 export const GOAL_PALETTES = ['original', 'pastel', 'street', 'chic'];
 
@@ -24,11 +24,11 @@ export function goalCostumeFor(textureKey = 'npc-waiting-0') {
   const palette = base === 'npc-prin-student' ? 'prin' : color;
   return {
     ...costume, base, palette,
-    atlasKey: `goal-costumes-retail-${palette}`,
-    atlasPath: `assets/ai/costumes-retail-${palette}.png`,
+    atlasKey: palette === 'prin' ? 'goal-costumes-bunny-prin' : `goal-costumes-retail-${palette}`,
+    atlasPath: palette === 'prin' ? 'assets/ai/costumes-bunny-prin.png' : `assets/ai/costumes-retail-${palette}.png`,
     portraitKey: `goal-portrait-retail-${base}-${palette}`,
-    roomKey: `goal-room-${costume.room}`,
-    roomPath: `assets/ai/room-${costume.room}.png`,
+    roomKey: `goal-bedroom-${costume.room}`,
+    roomPath: `assets/ai/bedroom-${costume.room}.png`,
   };
 }
 

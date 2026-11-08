@@ -1,6 +1,6 @@
 import { WALK_REPLY_KEYS, WALK_QUESTION_X, walkQuestion, walkReplyEffect } from "../escort-conversation.js?v=20261108-conversation1";
 import { encounterFor } from "../encounter-rules.js?v=20261108-conversation1";
-import { goalCostumeFor, buildGoalPortrait, goalPortraitBounds } from "../goal-costumes.js?v=20261108-conversation1";
+import { goalCostumeFor, buildGoalPortrait, goalPortraitBounds } from "../goal-costumes.js?v=20261108-bunny1";
 import { createNativeButtons } from "../native-buttons.js?v=20261108-conversation1";
 import { drawCitySky, drawCityStreet } from "../scenery.js?v=20261108-conversation1";
 import { bindTouchReset } from "../mobile.js?v=20261108-conversation1";

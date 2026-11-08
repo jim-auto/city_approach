@@ -2,7 +2,7 @@
 
 **「まあまあまあ」は、何回まで通じる？**
 
-[![実プレイ：声かけ、4枚の会話フリップ、横スクロールの同行、相手別のゴールCG](./assets/demo.gif?v=game-only1)](https://jim-auto.github.io/city_approach/)
+[![実プレイ：声かけ、4枚の会話フリップ、横スクロールの同行、相手別のゴールCG](./assets/demo.gif?v=bunny1)](https://jim-auto.github.io/city_approach/)
 
 **[▶ ブラウザで遊ぶ](https://jim-auto.github.io/city_approach/)** · **[投稿用MP4](./assets/demo.mp4)** · [WebM](./assets/demo.webm)
 
@@ -189,19 +189,19 @@ Chromiumではドラッグ、複数の指、タッチキャンセルも検証し
 
 ## ゴールの記念CG
 
-ラブホテル到着時は、ピンクのネオンと暖かな入口、濡れた舗道を描いた専用背景に、主人公と実際に同行した女の子の高解像度立ち絵を重ねた記念CGを表示する。41種類の姿・色違いを引き継ぎ、縦画面は絵を大きく、横画面は絵と結果を左右に配置。回転時にも構図を調整する。背景は内蔵画像生成ツールで作成し、`assets/ai/goal-cg-backdrop.png`、最終プロンプトは `assets/ai/goal-cg-backdrop-prompt.txt` に保存。
+ラブホテル到着時は、ベッド・枕・ベッドサイドの照明が見える客室背景に、主人公と実際に同行した女の子の高解像度立ち絵を重ねた記念CGを表示する。41種類の姿・色違いを引き継ぎ、縦画面は絵を大きく、横画面は絵と結果を左右に配置。回転時にも構図を調整する。客室背景は内蔵画像生成ツールで作成し、`assets/ai/bedroom-{rose,neon}.png`、最終プロンプトは `assets/ai/bedroom-prompts.json` に保存。
 
 `npm run test:goal` はCGの実際の描画ピクセル、同行相手・配色の一致、画面回転、動きを減らす設定、再挑戦時の失敗画面への持ち越しも検証する。
 
 ## 相手ごとのホテル内コスプレCG
 
-ゴール後は相手の姿に応じて、ホテル内でコスプレした記念CGを表示する。量販店の定番コスプレをイメージしたセーラー服、紺のスクール水着、体操服＆ブルマ、メイド服、ミニスカポリス、ナース服の6系統・11バリエーション。従来の4配色×10人とプリン髪大学生を引き継いだ計41種類で、全員20〜24歳の成人キャラクター。衣装ごとに本人のひとことも変わる。
+ゴール後は相手の姿に応じて、ホテル内でコスプレした記念CGを表示する。量販店の定番コスプレをイメージしたセーラー服、紺のスクール水着、体操服＆ブルマ、メイド服、ミニスカポリス、ナース服、バニーガールの7系統・11バリエーション。従来の4配色×10人とプリン髪大学生を引き継いだ計41種類で、全員20〜24歳の成人キャラクター。衣装ごとに本人のひとことも変わる。プリン髪大学生のゴール衣装は黒バニー。READMEの実プレイ動画も、この相手のバニーCGで締める。
 
-室内はローズ系とネオン系の2種類。`goal-costumes.js` で街のキャラと配色から衣装、台詞、部屋を決め、同行時に必要な配色の画像と部屋だけを読み込む。人物の透過部分を測って二人を配置し、広いスカートや帽子が切れないようにする。衣装はゴール画面でのみ使い、街と会話中は私服のまま。得点と同行中の行き先確認は従来どおり。
+室内はベッドが見えるローズ系とネオン系の客室2種類。`goal-costumes.js` で街のキャラと配色から衣装、台詞、部屋を決め、同行時に必要な配色の画像と部屋だけを読み込む。人物の透過部分を測って二人を配置し、広いスカートや帽子が切れないようにする。衣装はゴール画面でのみ使い、街と会話中は私服のまま。得点と同行中の行き先確認は従来どおり。
 
-内蔵画像生成ツールで制作した画像は `assets/ai/costumes-retail-{original,pastel,street,chic,prin}.png` と `assets/ai/room-{rose,neon}.png`。衣装の最終プロンプトと参照画像は `assets/ai/cosplay-retail-prompts.json`（室内背景は `assets/ai/cosplay-prompts.json`） に保存。
+内蔵画像生成ツールで制作した画像は `assets/ai/costumes-retail-{original,pastel,street,chic,prin}.png` と `assets/ai/bedroom-{rose,neon}.png`。黒バニーは `assets/ai/costumes-bunny-prin.png`、生成プロンプトは `assets/ai/costumes-bunny-prin-prompt.txt`。衣装の最終プロンプトと参照画像は `assets/ai/cosplay-retail-prompts.json`（現在の客室背景は `assets/ai/bedroom-prompts.json`） に保存。
 
-`npm run test:costumes` はChromium／WebKitで全41種類のCG、6系統・11バリエーション、2部屋、透過、絵の重複防止、相手と配色の一致、人物のはみ出し防止、台詞と得点を確認する。衣装一覧と各衣装のゴール画面は `test-results/costumes/` に出力。
+`npm run test:costumes` はChromium／WebKitで全41種類のCG、7系統・11バリエーション、2部屋、透過、絵の重複防止、相手と配色の一致、人物のはみ出し防止、台詞と得点を確認する。衣装一覧と各衣装のゴール画面は `test-results/costumes/` に出力。
 
 ## 相手の反応を読む同行会話
 
@@ -220,6 +220,6 @@ npm run demo:record
 npm run demo:build
 ```
 
-Playwrightが自然に出現した相手へ実際のキー入力・タップで声をかけ、会話からホテル到着まで録画する。ゲーム状態・成功率・得点は書き換えない。録画と区切り時刻は `test-results/demo/` に保存し、FFmpegで時系列の見どころを切り出す。生成にはFFmpegとNoto Sans CJKフォントが必要。
+Playwrightが自然に出現したプリン髪の相手へ実際のキー入力・タップで声をかけ、会話からホテル客室のバニーCGまで録画する。声かけに失敗したテイクは通常のリロードからやり直す。ゲーム状態・成功率・得点は書き換えない。録画と区切り時刻は `test-results/demo/` に保存し、FFmpegで時系列の見どころを切り出す。生成にはFFmpegとNoto Sans CJKフォントが必要。
 
 README用GIFはゲーム画面だけの480×800・10fps・ループ再生。投稿用MP4は1100×800・H.264・約21秒。WebMも同じ内容。MP4／WebMの左側の字幕は編集で加えた説明で、ゲーム画面は実際の録画。編集区間は `assets/demo.json` に記録する。Xへの投稿はMP4を使用できる。

@@ -29,8 +29,8 @@ try {
   await tapObject('TitleScene','startText');
   await page.waitForFunction(()=>window.cityApproachGame.scene.keys.MainScene?.player?.active);
   mark('street');
-  // Follow a naturally spawned NPC with keyboard input; if an opener fails,
-  // choose another available character rather than altering the random result.
+  // Follow the first naturally spawned NPC with keyboard input. Failed takes
+  // start a new normal run; success rates and random results are never altered.
   let talking=false;
   for(let attempt=0;attempt<5&&!talking;attempt++){
     const target=await page.evaluate(()=>{
@@ -41,7 +41,7 @@ try {
     for(let step=0;step<140;step++){
       const p=await page.evaluate(index=>{const s=window.cityApproachGame.scene.keys.MainScene,n=s.npcs[index];
         return {dx:n.sprite.x-s.player.x,dy:n.sprite.y-s.player.y,near:s.nearNpc===n};},target);
-      if(p.near&&Math.hypot(p.dx,p.dy)<75) break;
+      if(p.near&&Math.hypot(p.dx,p.dy)<60) break;
       const keys=[];
       if(Math.abs(p.dx)>25) keys.push(p.dx>0?'ArrowRight':'ArrowLeft');
       if(Math.abs(p.dy)>25) keys.push(p.dy>0?'ArrowDown':'ArrowUp');
@@ -54,9 +54,17 @@ try {
     await page.waitForTimeout(650);mark(`approach-${attempt}`);
     await tapObject('MainScene','actionButtons',action.index);
     await page.waitForTimeout(1100);
-    talking=await page.evaluate(()=>window.cityApproachGame.scene.isActive('TalkScene'));
+    talking=await page.evaluate(()=>window.cityApproachGame.scene.isActive('TalkScene') && window.cityApproachGame.scene.keys.TalkScene.fieldTextureKey.startsWith('npc-prin-student'));
+    if(!talking && attempt<4){
+      // Begin a new unmodified run after a failed opener or a different nearby NPC.
+      await page.reload();
+      await page.waitForFunction(()=>window.cityApproachGame.scene.keys.TitleScene?.startText?.active);
+      await tapObject('TitleScene','startText');
+      await page.waitForFunction(()=>window.cityApproachGame.scene.keys.MainScene?.player?.active);
+    }
   }
   assert(talking,'no successful opener in this take');
+  assert(await page.evaluate(()=>window.cityApproachGame.scene.keys.TalkScene.fieldTextureKey.startsWith('npc-prin-student')), 'Record another take: the bunny ending belongs to the first naturally spawned companion');
   mark('talk');
   for(let turn=0;turn<8;turn++){
     const decision=await page.evaluate(()=>{const t=window.cityApproachGame.scene.keys.TalkScene;
@@ -88,6 +96,7 @@ try {
   await page.keyboard.down('ArrowRight');
   await page.waitForFunction(()=>window.cityApproachGame.scene.keys.EscortScene.outcome==='goal',null,{timeout:60000});
   await page.keyboard.up('ArrowRight');
+  assert(await page.evaluate(()=>{const s=window.cityApproachGame.scene.keys.EscortScene.goalSelection;return s.family==='bunny'&&s.roomPath.includes('bedroom-');}), 'demo must end with the actual bunny costume in the guest bedroom');
   mark('goal');
   await page.waitForTimeout(4500);
   await page.screenshot({path:`${output}/goal.png`});

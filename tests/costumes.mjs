@@ -10,9 +10,11 @@ const cases = Object.keys(GOAL_COSTUMES).flatMap(base =>
 assert.equal(cases.length, 41);
 assert.equal(new Set(cases.map(key => goalCostumeFor(key).portraitKey)).size, 41);
 assert.equal(new Set(cases.map(key => goalCostumeFor(key).label)).size, 11);
-assert.deepEqual([...new Set(cases.map(key => goalCostumeFor(key).family))].sort(), ['gym','maid','nurse','police','sailor','swimsuit']);
+assert.deepEqual([...new Set(cases.map(key => goalCostumeFor(key).family))].sort(), ['bunny','gym','maid','nurse','police','sailor','swimsuit']);
+assert.equal(goalCostumeFor('npc-prin-student-0').atlasPath, 'assets/ai/costumes-bunny-prin.png');
 assert.equal(goalCostumeFor('unknown').base, 'npc-waiting');
 assert.equal(goalCostumeFor(null).base, 'npc-waiting');
+for (const key of cases) assert(goalCostumeFor(key).roomPath.startsWith('assets/ai/bedroom-'));
 for (const key of cases) assert.deepEqual(goalCostumeFor(key), goalCostumeFor(key.replace(/-0$/, '-1')));
 
 const output = 'test-results/costumes';
@@ -95,7 +97,7 @@ try {
       }, {keys: cases.map(key => goalCostumeFor(key).portraitKey), labels: Object.fromEntries(cases.map(key => {const s=goalCostumeFor(key); return [s.portraitKey,s.label];}))});
       await writeFile(`${output}/${engine}-all-41.png`, Buffer.from(gallery, 'base64'));
       assert.deepEqual(errors, []);
-      console.log(`PASS ${engine}: all 41 costume CGs, 6 costume families / 11 outfit variants, 2 rooms, transparency, palette identity, captions and score`);
+      console.log(`PASS ${engine}: all 41 costume CGs, 7 costume families / 11 outfit variants, 2 rooms, transparency, palette identity, captions and score`);
     } finally { await browser.close(); }
   }
 } finally { await server.close(); }
