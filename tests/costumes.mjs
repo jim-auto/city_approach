@@ -52,7 +52,7 @@ try {
             if (data[i + 3] > 16) filled++;
             hash = Math.imul(hash ^ data[i] ^ data[i + 1] << 8 ^ data[i + 2] << 16 ^ data[i + 3] << 24, 16777619) >>> 0;
           }
-          e.nextQuestionIndex = 4; e.questionsAnswered = 4; e.destinationConfirmed = true;
+          e.nextQuestionIndex = e.questionCount; e.questionsAnswered = e.questionCount; e.destinationConfirmed = true;
           e.player.x = 2900; e.partner.x = 2832;
           return { selection: s, filled: filled / (image.width * image.height), hash,
             corner: ctx.getImageData(0, 0, 1, 1).data[3], square: image.width === image.height };

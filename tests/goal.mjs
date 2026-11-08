@@ -29,7 +29,7 @@ for(const [engine,width,height,reduced] of [['chromium',320,568,false],['webkit'
  await page.evaluate(({companionKey,portraitKey})=>window.cityApproachGame.scene.keys.MainScene.scene.start('EscortScene',
   {score:10,companion:{textureKey:`${companionKey}-0`,portraitTextureKey:portraitKey}}),{companionKey,portraitKey});
  await page.waitForFunction(()=>window.cityApproachGame.scene.keys.EscortScene?.player?.active);
- await page.evaluate(()=>{const e=window.cityApproachGame.scene.keys.EscortScene;e.conversationBonus=80;e.score+=80;e.nextQuestionIndex=4;e.questionsAnswered=4;e.destinationConfirmed=true;e.player.x=2900;e.partner.x=2832;});
+ await page.evaluate(()=>{const e=window.cityApproachGame.scene.keys.EscortScene;e.conversationBonus=80;e.score+=80;e.nextQuestionIndex=e.questionCount;e.questionsAnswered=e.questionCount;e.destinationConfirmed=true;e.player.x=2900;e.partner.x=2832;});
  await page.waitForFunction(()=>window.cityApproachGame.scene.keys.EscortScene.finished);
  await page.waitForFunction(()=>{const e=window.cityApproachGame.scene.keys.EscortScene;return e.goalTitle?.alpha===1 && !e.tweens.isTweening(e.goalTitle);});
  const goal=await page.evaluate(()=>{const e=window.cityApproachGame.scene.keys.EscortScene;const score=e.score;e.finish();return {title:e.goalTitle.text,active:e.goalTitle.active,scale:e.goalTitle.scaleX,particles:e.goalConfetti.length,score:e.score,previous:score,bounds:{x:e.goalTitle.getBounds().x,y:e.goalTitle.getBounds().y,right:e.goalTitle.getBounds().right,bottom:e.goalTitle.getBounds().bottom},width:e.scale.width,height:e.scale.height};});

@@ -75,7 +75,6 @@ function check(name, condition, detail = "") {
     return {
       active: g.scene.scenes.find((s) => s.sys.isActive())?.scene.key,
       buttonLabels: m.actionButtons.map((b) => b.list.find((c) => c.text)?.text),
-      hasSkipFn: typeof m.respectfullySkip === "function",
       npcCount: m.npcs?.length ?? 0,
       hasStyleLabels: m.npcs?.every((n) => typeof n.profile.styleLabel === "string" && n.profile.styleLabel.length > 0),
       historyIsArray: Array.isArray(m.history),
@@ -85,21 +84,19 @@ function check(name, condition, detail = "") {
       spriteMode: m.spriteMode,
       fieldFxReady:
         typeof m.showConnectionBurst === "function" &&
-        typeof m.showRespectCue === "function" &&
         typeof m.showClearOverlay === "function" &&
         typeof m.showBestUpdate === "function" &&
         typeof m.showRankSOverlay === "function",
     };
   });
   check("transitioned to MainScene", main.active === "MainScene");
-  check("five action buttons", main.buttonLabels?.length === 5,
+  check("four action buttons", main.buttonLabels?.length === 4,
     `labels=${main.buttonLabels?.join(",")}`);
   check("empathy opener present", main.buttonLabels?.includes("共感する"));
   check("situation opener present", main.buttonLabels?.includes("状況いじり"));
   check("item opener present", main.buttonLabels?.includes("持ち物に触れる"));
   check("humor opener present", main.buttonLabels?.includes("ユーモア賭け"));
-  check("skip button present", main.buttonLabels?.includes("離れる"));
-  check("respectfullySkip defined", main.hasSkipFn);
+  check("field only offers openers", !main.buttonLabels?.some(label => ["離れる", "次の相手へ"].includes(label)));
   check("NPCs spawned", main.npcCount > 0);
   check("NPC identities have style labels", main.hasStyleLabels);
   check("history initialised", main.historyIsArray);
@@ -177,26 +174,6 @@ function check(name, condition, detail = "") {
   check("NPC walk animation exists", anims.npcAnim);
   check("player uses walk texture", ["player-0", "player-1"].includes(anims.playerTex), `texture=${anims.playerTex}`);
   check("NPCs playing npc-walk", anims.npcAnimating);
-
-  // Exercise the skip path
-  const skip = await page.evaluate(() => {
-    const m = window.cityApproachGame.scene.keys.MainScene;
-    const target = m.npcs.find((n) => !n.disabled);
-    m.player.x = target.sprite.x;
-    m.player.y = target.sprite.y;
-    m.updateNearestNpc();
-    const before = m.score;
-    m.respectfullySkip();
-    return {
-      ok: true,
-      scored: m.score >= before,
-      disabled: target.disabled,
-      historyGrew: m.history.length >= 1,
-    };
-  });
-  check("skip awards non-negative score", skip.scored);
-  check("skipped NPC disabled", skip.disabled);
-  check("history gets entry after skip", skip.historyGrew);
 
   // Start a talk scene directly to verify dialogue pool
   const talk = await page.evaluate(async () => {
@@ -370,15 +347,23 @@ function check(name, condition, detail = "") {
     fresh.chooseWalkReply("explain");
     fresh.closeConversation();
     fresh.beginConversation();
+    fresh.chooseWalkReply("explain");
+    const firstDoorStillUndecided = !fresh.destinationConfirmed;
+    fresh.closeConversation();
+    fresh.beginConversation();
+    fresh.chooseWalkReply("explain");
+    const secondDoorStillUndecided = !fresh.destinationConfirmed;
+    fresh.closeConversation();
+    fresh.beginConversation();
     fresh.chooseWalkReply("evade");
-    const finalNotBypassed = !fresh.destinationConfirmed && fresh.questionsAnswered === 3;
+    const finalNotBypassed = !fresh.destinationConfirmed && fresh.questionsAnswered === fresh.questionCount - 1;
     fresh.closeConversation();
     fresh.beginConversation();
     fresh.chooseWalkReply("explain");
     fresh.closeConversation();
     return { unansweredCannotWin, firstQuestion, stopsForReply, loveHotelExplained, loveHotelSign, firstEvade, doubleTapIgnored,
-      escalating, breaksAfterThree, noGoalAfterFailure, repairWorks, finalNotBypassed,
-      consentConfirmed: fresh.destinationConfirmed && fresh.questionsAnswered === 4 };
+      escalating, breaksAfterThree, noGoalAfterFailure, repairWorks, firstDoorStillUndecided, secondDoorStillUndecided, finalNotBypassed,
+      consentConfirmed: fresh.destinationConfirmed && fresh.questionsAnswered === fresh.questionCount };
   });
   for (const [name, passed] of Object.entries(walkDialogue)) check(`walk dialogue: ${name}`, passed);
 
@@ -413,7 +398,11 @@ function check(name, condition, detail = "") {
   check("mobile right button moves and releases", touch.x > beforeTouch + 40 && touch.direction === 0);
   check("escort resizes to mobile ground", touch.ground === Math.round(844 * 0.69));
   const tapStart = await page.evaluate(() => window.cityApproachGame.scene.keys.EscortScene.player.x);
-  await page.mouse.click(365, 400);
+  const fieldPoint = await page.evaluate(() => {
+    const e=window.cityApproachGame.scene.keys.EscortScene;
+    return {x:Math.min(e.scale.width-12,e.player.x-e.cameras.main.scrollX+100),y:e.scale.height-230};
+  });
+  await page.mouse.click(fieldPoint.x, fieldPoint.y);
   await page.waitForFunction((x) => Math.abs(window.cityApproachGame.scene.keys.EscortScene.player.x - x) > 5, tapStart);
   check("escort field tap moves", true);
   const goal = await page.evaluate(() => {

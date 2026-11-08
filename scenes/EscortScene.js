@@ -1,12 +1,12 @@
-import { PLAYER_CAST_KEY, PLAYER_CAST_PATH, buildPlayerCast, playerForDifficulty } from "../player-appearance.js?v=20261108-cast1";
-import { WALK_REPLY_KEYS, WALK_QUESTION_X, walkQuestion, walkReplyEffect } from "../escort-conversation.js?v=20261108-cast1";
-import { encounterFor } from "../encounter-rules.js?v=20261108-cast1";
-import { goalCostumeFor, buildGoalPortrait, goalPortraitBounds } from "../goal-costumes.js?v=20261108-cast1";
-import { createNativeButtons } from "../native-buttons.js?v=20261108-cast1";
-import { drawCitySky, drawCityStreet } from "../scenery.js?v=20261108-cast1";
-import { bindTouchReset } from "../mobile.js?v=20261108-cast1";
-import { sfx } from "../sfx.js?v=20261108-cast1";
-import { DIFFICULTIES, getDifficulty, getBest, setBest } from "../storage.js?v=20261108-cast1";
+import { PLAYER_CAST_KEY, PLAYER_CAST_PATH, buildPlayerCast, playerForDifficulty } from "../player-appearance.js?v=20261108-door1";
+import { WALK_REPLY_KEYS, WALK_QUESTION_X, walkQuestion, walkReplyEffect } from "../escort-conversation.js?v=20261108-door1";
+import { encounterFor } from "../encounter-rules.js?v=20261108-door1";
+import { goalCostumeFor, buildGoalPortrait, goalPortraitBounds } from "../goal-costumes.js?v=20261108-door1";
+import { createNativeButtons } from "../native-buttons.js?v=20261108-door1";
+import { drawCitySky, drawCityStreet } from "../scenery.js?v=20261108-door1";
+import { bindTouchReset } from "../mobile.js?v=20261108-door1";
+import { sfx } from "../sfx.js?v=20261108-door1";
+import { DIFFICULTIES, getDifficulty, getBest, setBest } from "../storage.js?v=20261108-door1";
 
 const START_X = 150;
 const HOTEL_X = 2900;
@@ -60,6 +60,7 @@ export default class EscortScene extends Phaser.Scene {
     this.doubt = 0;
     this.evasionStreak = 0;
     this.totalEvasions = 0;
+    this.questionCount = WALK_QUESTION_X.length;
     this.nextQuestionIndex = 0;
     this.questionsAnswered = 0;
     this.destinationExplained = false;
@@ -336,7 +337,8 @@ export default class EscortScene extends Phaser.Scene {
     this.player.anims.stop();
     this.partner.anims.stop();
     const label = this.runData.companion?.profile?.styleLabel || "相手";
-    this.speakerBody = `${label} / 会話 ${index + 1}/4\nヒント：${this.encounter.hint}`;
+    const phase = this.currentQuestion.atDoor ? `入口 ${index - 2}/3` : `会話 ${index + 1}/${this.questionCount}`;
+    this.speakerBody = `${label} / ${phase}\nヒント：${this.encounter.hint}`;
     this.dialogueBody = this.currentQuestion.text;
     this.layoutConversation();
     this.updateHud();
@@ -353,6 +355,10 @@ export default class EscortScene extends Phaser.Scene {
     let failure = null;
     const previousDoubt = this.doubt;
     const effect = walkReplyEffect(this.runData.companion?.profile, question, key);
+    if (choice.kind === "leave") {
+      this.finishBreakdown("うん、今日はここまで。またね。");
+      return;
+    }
     if (choice.kind === "evade") {
       this.doubt = Math.min(100, this.doubt + 20 + this.evasionStreak * 15);
       this.evasionStreak += 1;

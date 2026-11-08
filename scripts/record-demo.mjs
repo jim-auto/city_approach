@@ -1,3 +1,4 @@
+import { WALK_QUESTION_X } from '../escort-conversation.js';
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
@@ -67,12 +68,15 @@ try {
   assert(await page.evaluate(()=>window.cityApproachGame.scene.keys.TalkScene.fieldTextureKey.startsWith('npc-prin-student')), 'Record another take: the bunny ending belongs to the first naturally spawned companion');
   mark('talk');
   for(let turn=0;turn<8;turn++){
+    await page.waitForFunction(()=>{const t=window.cityApproachGame.scene.keys.TalkScene;return t.resultShown||!t.choiceLocked;});
     const decision=await page.evaluate(()=>{const t=window.cityApproachGame.scene.keys.TalkScene;
       if(t.resultShown)return {done:true};
       const line=t.lines[t.lineIndex];return {line:t.lineIndex,index:line.cards.findIndex(c=>c.key===line.correct[0])};});
     if(decision.done)break;
-    await page.waitForTimeout(turn===0?1900:1000);
-    await page.locator('.game-native-buttons[data-scene="TalkScene"] button').nth(decision.index).tap();
+    await page.waitForTimeout(turn===0?1500:650);
+    const ready=await page.evaluate(line=>{const t=window.cityApproachGame.scene.keys.TalkScene;return !t.resultShown&&!t.choiceLocked&&t.lineIndex===line;},decision.line);
+    if(!ready){turn--;continue;}
+    await page.locator('.game-native-buttons[data-scene="TalkScene"] button').nth(decision.index).tap({timeout:5000});
     if(turn===0)mark('talk-reaction');
     await page.waitForFunction(line=>{const t=window.cityApproachGame.scene.keys.TalkScene;return t.resultShown||t.lineIndex>line;},decision.line);
   }
@@ -81,7 +85,7 @@ try {
   await tapObject('TalkScene','resultButton');
   await page.waitForFunction(()=>window.cityApproachGame.scene.keys.EscortScene?.player?.active);
   mark('walk');
-  for(let i=0;i<4;i++){
+  for(let i=0;i<WALK_QUESTION_X.length;i++){
     await page.keyboard.down('ArrowRight');
     await page.waitForFunction(()=>window.cityApproachGame.scene.keys.EscortScene.dialogState==='asking',null,{timeout:60000});
     await page.keyboard.up('ArrowRight');
@@ -91,7 +95,7 @@ try {
     await page.locator(`.game-native-buttons[data-scene="EscortScene"] button[data-choice="${key}"]`).tap();
     mark(`reaction-${i}`);
     await page.waitForFunction(()=>!window.cityApproachGame.scene.keys.EscortScene.currentQuestion);
-    if(i===3)mark('arrival-walk');
+    if(i===WALK_QUESTION_X.length-1)mark('arrival-walk');
   }
   await page.keyboard.down('ArrowRight');
   await page.waitForFunction(()=>window.cityApproachGame.scene.keys.EscortScene.outcome==='goal',null,{timeout:60000});

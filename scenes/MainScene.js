@@ -1,8 +1,8 @@
-import { PLAYER_CAST_KEY, PLAYER_CAST_PATH, buildPlayerCast, playerForDifficulty } from "../player-appearance.js?v=20261108-cast1";
-import { bindTouchReset } from "../mobile.js?v=20261108-cast1";
-import { sfx } from "../sfx.js?v=20261108-cast1";
-import { getBest, setBest, getDifficulty, cycleDifficulty, getSpriteMode } from "../storage.js?v=20261108-cast1";
-import { NPC_COLORWAYS, npcColorKey, CHARACTER_STYLE_LABELS, aiSourceKeyFor, buildCharacterTextures, registerCharacterAnimations } from "../characters.js?v=20261108-cast1";
+import { PLAYER_CAST_KEY, PLAYER_CAST_PATH, buildPlayerCast, playerForDifficulty } from "../player-appearance.js?v=20261108-door1";
+import { bindTouchReset } from "../mobile.js?v=20261108-door1";
+import { sfx } from "../sfx.js?v=20261108-door1";
+import { getBest, setBest, getDifficulty, cycleDifficulty, getSpriteMode } from "../storage.js?v=20261108-door1";
+import { NPC_COLORWAYS, npcColorKey, CHARACTER_STYLE_LABELS, aiSourceKeyFor, buildCharacterTextures, registerCharacterAnimations } from "../characters.js?v=20261108-door1";
 
 const NPC_VARIANT_KEYS = {
   "待ち合わせ系": "npc-waiting",
@@ -173,7 +173,7 @@ const CHARACTER_TYPES = [
     type: "ランニング系",
     traits: ["歩くの速い", "イヤホン", "外界遮断"],
     difficulty: "高",
-    effective_actions: ["離れる"],
+    effective_actions: ["短く要点"],
     bad_actions: ["声かけ全般"],
     baseInterest: 12,
     flags: ["fast", "earphones"],
@@ -265,7 +265,6 @@ const ACTION_HINTS = {
   outfit: "状況いじり: 迷い/人混み/偶然を拾う",
   item: "持ち物: スマホ/本/カメラ/コーヒー向け",
   joke: "ユーモア: 刺されば強いが警戒には危険",
-  skip: "離れる: 速い/イヤホン/同伴は正解になりやすい",
 };
 
 const SITUATION_STATUS = {
@@ -465,7 +464,7 @@ export default class MainScene extends Phaser.Scene {
     this.spawnAmbient(map);
     this.spawnCompanion();
     this.showMessage(
-      `${map.label}: 近づいて右下の声かけを選ぶ。相手のサインを見て無理なら離れる。`,
+      `${map.label}: 街を自由に歩き、相手に近づいて4つの声かけを選ぶ。`,
       2600
     );
   }
@@ -1073,7 +1072,6 @@ export default class MainScene extends Phaser.Scene {
       this.createHudButton(ACTIONS.outfit.label, () => this.tryApproach("outfit"), 148, 48, 0x51323d),
       this.createHudButton(ACTIONS.item.label, () => this.tryApproach("item"), 148, 48, 0x33405a),
       this.createHudButton(ACTIONS.joke.label, () => this.tryApproach("joke"), 148, 48, 0x4a3a22),
-      this.createHudButton("離れる", () => this.respectfullySkip(), 148, 48, 0x2a2f38),
     ];
 
     this.joystickBase = this.add.graphics().setScrollFactor(0).setDepth(50);
@@ -1550,8 +1548,6 @@ export default class MainScene extends Phaser.Scene {
       key,
       rate: this.estimateActionRate(profile, key),
     })).sort((a, b) => b.rate - a.rate);
-    const skip = this.calculateSkipBonus(profile).bonus;
-    if (skip >= 8) return `${ACTION_HINTS.skip} / 防御サイン強め`;
     const best = ranked[0];
     const s = profile.situation || SITUATION_STATUS.waiting;
     return `${s.label}/${s.hook}: ${ACTION_HINTS[best.key]} / 目安${Math.round(best.rate * 100)}%`;
@@ -2109,96 +2105,6 @@ export default class MainScene extends Phaser.Scene {
         sub.destroy();
       },
     });
-  }
-
-  respectfullySkip() {
-    if (this.approachPending) return;
-    if (!this.nearNpc) {
-      this.showMessage("離れる相手がいない。まずサインを観察してから。", 1500);
-      return;
-    }
-
-    const target = this.nearNpc;
-    const { bonus, reason } = this.calculateSkipBonus(target.profile);
-    const adjusted = Math.round(bonus * this.difficulty.mult);
-    this.streak = adjusted > 0 ? this.streak + 1 : 0;
-    const total = this.awardScore(adjusted, "観察判断で");
-    sfx.play("skip");
-    this.showRespectCue(target, total > 0);
-
-    target.disabled = true;
-    target.sprite.setAlpha(0.28);
-    target.icons.setAlpha(0.2);
-    this.nearNpc = null;
-    this.nearRing.clear();
-
-    const sign = total >= 0 ? `+${total}` : `${total}`;
-    this.pushHistory(`離れる ${sign}`);
-    this.showMessage(`離れた。${reason} Score ${sign}`, 2300);
-  }
-
-  showRespectCue(target, earned) {
-    const color = earned ? "#57f5ff" : "#f5f1df";
-    const mark = earned ? "✓" : "...";
-    const t = this.add
-      .text(this.player.x, this.player.y - 48, mark, {
-        fontFamily: "system-ui, sans-serif",
-        fontSize: "34px",
-        color,
-        fontStyle: "bold",
-        stroke: "#0a0a10",
-        strokeThickness: 5,
-      })
-      .setOrigin(0.5)
-      .setDepth(35);
-    const g = this.add.graphics().setDepth(30);
-    g.lineStyle(3, earned ? 0x57f5ff : 0xf5f1df, 0.45).strokeCircle(target.sprite.x, target.sprite.y, 42);
-    this.tweens.add({
-      targets: t,
-      y: t.y - 26,
-      alpha: 0,
-      duration: 900,
-      ease: "Quad.easeOut",
-      onComplete: () => t.destroy(),
-    });
-    this.tweens.add({
-      targets: g,
-      alpha: 0,
-      duration: 700,
-      onComplete: () => g.destroy(),
-    });
-  }
-
-  calculateSkipBonus(profile) {
-    const defensive = {
-      "イヤホン": 5,
-      "友達といる": 5,
-      "歩くの速い": 4,
-      "外界遮断": 4,
-      "夜の警戒": 3,
-      "人混み": 2,
-    };
-    const openTraits = ["目が合う", "立ち止まり", "待ち合わせ"];
-    const hits = [];
-    let bonus = 0;
-    profile.traits.forEach((trait) => {
-      if (defensive[trait]) {
-        bonus += defensive[trait];
-        hits.push(trait);
-      }
-    });
-    bonus = Math.min(bonus, 15);
-
-    if (hits.length > 0) {
-      return {
-        bonus,
-        reason: `${hits.slice(0, 2).join("・")} のサインを読んで引いた。`,
-      };
-    }
-    if (profile.traits.some((trait) => openTraits.includes(trait))) {
-      return { bonus: 1, reason: "開かれたサインもあったが無理はしなかった。" };
-    }
-    return { bonus: 2, reason: "明確なサインは見えなかったので追わなかった。" };
   }
 
   calculateSuccessRate(profile, actionKey) {

@@ -95,7 +95,7 @@ async function replyWhileWalking(page, name, choice = 0) {
   if (await page.evaluate(() => window.cityApproachGame.scene.keys.EscortScene.finished)) return;
   const index = await page.evaluate(() => window.cityApproachGame.scene.keys.EscortScene.currentQuestion.index);
   await audit(page, "EscortScene", ["hud", "dialogSpeaker", "dialogText"], ["replyButtons"]);
-  if (index === 0 || index === 3) await shot(page, `${name}-walk-question-${index + 1}`);
+  if (index === 0 || index >= 3) await shot(page, `${name}-walk-question-${index + 1}`);
   await tap(page, "EscortScene", "replyButtons", choice, index === 0);
   await page.waitForFunction((index) => {
     const e = window.cityApproachGame.scene.keys.EscortScene;
@@ -268,7 +268,7 @@ try {
           }
           check(await page.evaluate(() => {
             const e = window.cityApproachGame.scene.keys.EscortScene;
-            return e.finished && e.outcome === "goal" && e.questionsAnswered === 4 && e.destinationConfirmed;
+            return e.finished && e.outcome === "goal" && e.questionsAnswered === e.questionCount && e.destinationConfirmed;
           }), "walking conversation did not reach confirmed goal");
           check(await page.evaluate((before) => { const e=window.cityApproachGame.scene.keys.EscortScene; return e.score === before.score + 100 + e.conversationBonus - before.bonus; }, beforeGoal), "goal and conversation bonus incorrect");
           await audit(page, "EscortScene", ["goalTitle", "finishText"], ["returnButton"]);
@@ -329,7 +329,7 @@ try {
   await writeFile(`${output}/report.json`, JSON.stringify({ checks, report }, null, 2));
   await writeFile(`${output}/report.md`, `# Mobile Playwright results\n\n${checks} assertions passed.\n\n` +
     report.map((r) => `- ${r.status} ${r.name}${r.seconds ? ` (${r.seconds}s)` : ""}${r.fullWalk ? " — full route using native held touch" : ""}${r.error ? `\n\n\`\`\`\n${r.error}\n\`\`\`` : ""}`).join("\n") +
-    "\n\nScreenshots are saved beside this report. These are browser-emulation tests, not physical-device tests. Notch insets are simulated with CSS overrides. Non-full-route cases use a near-goal position fixture. Native multi-touch and cancellation are tested in Chromium; WebKit uses touchscreen taps. Both success with four walking replies and failure after three consecutive evasions are tested through touch input.\n");
+    "\n\nScreenshots are saved beside this report. These are browser-emulation tests, not physical-device tests. Notch insets are simulated with CSS overrides. Non-full-route cases use a near-goal position fixture. Native multi-touch and cancellation are tested in Chromium; WebKit uses touchscreen taps. Both success with six walking replies and failure after three consecutive evasions are tested through touch input.\n");
 }
 if (report.some((r) => r.status === "FAIL")) process.exitCode = 1;
 else console.log(`All ${report.length} mobile cases passed (${checks} assertions).`);

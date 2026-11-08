@@ -1,10 +1,10 @@
-import { PLAYER_CAST_KEY, PLAYER_CAST_PATH, buildPlayerCast, playerForDifficulty } from "../player-appearance.js?v=20261108-cast1";
-import { sfx } from "../sfx.js?v=20261108-cast1";
-import { getBest, getDifficulty, cycleDifficulty } from "../storage.js?v=20261108-cast1";
+import { PLAYER_CAST_KEY, PLAYER_CAST_PATH, buildPlayerCast, playerForDifficulty } from "../player-appearance.js?v=20261108-door1";
+import { sfx } from "../sfx.js?v=20261108-door1";
+import { getBest, getDifficulty, cycleDifficulty } from "../storage.js?v=20261108-door1";
 
 const TUTORIAL_LINES = [
   "街を歩く  →  状態を見る  →  オープナーを選ぶ",
-  "防御サインが強い相手は「離れる」が正解",
+  "気になる相手へ近づいて、声をかける",
   "共感 / 状況いじり / 持ち物 / ユーモア賭け",
   "属性を読む → 相性フリップ → 二人で決める",
   "相手に合う返しで盛り上げて、ホテルへ",
@@ -37,7 +37,7 @@ export default class TitleScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
     this.subText = this.add
-      .text(0, 0, "街で相手のサインを読む。無理なら離れる。", {
+      .text(0, 0, "街で声をかけ、相手に合う返しを選ぶ。", {
         fontFamily: "system-ui, sans-serif",
         fontSize: "15px",
         color: "#cfd3da",

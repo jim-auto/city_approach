@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 import { chromium, webkit } from 'playwright';
-import { walkQuestion, walkReplyEffect, WALK_REPLY_KEYS } from '../escort-conversation.js';
+import { walkQuestion, walkReplyEffect, WALK_REPLY_KEYS, WALK_QUESTION_X } from '../escort-conversation.js';
 import { encounterFor } from '../encounter-rules.js';
 import { startTestServer } from './helpers.mjs';
 
@@ -11,11 +11,13 @@ const profiles = [
   {styleLabel:'専門学生'}, {styleLabel:'大学生'}, {},
 ];
 assert.deepEqual(profiles.map(p=>encounterFor(p).key),['casual','rushed','friends','cautious','creative','student','neutral']);
-for(const profile of profiles) for(let i=0;i<4;i++) {
+for(const profile of profiles) for(let i=0;i<WALK_QUESTION_X.length;i++) {
   const q=walkQuestion(profile,i);
   assert.deepEqual(q.cards.map(c=>c.key),WALK_REPLY_KEYS);
   assert(walkReplyEffect(profile,q,'explain').gain>=8,'safe reply always progresses');
   assert.equal(walkReplyEffect(profile,q,'evade').gain,0);
+  assert.equal(q.final,i===WALK_QUESTION_X.length-1);
+  if(i===3||i===4)assert(q.atDoor&&!q.final);
 }
 const effect=(p,key)=>walkReplyEffect(p,walkQuestion(p,1),key);
 assert(effect(profiles[0],'check').gain>effect(profiles[3],'check').gain,'same joke depends on companion');
@@ -42,7 +44,7 @@ for(const [engine,width,height,profile] of [
     await page.waitForFunction(()=>window.cityApproachGame.scene.keys.EscortScene?.player?.active);
     assert(await page.evaluate(()=>{const e=window.cityApproachGame.scene.keys.EscortScene;return !e.jumpButton&&!e.walkAction;}));
     let expected=10;
-    for(let i=0;i<4;i++) {
+    for(let i=0;i<WALK_QUESTION_X.length;i++) {
       await page.evaluate(()=>window.cityApproachGame.scene.keys.EscortScene.beginConversation());
       await page.waitForFunction(()=>window.cityApproachGame.scene.keys.EscortScene.dialogState==='asking');
       const cards=page.locator('.game-native-buttons[data-scene="EscortScene"] button');
@@ -68,6 +70,7 @@ for(const [engine,width,height,profile] of [
       expected+=reward.gain+(result.chain===2?10:0);
       assert.equal(result.score,expected);assert.equal(result.bonus,expected-10);
       assert(result.body.includes(reward.reaction));
+      if(i===3||i===4)assert.equal(await page.evaluate(()=>window.cityApproachGame.scene.keys.EscortScene.destinationConfirmed),false,'door hesitation must not accept the invitation yet');
       await page.evaluate(()=>{const e=window.cityApproachGame.scene.keys.EscortScene;e.chooseWalkReply('explain');});
       assert.equal(await page.evaluate(()=>window.cityApproachGame.scene.keys.EscortScene.score),expected,'duplicate activation cannot award twice');
       if(i===0) await page.screenshot({path:`test-results/escort/${engine}-${width}-reaction.png`});
@@ -84,8 +87,13 @@ for(const [engine,width,height,profile] of [
       if(i<2) await page.waitForFunction(()=>!window.cityApproachGame.scene.keys.EscortScene.currentQuestion);
     }
     assert(await page.evaluate(()=>{const e=window.cityApproachGame.scene.keys.EscortScene;return e.outcome==='breakdown'&&e.score===10&&!e.goalArt;}));
+    await page.evaluate(()=>window.cityApproachGame.scene.keys.EscortScene.scene.restart({score:10}));
+    await page.waitForFunction(()=>{const e=window.cityApproachGame.scene.keys.EscortScene;return !e.finished&&e.player?.active;});
+    await page.evaluate(()=>{const e=window.cityApproachGame.scene.keys.EscortScene;e.nextQuestionIndex=e.questionCount-1;e.questionsAnswered=e.questionCount-1;e.destinationExplained=true;e.beginConversation();});
+    await page.locator('.game-native-buttons[data-scene="EscortScene"] button[data-choice="check"]').tap();
+    assert(await page.evaluate(()=>{const e=window.cityApproachGame.scene.keys.EscortScene;return e.outcome==='breakdown'&&!e.destinationConfirmed&&!e.goalArt;}),'choosing to go home must not grant entry');
     assert.deepEqual(errors,[]);
-    console.log(`PASS ${engine} ${width}x${height}: four live touch flips, reactions, score/chain, easy goal, repeated evasion failure`);
+    console.log(`PASS ${engine} ${width}x${height}: six conversations, three door exchanges, explicit final choice, touch flips, score/chain, easy goal, repeated evasion failure`);
   } finally { await browser.close(); }
 }
 } finally { await server.close(); }
