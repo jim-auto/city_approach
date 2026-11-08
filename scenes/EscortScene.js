@@ -1,9 +1,9 @@
-import { aiSourceKeyFor } from "../characters.js?v=20261108-ending1";
-import { createNativeButtons } from "../native-buttons.js?v=20261108-ending1";
-import { drawCitySky, drawCityStreet } from "../scenery.js?v=20261108-ending1";
-import { bindTouchReset } from "../mobile.js?v=20261108-ending1";
-import { sfx } from "../sfx.js?v=20261108-ending1";
-import { getBest, setBest } from "../storage.js?v=20261108-ending1";
+import { aiSourceKeyFor } from "../characters.js?v=20261108-ending2";
+import { createNativeButtons } from "../native-buttons.js?v=20261108-ending2";
+import { drawCitySky, drawCityStreet } from "../scenery.js?v=20261108-ending2";
+import { bindTouchReset } from "../mobile.js?v=20261108-ending2";
+import { sfx } from "../sfx.js?v=20261108-ending2";
+import { getBest, setBest } from "../storage.js?v=20261108-ending2";
 
 const START_X = 150;
 const HOTEL_X = 2900;
@@ -525,7 +525,7 @@ export default class EscortScene extends Phaser.Scene {
       this.finishText.setPosition(center, landscape ? h * .5 : artY + artHeight + 53)
         .setFontSize(fontSize).setLineSpacing(6)
         .setText(this.wrapDialogue(this.resultBody, Math.floor(panelWidth / fontSize)));
-      this.returnButton.setFontSize(landscape ? 17 : 18).setPadding(22, 12, 22, 12)
+      this.returnButton.setFontSize(landscape ? 17 : 18).setPadding(22, 14, 22, 14)
         .setPosition(center, h - (landscape ? 43 : 39));
     } else {
       const fontSize = h < 450 ? 18 : w < 360 ? 22 : 25;
