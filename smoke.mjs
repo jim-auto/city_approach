@@ -298,8 +298,8 @@ function check(name, condition, detail = "") {
   const escort = await page.evaluate(() => {
     const e = window.cityApproachGame.scene.keys.EscortScene;
     return { partner: e.partner.active, score: e.score, finished: e.finished,
-      atlas: e.textures.exists("character-atlas-v4"),
-      cellWidth: e.textures.get("character-atlas-v4").getSourceImage().width / 4,
+      atlas: e.textures.exists("character-fashion-original"),
+      cellWidth: e.textures.get("character-fashion-original").getSourceImage().width / 4,
       sourceWidth: e.textures.get("ai_player_raw").getSourceImage().width };
   });
   check("successful conversation starts escort", escort.partner && !escort.finished);
