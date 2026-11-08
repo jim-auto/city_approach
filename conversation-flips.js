@@ -1,4 +1,4 @@
-import { encounterFor } from "./encounter-rules.js?v=20261108-calm1";
+import { encounterFor } from "./encounter-rules.js?v=20261108-listen1";
 // Each hand contains concrete replies. Slots change so the answer is read, not memorised.
 const KEYS = ['listen', 'empathy', 'tsukkomi', 'proposal'];
 const CONCERNS = {

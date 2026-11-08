@@ -1,4 +1,4 @@
-import { encounterFor } from './encounter-rules.js?v=20261108-calm1';
+import { encounterFor } from './encounter-rules.js?v=20261108-listen1';
 
 export const WALK_REPLY_KEYS = ['explain', 'evade', 'check', 'spark'];
 export const WALK_QUESTION_X = [650, 1300, 1950, 2630, 2780, 2860];
@@ -58,7 +58,7 @@ export function walkQuestion(profile, index) {
   } else if (index === 3) {
     text = 'え、ここ入るの？まだ迷ってる（笑）';
     cards = [
-      card('explain', 'まず確認', '迷うよね。まず料金だけ一緒に見よう', 'honest', 'じゃあ料金だけ。まだ決めてないからね。'),
+      card('explain', '聞く', 'そっか。何が気になってる？', 'honest', '急に入るのは、ちょっと緊張する（笑）'),
       card('evade', '流す', 'まあまあまあ', null, '', 'evade'),
       card('check', '待つ', 'ここで少し話そ。急いで決めなくていいよ', 'respect', 'うん。いきなり入るのは緊張するし。'),
       card('spark', '軽口', '入口で緊張するの、俺も一緒（笑）', 'banter', 'そっちも緊張してるの（笑）じゃあ落ち着こ。'),

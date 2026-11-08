@@ -1,4 +1,4 @@
-import { DIFFICULTIES } from './storage.js?v=20261108-calm1';
+import { DIFFICULTIES } from './storage.js?v=20261108-listen1';
 
 export const PLAYER_CAST_KEY = 'player-cast-atlas';
 export const PLAYER_CAST_PATH = 'assets/ai/player-cast.png';
