@@ -1,4 +1,4 @@
-import { sfx } from './sfx.js?v=20261108-action1';
+import { sfx } from './sfx.js?v=20261108-action2';
 
 const SPOTS = [360, 510, 910, 1120, 1530, 1760, 2220, 2440];
 const JUMP_SECONDS = .82;
@@ -79,7 +79,7 @@ export class WalkAction {
   layout() {
     const s = this.scene;
     this.button.setPosition(s.scale.width / 2, s.scale.height - 48);
-    this.status.setPosition(20, s.compact ? 49 : 59).setFontSize(s.compact ? 11 : 12);
+    this.status.setPosition(20, s.compact ? 52 : 63).setFontSize(s.compact ? 11 : 12);
     this.puddles.forEach(p => p.art.setPosition(p.x, s.groundY + 2));
     this.hearts.forEach(h => h.art.setPosition(h.x, s.groundY - 28 - (h.raised ? this.jumpHeight * .85 : 0)));
     this.refreshStatus();

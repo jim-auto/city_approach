@@ -32,6 +32,10 @@ try {
         return { x: r.x + b.centerX, y: r.y + b.centerY, width: b.width, height: b.height };
       }, property);
       const jump = await point('jumpButton'); assert(jump.width >= 44 && jump.height >= 44);
+      assert(await page.evaluate(()=>{ const e=window.cityApproachGame.scene.keys.EscortScene;
+        const hud=e.hud.getBounds(), status=e.walkAction.status.getBounds();
+        return status.y>=hud.bottom+1 && status.bottom<(e.compact?66:82) && status.right<=e.scale.width-10;
+      }), 'action status must fit below the distance without overlapping the progress bar');
       await page.touchscreen.tap(jump.x, jump.y);
       await page.waitForFunction(() => window.cityApproachGame.scene.keys.EscortScene.walkAction.jumpOffset > 12);
       assert.equal((await snapshot(page)).x, 150, 'jump tap must not also set a walk destination');

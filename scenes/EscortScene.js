@@ -1,10 +1,10 @@
-import { WalkAction } from "../walk-action.js?v=20261108-action1";
-import { goalCostumeFor, buildGoalPortrait, goalPortraitBounds } from "../goal-costumes.js?v=20261108-action1";
-import { createNativeButtons } from "../native-buttons.js?v=20261108-action1";
-import { drawCitySky, drawCityStreet } from "../scenery.js?v=20261108-action1";
-import { bindTouchReset } from "../mobile.js?v=20261108-action1";
-import { sfx } from "../sfx.js?v=20261108-action1";
-import { getBest, setBest } from "../storage.js?v=20261108-action1";
+import { WalkAction } from "../walk-action.js?v=20261108-action2";
+import { goalCostumeFor, buildGoalPortrait, goalPortraitBounds } from "../goal-costumes.js?v=20261108-action2";
+import { createNativeButtons } from "../native-buttons.js?v=20261108-action2";
+import { drawCitySky, drawCityStreet } from "../scenery.js?v=20261108-action2";
+import { bindTouchReset } from "../mobile.js?v=20261108-action2";
+import { sfx } from "../sfx.js?v=20261108-action2";
+import { getBest, setBest } from "../storage.js?v=20261108-action2";
 
 const START_X = 150;
 const HOTEL_X = 2900;
@@ -173,7 +173,7 @@ export default class EscortScene extends Phaser.Scene {
     this.cameras.main.followOffset.set(-w * 0.16, 0);
     this.leftButton.setPosition(65, h - 48);
     this.rightButton.setPosition(w - 65, h - 48);
-    this.hud.setPosition(16, 16).setFontSize(this.compact ? 14 : 17);
+    this.hud.setPosition(16, 16).setFontSize(this.compact ? 13 : 17).setLineSpacing(2);
     this.caption.setPosition(w / 2, this.compact ? 98 : h - 124).setFontSize(this.compact ? 14 : 15).setWordWrapWidth(w - 40);
     this.hudBackdrop.clear().fillStyle(0x0b1526, 0.83).fillRoundedRect(8, 8, w - 16, this.compact ? 78 : 96, 9);
     this.decorations.removeAll(true);
