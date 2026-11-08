@@ -1,0 +1,10 @@
+Tool: built-in image_gen
+Edit target: assets/ai/player-cast.png
+Proportion reference: assets/ai/costumes-bunny-prin.png
+Output: assets/ai/player-goal-cast.png
+
+Use case: identity-preserve.
+Asset type: transparent 3-character atlas for a game's ending illustration.
+Edit target: image 1, the existing three adult male protagonists. Image 2 is a proportion and line-art reference ONLY; do not draw that woman.
+Primary request: redraw the SAME three men with natural adult 7.5-head-tall full-body proportions. Their heads in the original are much too large when composited next to image 2. Reduce each entire head (hair, skull, face) relative to body by approximately 35%, elongate adult torso/legs as needed, with believable shoulders and neck. Preserve their identities, facial features and age differences, hair, expression, outfit, gesture and art style. Full figure including shoes. Left: handsome adult Japanese man, black mushroom haircut, dark charcoal T-shirt, slim dark trousers, black shoes, silver necklace and wristwatch, open left hand. Middle: ordinary adult Japanese man, tousled dark hair, gray T-shirt, dark jeans, sneakers, watch. Right: man in his 50s, receding salt-and-pepper hair, wrinkles, slight facial hair, navy polo, gray trousers, black shoes, watch. No jackets.
+Layout: wide atlas aspect ratio 3:1, THREE EXACTLY EQUAL square cells in one row; one centered figure per cell at x=1/6, 1/2, 5/6 of width. All feet on same baseline, same full-body figure height, each figure completely within its own cell, transparent padding on every side. Keep clear air above heads. No borders, no lettering, no background, no shadows or glow. Actual alpha transparency. Clean detailed anime illustration matching image 2's adult anatomy, not chibi.

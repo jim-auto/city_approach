@@ -1,4 +1,4 @@
-import { encounterFor } from './encounter-rules.js?v=20261108-listen1';
+import { encounterFor } from './encounter-rules.js?v=20261108-proportion1';
 
 export const WALK_REPLY_KEYS = ['explain', 'evade', 'check', 'spark'];
 export const WALK_QUESTION_X = [650, 1300, 1950, 2630, 2780, 2860];

@@ -1,6 +1,6 @@
-import { PLAYER_CAST_KEY, PLAYER_CAST_PATH, buildPlayerCast, playerForDifficulty } from "../player-appearance.js?v=20261108-listen1";
-import { sfx } from "../sfx.js?v=20261108-listen1";
-import { getBest, getDifficulty, cycleDifficulty } from "../storage.js?v=20261108-listen1";
+import { PLAYER_CAST_KEY, PLAYER_CAST_PATH, buildPlayerCast, playerForDifficulty } from "../player-appearance.js?v=20261108-proportion1";
+import { sfx } from "../sfx.js?v=20261108-proportion1";
+import { getBest, getDifficulty, cycleDifficulty } from "../storage.js?v=20261108-proportion1";
 
 const TUTORIAL_LINES = [
   "街を歩く  →  状態を見る  →  オープナーを選ぶ",

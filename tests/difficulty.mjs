@@ -62,7 +62,7 @@ for(const engine of ['chromium','webkit']){
       await page.waitForFunction(()=>{const e=window.cityApproachGame.scene.keys.EscortScene;return e.goalArt?.active&&!e.cameras.main.fadeEffect.isRunning;});
       const goal=await page.evaluate(()=>{const e=window.cityApproachGame.scene.keys.EscortScene;
         return {portrait:e.goalArt.list[2].texture.key,difficulty:e.runData.difficulty,room:e.goalSelection.roomPath};});
-      assert.equal(goal.portrait,player.portraitKey);assert.equal(goal.difficulty,difficulty.key);assert(goal.room.includes('bedroom-'));
+      assert.equal(goal.portrait,player.goalPortraitKey);assert.equal(goal.difficulty,difficulty.key);assert(goal.room.includes('bedroom-'));
       await page.screenshot({path:`test-results/difficulty/${engine}-${difficulty.key}-goal.png`});
       await page.setViewportSize({width:320,height:568});
       await page.waitForFunction(()=>window.cityApproachGame.scene.keys.EscortScene.scale.width===320);

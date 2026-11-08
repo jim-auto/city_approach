@@ -41,7 +41,7 @@ for(const [engine,width,height,reduced] of [['chromium',320,568,false],['webkit'
   return {x:e.goalArt.x,y:e.goalArt.y,width:e.goalArt.width,height:e.goalArt.height,
    textures:e.goalArt.list.filter(o=>o.texture).map(o=>o.texture.key)};});
  const selection=goalCostumeFor(`${companionKey}-0`);
- assert.deepEqual(art.textures,[selection.roomKey,'ai_player_raw',selection.portraitKey],'CG must keep the actual companion and palette');
+ assert.deepEqual(art.textures,[selection.roomKey,selection.family === 'bunny' ? 'goal-player-easy' : 'ai_player_raw',selection.portraitKey],'CG must keep the actual companion and palette');
  assert(art.x>=0 && art.y>=0 && art.x+art.width<=width && art.y+art.height<=height,'CG stays inside the viewport');
  assert(await page.evaluate(()=>{const e=window.cityApproachGame.scene.keys.EscortScene;
   const a=new Phaser.Geom.Rectangle(e.goalArt.x,e.goalArt.y,e.goalArt.width,e.goalArt.height);

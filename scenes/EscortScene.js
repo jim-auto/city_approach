@@ -1,12 +1,12 @@
-import { PLAYER_CAST_KEY, PLAYER_CAST_PATH, buildPlayerCast, playerForDifficulty } from "../player-appearance.js?v=20261108-listen1";
-import { WALK_REPLY_KEYS, WALK_QUESTION_X, walkQuestion, walkReplyEffect } from "../escort-conversation.js?v=20261108-listen1";
-import { encounterFor } from "../encounter-rules.js?v=20261108-listen1";
-import { goalCostumeFor, buildGoalPortrait, goalPortraitBounds } from "../goal-costumes.js?v=20261108-listen1";
-import { createNativeButtons } from "../native-buttons.js?v=20261108-listen1";
-import { drawCitySky, drawCityStreet } from "../scenery.js?v=20261108-listen1";
-import { bindTouchReset } from "../mobile.js?v=20261108-listen1";
-import { sfx } from "../sfx.js?v=20261108-listen1";
-import { DIFFICULTIES, getDifficulty, getBest, setBest } from "../storage.js?v=20261108-listen1";
+import { PLAYER_CAST_KEY, PLAYER_CAST_PATH, PLAYER_GOAL_CAST_KEY, PLAYER_GOAL_CAST_PATH, buildPlayerCast, buildGoalPlayerCast, playerForDifficulty } from "../player-appearance.js?v=20261108-proportion1";
+import { WALK_REPLY_KEYS, WALK_QUESTION_X, walkQuestion, walkReplyEffect } from "../escort-conversation.js?v=20261108-proportion1";
+import { encounterFor } from "../encounter-rules.js?v=20261108-proportion1";
+import { goalCostumeFor, buildGoalPortrait, goalPortraitBounds } from "../goal-costumes.js?v=20261108-proportion1";
+import { createNativeButtons } from "../native-buttons.js?v=20261108-proportion1";
+import { drawCitySky, drawCityStreet } from "../scenery.js?v=20261108-proportion1";
+import { bindTouchReset } from "../mobile.js?v=20261108-proportion1";
+import { sfx } from "../sfx.js?v=20261108-proportion1";
+import { DIFFICULTIES, getDifficulty, getBest, setBest } from "../storage.js?v=20261108-proportion1";
 
 const START_X = 150;
 const HOTEL_X = 2900;
@@ -25,6 +25,7 @@ export default class EscortScene extends Phaser.Scene {
   preload() {
     const assets = [
       [PLAYER_CAST_KEY, PLAYER_CAST_PATH],
+      [PLAYER_GOAL_CAST_KEY, PLAYER_GOAL_CAST_PATH],
       [this.goalSelection.atlasKey, this.goalSelection.atlasPath],
       [this.goalSelection.roomKey, this.goalSelection.roomPath],
     ].filter(([key]) => !this.textures.exists(key));
@@ -39,6 +40,7 @@ export default class EscortScene extends Phaser.Scene {
   create(data = {}) {
     this.runData = { ...data, difficulty: this.difficulty.key };
     buildPlayerCast(this);
+    buildGoalPlayerCast(this);
     buildGoalPortrait(this, this.goalSelection);
     this.mapKey = data.mapKey || "nagoya";
     this.score = data.score || 0;
@@ -526,7 +528,10 @@ export default class EscortScene extends Phaser.Scene {
     const cropWidth = width / cover, cropHeight = height / cover;
     backdrop.setCrop((backdrop.width - cropWidth) / 2, (backdrop.height - cropHeight) / 2, cropWidth, cropHeight)
       .setScale(cover);
-    const keys = [this.playerAppearance.portraitKey, this.goalArtCompanionKey];
+    // The bunny illustration has taller proportions than the costume atlases.
+    const playerKey = this.goalSelection.family === "bunny"
+      ? this.playerAppearance.goalPortraitKey : this.playerAppearance.portraitKey;
+    const keys = [playerKey, this.goalArtCompanionKey];
     const bounds = keys.map(key => goalPortraitBounds(this, key));
     const ratios = bounds.map(b => b.width / b.height);
     // Wide dresses and tall hats must fit beside the protagonist without clipping.

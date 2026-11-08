@@ -2,7 +2,7 @@
 
 **「まあまあまあ」は、何回まで通じる？**
 
-[![実プレイ：声かけ、4枚の会話フリップ、横スクロールの同行、相手別のゴールCG](./assets/demo.gif?v=listen1)](https://jim-auto.github.io/city_approach/)
+[![実プレイ：声かけ、4枚の会話フリップ、横スクロールの同行、相手別のゴールCG](./assets/demo.gif?v=proportion1)](https://jim-auto.github.io/city_approach/)
 
 **[▶ ブラウザで遊ぶ](https://jim-auto.github.io/city_approach/)** · **[投稿用MP4](./assets/demo.mp4)** · [WebM](./assets/demo.webm)
 
@@ -26,7 +26,7 @@
 
 タイトル・街の難度ボタンで切り替えると、主人公の立ち絵、街と同行の歩行キャラ、ゴールCGが連動する。初回はガチイケで、選択は保存される。会話にも選択した難易度を引き継ぐ。
 
-男性3人の画像は内蔵画像生成ツールで制作。`assets/ai/player-cast.png` は左からガチイケ・フツメン・おじさんの3列、プロンプトは `assets/ai/player-cast-prompt.txt`。全員ジャケットなし。`npm run test:difficulty` でChromium／WebKitのタップ選択、3人の描き分け、歩行、会話・CGへの引き継ぎ、縦横の切り替え、選択保存を検証する。
+男性3人の画像は内蔵画像生成ツールで制作。`assets/ai/player-cast.png` は左からガチイケ・フツメン・おじさんの3列、プロンプトは `assets/ai/player-cast-prompt.txt`。全員ジャケットなし。ゴールでは相手の頭身に合わせて男性の絵を選ぶ。頭身の高いバニーの一枚絵には、顔を小さくして体との比率を揃えた `assets/ai/player-goal-cast.png` を使用。元の3人を参照して内蔵画像生成ツールで制作し、プロンプトは `assets/ai/player-goal-cast-prompt.txt` に保存。`npm run test:difficulty` でChromium／WebKitのタップ選択、3人の描き分け、歩行、会話・CGへの引き継ぎ、縦横の切り替え、選択保存を検証する。
 
 ## ゲーム内容
 
