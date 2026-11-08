@@ -1,13 +1,13 @@
-import { PLAYER_CAST_KEY, PLAYER_CAST_PATH, buildPlayerCast, playerForDifficulty } from "../player-appearance.js?v=20261108-door1";
-import { sfx } from "../sfx.js?v=20261108-door1";
-import { getBest, getDifficulty, cycleDifficulty } from "../storage.js?v=20261108-door1";
+import { PLAYER_CAST_KEY, PLAYER_CAST_PATH, buildPlayerCast, playerForDifficulty } from "../player-appearance.js?v=20261108-calm1";
+import { sfx } from "../sfx.js?v=20261108-calm1";
+import { getBest, getDifficulty, cycleDifficulty } from "../storage.js?v=20261108-calm1";
 
 const TUTORIAL_LINES = [
   "街を歩く  →  状態を見る  →  オープナーを選ぶ",
   "気になる相手へ近づいて、声をかける",
   "共感 / 状況いじり / 持ち物 / ユーモア賭け",
-  "属性を読む → 相性フリップ → 二人で決める",
-  "相手に合う返しで盛り上げて、ホテルへ",
+  "相手の話を聞く → 減点を避ける → 二人で決める",
+  "無理にウケを狙わず、自然な返しでホテルへ",
 ];
 
 export default class TitleScene extends Phaser.Scene {

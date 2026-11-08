@@ -1,4 +1,4 @@
-import { encounterFor } from "./encounter-rules.js?v=20261108-door1";
+import { encounterFor } from "./encounter-rules.js?v=20261108-calm1";
 // Each hand contains concrete replies. Slots change so the answer is read, not memorised.
 const KEYS = ['listen', 'empathy', 'tsukkomi', 'proposal'];
 const CONCERNS = {
@@ -37,6 +37,19 @@ const EXTRA = {
     answer: '服に合わせて選ぶの？\n次はどんな色が気になる？', reply: 'そう、服との組み合わせ考えちゃう。実はね……',
     wrong: ['今の髪、早く染め直した方がいいよ', '俺の好みの色にしてよ', '髪はいいから、連絡先教えて'], miss: '自分の好きな感じを一緒に話したかったんだよね。' },
 };
+// A calm reply also works; a conversation is not a one-answer quiz.
+const SAFE_REPLIES = {
+  safety: ['そっか。ここで少し話そ\nどんな人か分かってからで', 'うん、ここなら話せる。'],
+  time: ['何時に出れば間に合う？\nそれまではここで話そ', 'あと5分くらいかな。それなら大丈夫。'],
+  friend: ['友達と待ち合わせなんだ\nじゃあここで話してよう', 'そうしよ。ここなら合流できるし。'],
+  money: ['いくらくらいなら大丈夫？\n合わなかったら別にしよう', 'それなら、先に予算の話しておこ。'],
+  destination: ['近くのラブホテルを考えてた\nどうするかは一緒に決めよ', 'そっか。どんな所か先に見たいな。'],
+  pace: ['ちょっと早かったね（笑）\nもう少し話してからにしよ', 'うん、まだ名前くらいしか知らないし（笑）'],
+  fatigue: ['お疲れさま。まず座ろっか\n話すのはそれからで', 'うん、座れるなら助かる。'],
+  pressure: ['話すだけでも楽しいよ\nこのあとは気が向いたらで', 'そう言ってくれるなら気楽に話せる。'],
+  freeTime: ['急に空くと困るよね（笑）\nいつも空き時間なにしてる？', '結局スマホ見ちゃうんよね（笑）'],
+  appearance: ['色々試したくなるよね\n今まで何色にしたことある？', 'いろいろやったよ。写真見る？'],
+};
 const VIBE_CARDS = [
   { strategy: 'honest', text: '普通に話してみたくて\n嫌ならここまでで大丈夫' },
   { strategy: 'banter', text: '慣れてたら今ごろ\nこんなに噛んでない（笑）' },
@@ -55,10 +68,13 @@ export function buildFlipLines(profile, mapKey, shuffle) {
       const hand = shuffle(VIBE_CARDS.map(card => ({ ...card })));
       return { concern: 'vibe', cue: '相手に合うノリ', weak: true, text: 'なんか喋り慣れてそうだけど、いつもこんな感じ？',
         reply: type.reaction, miss: '', correct: hand.flatMap((c, i) => c.strategy === type.vibe ? [KEYS[i]] : []),
-        cards: hand.map((card, i) => ({ ...card, key: KEYS[i] })) };
+        cards: hand.map((card, i) => ({ ...card, safe: true, key: KEYS[i] })) };
     }
     const c = CONCERNS[id] || EXTRA[id];
-    const hand = shuffle([{ text: c.answer, hit: true, strategy: STRATEGIES[id] }, ...c.wrong.map(text => ({ text, hit: false, strategy: 'pushy' }))]);
+    const [safeText, safeReaction] = SAFE_REPLIES[id];
+    const hand = shuffle([{ text: c.answer, hit: true, strategy: STRATEGIES[id] },
+      { text: safeText, safe: true, reaction: safeReaction, strategy: STRATEGIES[id] },
+      ...c.wrong.slice(0, 2).map(text => ({ text, hit: false, strategy: 'pushy' }))]);
     return { ...c, concern: id, weak: true, correct: hand.flatMap((card, i) => card.hit ? [KEYS[i]] : []),
       cards: hand.map((card, i) => ({ ...card, key: KEYS[i] })) };
   }), { concern: 'closing', isClosing: true, cue: '二人で次の予定', text: 'ちょっと安心したかも。このあと、どうしようか？', weak: true,

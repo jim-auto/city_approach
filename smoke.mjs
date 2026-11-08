@@ -214,8 +214,8 @@ function check(name, condition, detail = "") {
       t.favor = 85; t.discomfort = 20; t.responseChain = 0; t.invitationAccepted = false; t.resolvedConcerns = new Set(resolved);
     };
     const concern = lines[0];
-    const wrongListen = { ...concern, correct: ["empathy"] };
-    reset(wrongListen); t.choose("listen");
+    const wrongKey = concern.cards.find(c => !c.safe && !concern.correct.includes(c.key)).key;
+    reset(concern); t.choose(wrongKey);
     const wrongCardCostsTrust = t.favor === 80 && t.discomfort === 20 + t.encounter.mistake && t.resolvedConcerns.size === 0;
     reset({ ...concern, correct: ["proposal"] }); t.choose("proposal");
     const noEarlyInvite = !t.resultShown && !t.invitationAccepted && t.resolvedConcerns.size === 1;

@@ -42,11 +42,12 @@ export function replyEffect(profile, line, choiceKey, chain = 0) {
     const affinity = type.preferred[card?.strategy] || 0;
     const gain = Math.min(40, 20 + Math.min(9, chain * 3) + affinity);
     return { quality: 'match', favor: gain, guard: -(6 + Math.floor(affinity / 3)), affinity,
-      label: affinity ? type.hint : '不安に合った返答', reaction: line.reply };
+      label: affinity ? '好印象 / 減点なし' : '減点なし', reaction: line.reply };
   }
-  if (line.concern === 'vibe') {
-    return { quality: 'neutral', favor: 4, guard: 2, affinity: 0, label: '相性△',
-      reaction: type.key === 'rushed' ? '今は手短に話してもらえると助かる。' : '悪くないけど、もう少し自然に話せるといいな。' };
+  if (card?.safe) {
+    return { quality: 'safe', favor: 16, guard: line.concern === 'vibe' ? 0 : -6, affinity: 0,
+      label: '減点なし', reaction: card.reaction || (type.key === 'rushed'
+        ? 'うん、少しなら話せるよ。' : 'そっか（笑）じゃあ普通に話そ。') };
   }
   return { quality: 'miss', favor: -5, guard: type.mistake, affinity: 0,
     label: '不安が残った', reaction: line.miss };

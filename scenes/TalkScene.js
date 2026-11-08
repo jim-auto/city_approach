@@ -1,8 +1,8 @@
-import { encounterFor, replyEffect } from "../encounter-rules.js?v=20261108-door1";
-import { createNativeButtons } from "../native-buttons.js?v=20261108-door1";
-import { buildFlipLines } from "../conversation-flips.js?v=20261108-door1";
-import { sfx } from "../sfx.js?v=20261108-door1";
-import { DIFFICULTIES, getDifficulty } from "../storage.js?v=20261108-door1";
+import { encounterFor, replyEffect } from "../encounter-rules.js?v=20261108-calm1";
+import { createNativeButtons } from "../native-buttons.js?v=20261108-calm1";
+import { buildFlipLines } from "../conversation-flips.js?v=20261108-calm1";
+import { sfx } from "../sfx.js?v=20261108-calm1";
+import { DIFFICULTIES, getDifficulty } from "../storage.js?v=20261108-calm1";
 
 const CHOICES = [
   { key: "listen", label: "聞く", color: 0x3b4652 },
@@ -56,7 +56,7 @@ export default class TalkScene extends Phaser.Scene {
       : null;
     this.gaugeGraphics = this.add.graphics().setDepth(12);
     this.timerGraphics = this.add.graphics().setDepth(14);
-    this.favorGaugeLabel = this.createGaugeLabel("好感度");
+    this.favorGaugeLabel = this.createGaugeLabel("安心感");
     this.discomfortGaugeLabel = this.createGaugeLabel("違和感");
     this.feedbackText = this.add
       .text(0, 0, "", {
@@ -302,7 +302,7 @@ export default class TalkScene extends Phaser.Scene {
     this.lineText.setFontSize(line.text.length > 16 ? baseSize - 6 : baseSize);
     this.lineText.setText(this.wrapText(line.text, this.scale.width < 430 ? 12 : 22));
     const phase = line.concern ? (line.isClosing ? `LAST / ${this.encounter.label}` : `不安 ${this.lineIndex + 1}/4 / ${this.encounter.label}`) : `返答: ${line.cue}`;
-    this.topicText.setText(`${phase}\n${line.concern ? `${this.encounter.hint} / 安心 ${this.resolvedConcerns.size}/4` : "相手の気持ちを読もう"}`);
+    this.topicText.setText(`${phase}\n${line.concern ? `無難な返しでOK / 安心 ${this.resolvedConcerns.size}/4` : "相手の気持ちを読もう"}`);
     this.topicText.setAlign("center");
     this.choiceButtons.forEach((button, i) => {
       button.rawLabel = line.cards?.[i]?.text || CHOICES[i].label;
@@ -326,7 +326,7 @@ export default class TalkScene extends Phaser.Scene {
     const effect = line.concern ? replyEffect(this.profile, line, choiceKey, this.responseChain) : null;
     this.lastReplyEffect = effect;
     const readyToInvite = this.favor >= (line.concern ? this.encounter.inviteAt : 68) && this.discomfort < 60;
-    const correct = effect ? effect.quality === "match" : line.weak ? line.correct.includes(choiceKey) : choiceKey === "listen";
+    const correct = effect ? ["match", "safe"].includes(effect.quality) : line.weak ? line.correct.includes(choiceKey) : choiceKey === "listen";
     if (correct) {
       this.responseChain += 1;
       this.bestResponseChain = Math.max(this.bestResponseChain, this.responseChain);
@@ -339,14 +339,8 @@ export default class TalkScene extends Phaser.Scene {
         `${line.weak ? "文脈に合った返答" : "相手の話を聞けた"}！ 好感+${gain} / ${this.responseChain}連続` +
         (choiceKey === "proposal" && !readyToInvite ? "。まずは信頼を深めよう。" : ""),
         this.scale.width < 430 ? 20 : 42));
-      this.pulseFeedback("hit");
-      sfx.play("hit");
-    } else if (effect?.quality === "neutral") {
-      this.responseChain = 0;
-      this.favor = Phaser.Math.Clamp(this.favor + effect.favor, 0, 100);
-      this.discomfort = Phaser.Math.Clamp(this.discomfort + effect.guard, 0, 100);
-      this.pulseFeedback("watch");
-      sfx.play("tick");
+      this.pulseFeedback(effect?.quality === "safe" ? "safe" : "hit");
+      sfx.play(effect?.quality === "safe" ? "tick" : "hit");
     } else if (choiceKey === "listen" && !line.concern) {
       this.responseChain = 0;
       this.discomfort = Phaser.Math.Clamp(this.discomfort - 4, 0, 100);
@@ -366,10 +360,9 @@ export default class TalkScene extends Phaser.Scene {
     }
 
     if (line.concern) {
-      const sign = effect.favor >= 0 ? "+" : "";
-      this.topicText.setText(`${line.isClosing ? "LAST" : `不安 ${this.lineIndex + 1}/4`} / ${this.encounter.label}\n${effect.label} 好感${sign}${effect.favor} / ${this.resolvedConcerns.size}/4`);
+      this.topicText.setText(`${line.isClosing ? "LAST" : `不安 ${this.lineIndex + 1}/4`} / ${this.encounter.label}\n${effect.label} / 安心 ${this.resolvedConcerns.size}/4`);
       const accepted = correct && (!line.isClosing || this.invitationAccepted);
-      this.feedbackText.setText(this.wrapText(accepted ? `「${line.reply}」` : correct ? "まだ不安が残るな。今日はここまでにしよう。" : `「${effect.reaction}」`, this.scale.width < 430 ? 21 : 30));
+      this.feedbackText.setText(this.wrapText(accepted ? `「${effect.reaction}」` : correct ? "まだ不安が残るな。今日はここまでにしよう。" : `「${effect.reaction}」`, this.scale.width < 430 ? 21 : 30));
       const index = CHOICES.findIndex(c => c.key === choiceKey);
       const card = this.choiceButtons[index];
       this.choiceButtons.forEach((button, i) => button.setAlpha(i === index ? 1 : .35));
@@ -461,7 +454,7 @@ export default class TalkScene extends Phaser.Scene {
     this.topicText.setText(title);
     this.lineText.setFontSize(this.scale.width < 430 ? 30 : 42);
     this.lineText.setText(this.wrapText(body, this.scale.width < 430 ? 12 : 24));
-    this.feedbackText.setText(`好感度 ${this.favor} / 違和感 ${this.discomfort}\n最高 ${this.bestResponseChain}連続`);
+    this.feedbackText.setText(`安心感 ${this.favor} / 違和感 ${this.discomfort}\n${this.resolvedConcerns.size}/4 話題で安心して話せた`);
     this.resultScoreText
       .setText(`獲得 +${preview.total} / 連続 ${this.streak} → ${preview.nextStreak}`)
       .setVisible(true);
@@ -499,15 +492,19 @@ export default class TalkScene extends Phaser.Scene {
   }
 
   pulseFeedback(kind) {
+    // Card feedback already occupies this space; keep the dialogue readable.
+    if (this.lines[this.lineIndex]?.concern) return;
     const color = {
       hit: "#57f5ff",
+      safe: "#57f5ff",
       miss: "#ff4d6d",
       watch: "#ffd24f",
       timeout: "#f5f1df",
     }[kind] || "#ffffff";
     const label = {
-      hit: "HIT",
-      miss: "MISS",
+      hit: "好印象",
+      safe: "減点なし",
+      miss: "違和感",
       watch: "READ",
       timeout: "LATE",
     }[kind] || "";

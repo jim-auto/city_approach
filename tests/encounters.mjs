@@ -25,16 +25,34 @@ for (const profile of profiles) {
   assert(lines.every(l=>l.cards.length===4 && l.correct.length===1));
   assert(lines.at(-1).cards[3].text.includes('ラブホテル'));
 }
+// Every type can progress using only calm replies, without affinity bonuses.
+for (const profile of profiles) {
+  const type = encounterFor(profile);
+  let favor = 42 + Math.round((profile.interest - 50) * .35) + type.startFavor;
+  let guard = 24 + type.startGuard;
+  for (const line of linesFor(profile).slice(0, 4)) {
+    const calm = line.cards.find(c => c.safe && !line.correct.includes(c.key));
+    assert(calm, `${profile.key}/${line.concern} needs a calm alternative`);
+    const effect = replyEffect(profile, line, calm.key, 0);
+    assert.equal(effect.quality, 'safe');
+    assert(effect.favor >= 0 && effect.guard <= 0);
+    favor = Math.min(100, favor + effect.favor); guard = Math.max(0, guard + effect.guard);
+    for (const card of line.cards.filter(c => !c.safe && !line.correct.includes(c.key))) {
+      assert.equal(replyEffect(profile, line, card.key).quality, 'miss');
+    }
+  }
+  assert(favor >= type.inviteAt && guard < 60, `${profile.key} calm path must qualify`);
+}
 const casualVibe = vibeFor(casual);
 const banter = casualVibe.cards.find(c=>c.strategy==='banter').key;
 assert.equal(replyEffect(casual,casualVibe,banter).favor,34);
-assert.equal(replyEffect(rushed,vibeFor(rushed),banter).favor,4);
-assert.equal(replyEffect(rushed,vibeFor(rushed),banter).guard,2);
+assert.equal(replyEffect(rushed,vibeFor(rushed),banter).favor,16);
+assert.equal(replyEffect(rushed,vibeFor(rushed),banter).guard,0);
 assert.equal(replyEffect(cautious,vibeFor(cautious),'listen').favor,34);
 assert.equal(replyEffect(creative,vibeFor(creative),'proposal').favor,34);
 const friendLine=linesFor(friends).find(l=>l.concern==='friend');
 assert.equal(replyEffect(friends,friendLine,friendLine.correct[0]).favor,34);
-const safe=linesFor(casual)[0], miss=safe.cards.find(c=>!safe.correct.includes(c.key)).key;
+const safe=linesFor(casual)[0], miss=safe.cards.find(c=>!c.safe && !safe.correct.includes(c.key)).key;
 assert.equal(replyEffect(casual,safe,miss).guard,14);
 assert.equal(replyEffect(cautious,safe,miss).guard,30);
 assert.equal(encounterFor(casual).inviteAt,60);
@@ -69,7 +87,7 @@ for(const engine of (process.env.ENCOUNTER_BROWSERS || 'chromium,webkit').split(
    const buttons=page.locator('.game-native-buttons[data-scene="TalkScene"] button');
    await buttons.nth(index).tap();
    const state=await page.evaluate(()=>{const t=window.cityApproachGame.scene.keys.TalkScene;return {gain:t.lastReplyEffect.favor,resolved:t.resolvedConcerns.size,topic:t.topicText.text};});
-   assert(state.gain>=20 && state.resolved===1 && state.topic.includes('好感+'));
+   assert(state.gain>=20 && state.resolved===1 && state.topic.includes('減点なし'));
    const bounds=await page.evaluate(()=>{const t=window.cityApproachGame.scene.keys.TalkScene;return [t.topicText,t.lineText,t.feedbackText].map(o=>({text:o.text,x:o.getBounds().x,y:o.getBounds().y,right:o.getBounds().right,bottom:o.getBounds().bottom}));});
    for(const b of bounds) assert(b.x>=-1 && b.y>=0 && b.right<=width+1 && b.bottom<=height+1,`${profile.key} text clipped: ${JSON.stringify(b)}`);
    if(profile.key==='casual' || profile.key==='cautious') await page.screenshot({path:`${output}/${engine}-${profile.key}-${width}.png`});
@@ -78,8 +96,30 @@ for(const engine of (process.env.ENCOUNTER_BROWSERS || 'chromium,webkit').split(
    assert.equal(await page.evaluate(()=>window.cityApproachGame.scene.keys.TalkScene.invitationAccepted),profile.key==='casual',`${profile.key} invitation threshold`);
   }
  }
+ // Real native taps through a full conversation, choosing no best-match cards.
+ await page.setViewportSize({width:320,height:568});
+ await page.evaluate(profile => {
+   const g=window.cityApproachGame;
+   ['TalkScene','EscortScene','MainScene'].forEach(key=>g.scene.stop(key));
+   g.scene.start('TalkScene',{profile,mapKey:'kabukicho',npcTextureKey:'npc-prin-student-0'});
+ }, profiles.find(p=>p.key==='cautious'));
+ await page.waitForFunction(()=>window.cityApproachGame.scene.keys.TalkScene?.sys.isActive() && window.cityApproachGame.scene.keys.TalkScene.lineIndex===0);
+ for(let round=0;round<5;round++) {
+   await page.waitForFunction(round=>{const t=window.cityApproachGame.scene.keys.TalkScene;return t.lineIndex===round && !t.choiceLocked;},round);
+   const before=await page.evaluate(()=>{
+     const t=window.cityApproachGame.scene.keys.TalkScene,l=t.lines[t.lineIndex];
+     return {index:l.isClosing?3:l.cards.findIndex(c=>c.safe&&!l.correct.includes(c.key)),guard:t.discomfort,favor:t.favor};
+   });
+   await page.locator('.game-native-buttons[data-scene="TalkScene"] button').nth(before.index).tap();
+   const after=await page.evaluate(()=>{const t=window.cityApproachGame.scene.keys.TalkScene;return {guard:t.discomfort,favor:t.favor,resolved:t.resolvedConcerns.size,accepted:t.invitationAccepted,result:t.resultShown,topic:t.topicText.text};});
+   assert(after.guard<=before.guard && after.favor>=before.favor,'calm replies never cost trust');
+   assert.equal(after.resolved,Math.min(round+1,4));
+   if(round<4) assert(after.topic.includes('減点なし') && !after.result);
+   else assert(after.accepted && after.result,'calm replies alone earn an invitation');
+   if(round===1) await page.screenshot({path:`${output}/${engine}-calm-path.png`});
+ }
  assert.deepEqual(errors,[]);
- console.log(`PASS ${engine}: seven adult profiles, portrait/landscape, native taps, attribute feedback and different invitation thresholds`);
+ console.log(`PASS ${engine}: seven profiles, portrait/landscape taps, attribute effects, and a full calm-reply path`);
  }finally{await browser.close();}
 }
 }finally{await server.close();}
