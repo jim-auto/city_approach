@@ -1,67 +1,73 @@
 {
-  "description": "Actual browser play, recorded with Playwright and edited into chronological excerpts, keeping the initial conversation uninterrupted and every walking exchange through its reaction. No game state or outcomes were altered.",
+  "description": "GIF dialogue scenario recorded through actual Playwright browser inputs. Recording-only module routes replace dialogue and reaction timing; normal game files, success rates and scoring rules are unchanged. All conversations and the final silence, reassurance and affirmative reply are included.",
+  "scenario": "conversation-story-1",
+  "scenarioSource": "scripts/demo-scenario.mjs",
+  "finalConfirmation": {
+    "silentQuestion": true,
+    "answerAfterReassurance": true
+  },
   "width": 1100,
   "height": 800,
-  "duration": 68.22,
+  "duration": 78.61,
   "gifFps": 10,
   "gifWidth": 480,
   "gifHeight": 800,
   "initialConversation": {
-    "start": 87.153,
-    "end": 111.622,
+    "start": 7.41,
+    "end": 34.388999999999996,
     "rounds": 5,
     "uninterrupted": true
   },
   "walkingExchanges": 6,
   "clips": [
     {
-      "start": 84.443,
-      "end": 86.54299999999999,
+      "start": 4.804,
+      "end": 6.904,
       "caption": "街で声をかける。\nそこから始まる会話ゲーム。"
     },
     {
-      "start": 87.153,
-      "end": 111.622,
+      "start": 7.41,
+      "end": 34.388999999999996,
       "caption": "会話から、お誘いまで。\nやり取りを飛ばさず見せる。"
     },
     {
-      "start": 111.622,
-      "end": 113.372,
+      "start": 34.388999999999996,
+      "end": 36.138999999999996,
       "caption": "二人で歩き出す。\nこのあとも会話は続く。"
     },
     {
-      "start": 113.954,
-      "end": 119.654,
+      "start": 37.032,
+      "end": 43.788,
       "caption": "「まあまあまあ」で流す。\n返答とリアクションまで見せる。"
     },
     {
-      "start": 122.778,
-      "end": 128.52100000000002,
-      "caption": "次の質問には、ちゃんと返す。\n歩きながら会話は続く。"
+      "start": 46.826,
+      "end": 53.476,
+      "caption": "「目的地ないの？」には、\nちゃんと答え直す。"
     },
     {
-      "start": 131.627,
-      "end": 137.818,
-      "caption": "相手に合わせて、話題を選ぶ。\n雑談も、ひと往復ずつ。"
+      "start": 56.565,
+      "end": 63.336999999999996,
+      "caption": "さっきの冗談が、また話題に。\n会話がひと続きになる。"
     },
     {
-      "start": 142.387,
-      "end": 148.461,
-      "caption": "入口で「まだ迷ってる（笑）」\n気になることを聞いてみる。"
+      "start": 66.541,
+      "end": 73.269,
+      "caption": "ホテルが見えてきた。\nここで初めて、お誘い。"
     },
     {
-      "start": 149.353,
-      "end": 155.299,
-      "caption": "相手ごとの迷いにも返す。\n急がず、もうひと往復。"
+      "start": 74.069,
+      "end": 80.799,
+      "caption": "「ちょっと急じゃない？」\nここで一度、立ち止まる。"
     },
     {
-      "start": 155.962,
-      "end": 162.66,
-      "caption": "最後に、入るかを確認。\n返答を待ってからゴールへ。"
+      "start": 81.339,
+      "end": 91.936,
+      "caption": "無言の相手に、気持ちを伝える。\n返事を待ってからゴールへ。"
     },
     {
-      "start": 162.66,
-      "end": 166.21,
+      "start": 91.936,
+      "end": 95.486,
       "caption": "ホテルの客室で、記念CG。\nラストは黒バニー。"
     }
   ],

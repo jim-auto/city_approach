@@ -1,11 +1,12 @@
+import { installDemoScenario, scenario } from './demo-scenario.mjs';
 import { WALK_QUESTION_X } from '../escort-conversation.js';
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
 import { startTestServer } from '../tests/helpers.mjs';
 
-// Record real input and game outcomes. No game state, success rates, scores or
-// destination positions are changed. The edit uses marked excerpts of this take.
+// Record real input and game outcomes with the agreed GIF dialogue scenario.
+// Success rates, scoring rules and destination positions are unchanged.
 const output='test-results/demo';
 await mkdir(output,{recursive:true});
 const server=await startTestServer();
@@ -13,6 +14,7 @@ const browser=await chromium.launch();
 const context=await browser.newContext({viewport:{width:480,height:800},hasTouch:true,
   recordVideo:{dir:output,size:{width:480,height:800}}});
 const page=await context.newPage();
+await installDemoScenario(page);
 const started=Date.now(), marks=[], errors=[];
 const mark=name=>{const time=(Date.now()-started)/1000;marks.push({name,time});console.log(name,time.toFixed(2));};
 page.on('pageerror',e=>errors.push(e.message));
@@ -77,11 +79,11 @@ try {
     await page.waitForFunction(()=>{const t=window.cityApproachGame.scene.keys.TalkScene;return t.resultShown||!t.choiceLocked;});
     const decision=await page.evaluate(()=>{const t=window.cityApproachGame.scene.keys.TalkScene;
       if(t.resultShown)return {done:true};
-      const line=t.lines[t.lineIndex];return {line:t.lineIndex,guard:t.discomfort,index:line.cards.findIndex(c=>line.isClosing?c.key===line.correct[0]:c.safe&&!line.correct.includes(c.key))};});
+      const line=t.lines[t.lineIndex];return {line:t.lineIndex,guard:t.discomfort,index:line.cards.findIndex(c=>c.demoPick)};});
     if(decision.done)break;
     assert(decision.index>=0,'each conversation needs a calm reply or the final invitation');
     mark(`talk-question-${decision.line}`);
-    await page.waitForTimeout(2300);
+    await page.waitForTimeout(2800);
     const ready=await page.evaluate(line=>{const t=window.cityApproachGame.scene.keys.TalkScene;return !t.resultShown&&!t.choiceLocked&&t.lineIndex===line;},decision.line);
     if(!ready){turn--;continue;}
     await page.locator('.game-native-buttons[data-scene="TalkScene"] button').nth(decision.index).tap({timeout:5000});
@@ -92,7 +94,7 @@ try {
   }
   assert(await page.evaluate(()=>window.cityApproachGame.scene.keys.TalkScene.resultBonus===120),'conversation must earn the invitation');
   mark('talk-result');
-  await page.waitForTimeout(2300);
+  await page.waitForTimeout(2800);
   await tapObject('TalkScene','resultButton');
   await page.waitForFunction(()=>window.cityApproachGame.scene.keys.EscortScene?.player?.active);
   mark('walk');
@@ -101,10 +103,17 @@ try {
     await page.waitForFunction(()=>window.cityApproachGame.scene.keys.EscortScene.dialogState==='asking',null,{timeout:60000});
     await page.keyboard.up('ArrowRight');
     mark(`question-${i}`);
-    await page.waitForTimeout(2200);
-    const key=i===0?'evade':i===1?'check':i===2?'spark':'explain';
+    await page.waitForTimeout(i===5?3200:2600);
+    const key=scenario.walk[i][1];
     await page.locator(`.game-native-buttons[data-scene="EscortScene"] button[data-choice="${key}"]`).tap();
     mark(`reaction-${i}`);
+    if(i===5) {
+      assert.equal(await page.evaluate(()=>window.cityApproachGame.scene.keys.EscortScene.currentQuestion.text),'……');
+      assert.match(await page.evaluate(()=>window.cityApproachGame.scene.keys.EscortScene.dialogueBody),/相手「……」/);
+      await page.waitForTimeout(2000);
+      assert.match(await page.evaluate(()=>window.cityApproachGame.scene.keys.EscortScene.dialogueBody),/うん。じゃあ、入ろっか。/);
+      mark('final-answer');
+    }
     await page.waitForFunction(()=>!window.cityApproachGame.scene.keys.EscortScene.currentQuestion);
     if(i===WALK_QUESTION_X.length-1)mark('arrival-walk');
   }
@@ -120,6 +129,6 @@ try {
   const video=page.video();
   await context.close();
   const path=await video.path();
-  await writeFile(`${output}/take.json`,JSON.stringify({video:path,marks,errors},null,2));
+  await writeFile(`${output}/take.json`,JSON.stringify({video:path,marks,errors,scenario:scenario.id},null,2));
   await browser.close();await server.close();
 }

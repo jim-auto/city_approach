@@ -1,22 +1,24 @@
 import assert from 'node:assert/strict';
+import { scenario } from './demo-scenario.mjs';
 import { readFile, writeFile, stat } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 
 const dir='test-results/demo';
 const take=JSON.parse(await readFile(`${dir}/take.json`,'utf8'));
+assert.equal(take.scenario,scenario.id,'Record the current GIF scenario before building');
 const marks=Object.fromEntries(take.marks.map(m=>[m.name,m.time]));
-const required = ['goal','walk','talk-result',
+const required = ['goal','walk','talk-result','final-answer',
   ...Array.from({length:5}, (_, i) => [`talk-question-${i}`,`talk-reaction-${i}`]).flat(),
   ...Array.from({length:6}, (_, i) => [`question-${i}`,`reaction-${i}`]).flat()];
 assert(required.every(key=>Number.isFinite(marks[key])), 'Record the complete conversation and all six walking exchanges before editing');
 const approach=take.marks.filter(m=>m.name.startsWith('approach-')).at(-1).time;
 const walkCaptions = [
   '「まあまあまあ」で流す。\n返答とリアクションまで見せる。',
-  '次の質問には、ちゃんと返す。\n歩きながら会話は続く。',
-  '相手に合わせて、話題を選ぶ。\n雑談も、ひと往復ずつ。',
-  '入口で「まだ迷ってる（笑）」\n気になることを聞いてみる。',
-  '相手ごとの迷いにも返す。\n急がず、もうひと往復。',
-  '最後に、入るかを確認。\n返答を待ってからゴールへ。',
+  '「目的地ないの？」には、\nちゃんと答え直す。',
+  'さっきの冗談が、また話題に。\n会話がひと続きになる。',
+  'ホテルが見えてきた。\nここで初めて、お誘い。',
+  '「ちょっと急じゃない？」\nここで一度、立ち止まる。',
+  '無言の相手に、気持ちを伝える。\n返事を待ってからゴールへ。',
 ];
 const cuts=[
   [approach-1.3,approach+.8,'街で声をかける。\nそこから始まる会話ゲーム。'],
@@ -24,7 +26,7 @@ const cuts=[
   [marks['talk-question-0'],marks.walk+.15,'会話から、お誘いまで。\nやり取りを飛ばさず見せる。'],
   [marks.walk+.15,Math.min(marks['question-0']-.1,marks.walk+1.9),'二人で歩き出す。\nこのあとも会話は続く。'],
   ...walkCaptions.map((caption, i) => [marks[`question-${i}`],
-    i===5 ? marks.goal+.45 : marks[`reaction-${i}`]+2.8,caption]),
+    i===5 ? marks.goal+.45 : marks[`reaction-${i}`]+3.4,caption]),
   [marks.goal+.45,marks.goal+4,'ホテルの客室で、記念CG。\nラストは黒バニー。'],
 ];
 for(let i=0;i<cuts.length;i++) {
@@ -33,7 +35,7 @@ for(let i=0;i<cuts.length;i++) {
 }
 const font='/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc';
 const regular='/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc';
-const textFiles={brand:'CITY APPROACH',hook:'その返し、\nアリ？ ナシ？',badge:'実プレイ / ダイジェスト',sub:'「まあまあまあ」は何回まで通じる？',cta:'スマホ・ブラウザですぐ遊べる',url:'jim-auto.github.io/city_approach/'};
+const textFiles={brand:'CITY APPROACH',hook:'その返し、\nアリ？ ナシ？',badge:'GIF用シナリオ / ブラウザ操作で撮影',sub:'「まあまあまあ」は何回まで通じる？',cta:'スマホ・ブラウザですぐ遊べる',url:'jim-auto.github.io/city_approach/'};
 for(const [name,text] of Object.entries(textFiles))await writeFile(`${dir}/${name}.txt`,text);
 const draw=(name,x,y,size,color='ffffff',bold=true,extra='')=>
   `drawtext=fontfile='${bold?font:regular}':textfile='${dir}/${name}.txt':x=${x}:y=${y}:fontsize=${size}:fontcolor=0x${color}:line_spacing=16${extra}`;
@@ -67,7 +69,8 @@ ffmpeg(['-i','assets/demo.mp4','-vf','crop=480:800:620:0,fps=10,split[a][b];[a]p
 ffmpeg(['-i','assets/demo.mp4','-an','-c:v','libvpx-vp9','-cpu-used','4','-crf','34','-b:v','0','-row-mt','1','-threads','2','assets/demo.webm']);
 ffmpeg(['-ss','3','-i','assets/demo.mp4','-frames:v','1','-update','1',`${dir}/hero-preview.png`]);
 await writeFile('assets/demo.json',JSON.stringify({
-  description:'Actual browser play, recorded with Playwright and edited into chronological excerpts, keeping the initial conversation uninterrupted and every walking exchange through its reaction. No game state or outcomes were altered.',
+  description:'GIF dialogue scenario recorded through actual Playwright browser inputs. Recording-only module routes replace dialogue and reaction timing; normal game files, success rates and scoring rules are unchanged. All conversations and the final silence, reassurance and affirmative reply are included.',
+  scenario:scenario.id,scenarioSource:'scripts/demo-scenario.mjs',finalConfirmation:{silentQuestion:true,answerAfterReassurance:true},
   width:1100,height:800,duration:Number(offset.toFixed(2)),gifFps:10,gifWidth:480,gifHeight:800,
   initialConversation:{start:cuts[1][0],end:cuts[1][1],rounds:5,uninterrupted:true},
   walkingExchanges:6,
