@@ -1,9 +1,9 @@
-import { compatibilityFor } from '../attraction.js?v=20261108-types1';
-import { encounterFor, replyEffect } from "../encounter-rules.js?v=20261108-types1";
-import { createNativeButtons } from "../native-buttons.js?v=20261108-types1";
-import { buildFlipLines } from "../conversation-flips.js?v=20261108-types1";
-import { sfx } from "../sfx.js?v=20261108-types1";
-import { DIFFICULTIES, getDifficulty, getHeight, heightFor } from "../storage.js?v=20261108-types1";
+import { compatibilityFor } from '../attraction.js?v=20261108-fashion1';
+import { encounterFor, replyEffect } from "../encounter-rules.js?v=20261108-fashion1";
+import { createNativeButtons } from "../native-buttons.js?v=20261108-fashion1";
+import { buildFlipLines } from "../conversation-flips.js?v=20261108-fashion1";
+import { sfx } from "../sfx.js?v=20261108-fashion1";
+import { DIFFICULTIES, getDifficulty, getHeight, heightFor } from "../storage.js?v=20261108-fashion1";
 
 const CHOICES = [
   { key: "listen", label: "聞く", color: 0x3b4652 },

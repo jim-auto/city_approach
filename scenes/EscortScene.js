@@ -1,12 +1,12 @@
-import { PLAYER_CAST_KEY, PLAYER_CAST_PATH, PLAYER_GOAL_CAST_KEY, PLAYER_GOAL_CAST_PATH, buildPlayerCast, buildGoalPlayerCast, playerForDifficulty } from "../player-appearance.js?v=20261108-types1";
-import { WALK_REPLY_KEYS, WALK_QUESTION_X, walkQuestion, walkReplyEffect } from "../escort-conversation.js?v=20261108-types1";
-import { encounterFor } from "../encounter-rules.js?v=20261108-types1";
-import { goalCostumeFor, buildGoalPortrait, goalPortraitBounds } from "../goal-costumes.js?v=20261108-types1";
-import { createNativeButtons } from "../native-buttons.js?v=20261108-types1";
-import { drawCitySky, drawCityStreet } from "../scenery.js?v=20261108-types1";
-import { bindTouchReset } from "../mobile.js?v=20261108-types1";
-import { sfx } from "../sfx.js?v=20261108-types1";
-import { DIFFICULTIES, getDifficulty, getBest, setBest, getHeight, heightFor } from "../storage.js?v=20261108-types1";
+import { PLAYER_CAST_KEY, PLAYER_CAST_PATH, PLAYER_GOAL_CAST_KEY, PLAYER_GOAL_CAST_PATH, buildPlayerCast, buildGoalPlayerCast, playerForDifficulty } from "../player-appearance.js?v=20261108-fashion1";
+import { WALK_REPLY_KEYS, WALK_QUESTION_X, walkQuestion, walkReplyEffect } from "../escort-conversation.js?v=20261108-fashion1";
+import { encounterFor } from "../encounter-rules.js?v=20261108-fashion1";
+import { goalCostumeFor, buildGoalPortrait, goalPortraitBounds } from "../goal-costumes.js?v=20261108-fashion1";
+import { createNativeButtons } from "../native-buttons.js?v=20261108-fashion1";
+import { drawCitySky, drawCityStreet } from "../scenery.js?v=20261108-fashion1";
+import { bindTouchReset } from "../mobile.js?v=20261108-fashion1";
+import { sfx } from "../sfx.js?v=20261108-fashion1";
+import { DIFFICULTIES, getDifficulty, getBest, setBest, getHeight, heightFor } from "../storage.js?v=20261108-fashion1";
 
 const START_X = 150;
 const HOTEL_X = 2900;

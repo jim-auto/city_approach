@@ -2,7 +2,7 @@
 
 **「まあまあまあ」は、何回まで通じる？**
 
-[![実プレイ：声かけ、4枚の会話フリップ、横スクロールの同行、相手別のゴールCG](./assets/demo.gif?v=types1)](https://jim-auto.github.io/city_approach/)
+[![実プレイ：声かけ、4枚の会話フリップ、横スクロールの同行、相手別のゴールCG](./assets/demo.gif?v=fashion1)](https://jim-auto.github.io/city_approach/)
 
 **[▶ ブラウザで遊ぶ](https://jim-auto.github.io/city_approach/)** · **[投稿用MP4](./assets/demo.mp4)** · [WebM](./assets/demo.webm)
 
@@ -164,12 +164,11 @@ Chromiumではドラッグ、複数の指、タッチキャンセルも検証し
 - Pixel art参考: https://coldrice.itch.io/top-down-pixel-art-sprites-16x16
 - Pixel tile参考: https://philtacular.itch.io/top-down-kingdom
 
-## キャラクター画像 v4
+## キャラクターの基本デザイン
 
-主人公はv3画像の右下の男性をベースに、黒のマッシュヘアとTシャツ姿に変更（ジャケットなし）。女性NPCは20〜24歳の美容・デザイン・音楽・服飾の専門学生、大学生、地雷系、カフェバイトなど、私服・髪型・持ち物で描き分けた。近くの相手の表示にタイプ名も表示する。
-主人公と10種類のNPCは、透過PNGの共通アトラス `assets/ai/characters-v4.png` を使用。
-4列×3行のうち先頭11セルを `characters.js` で読み込み、会話用ポートレートと48pxの移動用スプライトを生成する。
-生成方法・最終プロンプトは `assets/ai/characters-v4-prompt.txt` を参照。旧画像は比較用として残している。
+主人公は黒のマッシュヘアとTシャツ姿のガチイケを含む3人。女性NPCは20〜24歳の美容・デザイン・音楽・服飾の専門学生、大学生、地雷系、カフェバイトなど、私服・髪型・持ち物で描き分けた。近くの相手にはタイプ名と好みを表示する。
+
+男性は `assets/ai/player-cast.png`、女性は `assets/ai/characters-fashion-*.png` とプリン髪の個別立ち絵を使用。4列×3行のアトラスから `characters.js` で会話用ポートレートと48pxの移動用スプライトを生成する。現在の私服と生成プロンプトは下記を参照。
 
 ## ホテルまでの街並み
 
@@ -179,13 +178,20 @@ Chromiumではドラッグ、複数の指、タッチキャンセルも検証し
 
 会話は4つの不安と最後の誘いの全5ラウンド。警戒・時間・友達・予算・行き先・距離感・疲れ・断りづらさ・暇・髪と服・相手に合うノリの11テーマから、相手の状況に応じて出題する。4枚の具体的な返答を読み、相手の不安に合うフリップを選ぶ。具体的に応える返しに加え、無難に受け止める返しも毎回用意。ノリが違うだけでは違和感を増やさず、無難な返しだけでも同行に進める。カードの場所はシャッフルされ、それぞれに相手のリアクションが返る。画面には「減点なし」「好印象」を表示し、正解の連打より減点トークを避けることを重視する。3テーマ以上で安心を得て、タイプと相性ごとの必要安心感を満たし、違和感60未満で最後の提案が合うと同行へ進む。各ラウンドは属性に応じて12〜16秒、スマホのフリップは2列。台詞と選択肢は `conversation-flips.js`、進行と表示は `scenes/TalkScene.js`。
 
-## 女の子の色違い（40種類）
+## 女の子の私服と色違い（41種類）
 
-元の10人にパステル・ストリート・シックの各10人を追加し、合計40種類。肌に一括で色を重ねず、内蔵の画像生成ツールで髪と服の配色を描き分けた。新しい透過アトラスは `assets/ai/characters-colors-pastel.png`、`characters-colors-street.png`、`characters-colors-chic.png`。元の4列×3行のセル配置を引き継ぎ、生成プロンプトは `assets/ai/characters-colors-prompts.txt` に保存。
+基本10人×オリジナル・パステル・ストリート・シックの4配色で40種類。プリン髪大学生を加えた41人の私服を、ヘソ出しのクロップドTシャツ、オフショルニット、肩開きブラウス、短丈カーディガンなどに更新した。スマホ・本・カメラ・バッグや髪型を引き継ぎ、キャラクターごとに服の形を描き分ける。街・会話・同行では同じ絵を使う。
 
-`characters.js` の `NPC_COLORWAYS` で配色を管理し、各配色に移動用2フレームと会話用の高解像度立ち絵を登録する。街では4配色が偏らないように出現し、会話からホテルまで同じ見た目を維持する。主人公は元の黒マッシュ・Tシャツ姿を使う。
+内蔵画像生成ツールで既存の人物を参照して制作。肌への一括着色は使わず、服と髪の配色を描き分けた透過PNG。4列×3行のアトラス配置を保ち、プリン髪の子は個別の立ち絵を使う。
 
-`npm run test:colorways` でChromium・WebKitそれぞれの全40種の画像、透過、配色差、歩行アニメーション、街の配色分布、会話と同行の姿の一致を確認する。一覧画像は `test-results/colorways/all-40.png` に出力する。
+- [オリジナル10人](assets/ai/characters-fashion-original.png)
+- [パステル10人](assets/ai/characters-fashion-pastel.png)
+- [ストリート10人](assets/ai/characters-fashion-street.png)
+- [シック10人](assets/ai/characters-fashion-chic.png)
+- [プリン髪大学生](assets/ai/character-prin-student-fashion.png)
+- [生成プロンプト一覧](assets/ai/characters-fashion-prompts.json)
+
+`characters.js` の `NPC_COLORWAYS` で4配色を管理し、各配色に移動用2フレームと会話用の立ち絵を登録する。`npm run test:colorways` でChromium・WebKitそれぞれの全40種の画像、透過、配色差、歩行アニメーション、街の配色分布、会話と同行の姿の一致を確認する。一覧画像は `test-results/colorways/all-40.png` に出力する。プリン髪の立ち絵と会話・ゴールへの接続は `npm run test:encounters` と実プレイ録画でも確認する。
 
 ## 会話のタップ入力
 
@@ -200,7 +206,7 @@ Chromiumではドラッグ、複数の指、タッチキャンセルも検証し
 
 相手は全員20〜24歳の架空の成人キャラクター。職業・見た目・現在の状況を組み合わせて7タイプを判定し、初期安心感、警戒、選択肢ごとの加点、誤答時の違和感、同行に必要な安心感を変える。同じ軽口でも「暇なプリン髪大学生」は+34、急いでいる相手には無難な返しとして+16・違和感増加なしとなり、短い返答ならさらに好印象となる。専門学生は服や髪の話、友達といる相手は予定への配慮、慎重派は具体的な説明が得意な返しになる。無難な返しは安心感+16。相性による上乗せはあるが、無難な返しだけでも必要な安心感を満たせる。
 
-専用のプリン髪大学生（21歳）は、黒い根元が伸びた金髪とゆるい私服で描き分け、各マップに1人出現する。既存40種類に加えた41番目の見た目として `assets/ai/character-prin-student.png` に保存。内蔵画像生成ツールを使用し、プロンプトは `assets/ai/character-prin-student-prompt.txt`。
+専用のプリン髪大学生（21歳）は、黒い根元が伸びた金髪とゆるい私服で描き分け、各マップに1人出現する。既存40種類に加えた41番目の見た目として `assets/ai/character-prin-student-fashion.png` に保存。内蔵画像生成ツールを使用し、プロンプトは `assets/ai/characters-fashion-prompts.json`。
 
 属性ルールは `encounter-rules.js`、会話の出題は `conversation-flips.js`。`npm run test:encounters` で属性別の効果差、全7タイプの無難な返しだけでの成立、7タイプ×縦横画面×Chromium／WebKitの操作を検証する。ブラウザでは慎重派に無難な返しだけを実際にタップして最後の誘いまで確認する。
 

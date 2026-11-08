@@ -7,7 +7,7 @@
 // Both modes emit the same texture keys so the rest of the scene doesn't
 // branch on mode.
 
-import { getSpriteMode } from "./storage.js?v=20261108-types1";
+import { getSpriteMode } from "./storage.js?v=20261108-fashion1";
 
 const BASE_AI_SOURCE_KEYS = {
   player: "ai_player_raw",
@@ -25,10 +25,10 @@ const BASE_AI_SOURCE_KEYS = {
 
 // Recoloured artwork is shared by field sprites, portraits, and the escort.
 export const NPC_COLORWAYS = [
-  { key: "original", label: "オリジナル", atlas: "character-atlas-v4", path: "assets/ai/characters-v4.png" },
-  { key: "pastel", label: "パステル", atlas: "character-colors-pastel", path: "assets/ai/characters-colors-pastel.png" },
-  { key: "street", label: "ストリート", atlas: "character-colors-street", path: "assets/ai/characters-colors-street.png" },
-  { key: "chic", label: "シック", atlas: "character-colors-chic", path: "assets/ai/characters-colors-chic.png" },
+  { key: "original", label: "オリジナル", atlas: "character-fashion-original", path: "assets/ai/characters-fashion-original.png" },
+  { key: "pastel", label: "パステル", atlas: "character-fashion-pastel", path: "assets/ai/characters-fashion-pastel.png" },
+  { key: "street", label: "ストリート", atlas: "character-fashion-street", path: "assets/ai/characters-fashion-street.png" },
+  { key: "chic", label: "シック", atlas: "character-fashion-chic", path: "assets/ai/characters-fashion-chic.png" },
 ];
 const AI_SOURCE_KEYS = { ...BASE_AI_SOURCE_KEYS };
 for (const color of NPC_COLORWAYS.slice(1)) {

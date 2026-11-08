@@ -1,9 +1,9 @@
-import { PREFERENCES, compatibilityFor } from '../attraction.js?v=20261108-types1';
-import { PLAYER_CAST_KEY, PLAYER_CAST_PATH, buildPlayerCast, playerForDifficulty } from "../player-appearance.js?v=20261108-types1";
-import { bindTouchReset } from "../mobile.js?v=20261108-types1";
-import { sfx } from "../sfx.js?v=20261108-types1";
-import { getBest, setBest, getDifficulty, cycleDifficulty, getSpriteMode, getHeight, heightFor, cycleHeight } from "../storage.js?v=20261108-types1";
-import { NPC_COLORWAYS, npcColorKey, CHARACTER_STYLE_LABELS, aiSourceKeyFor, buildCharacterTextures, registerCharacterAnimations } from "../characters.js?v=20261108-types1";
+import { PREFERENCES, compatibilityFor } from '../attraction.js?v=20261108-fashion1';
+import { PLAYER_CAST_KEY, PLAYER_CAST_PATH, buildPlayerCast, playerForDifficulty } from "../player-appearance.js?v=20261108-fashion1";
+import { bindTouchReset } from "../mobile.js?v=20261108-fashion1";
+import { sfx } from "../sfx.js?v=20261108-fashion1";
+import { getBest, setBest, getDifficulty, cycleDifficulty, getSpriteMode, getHeight, heightFor, cycleHeight } from "../storage.js?v=20261108-fashion1";
+import { NPC_COLORWAYS, npcColorKey, CHARACTER_STYLE_LABELS, aiSourceKeyFor, buildCharacterTextures, registerCharacterAnimations } from "../characters.js?v=20261108-fashion1";
 
 const NPC_VARIANT_KEYS = {
   "待ち合わせ系": "npc-waiting",
@@ -342,7 +342,7 @@ export default class MainScene extends Phaser.Scene {
   preload() {
     this.load.image("tiles", "assets/tiles.png");
     if (!this.textures.exists(PLAYER_CAST_KEY)) this.load.image(PLAYER_CAST_KEY, PLAYER_CAST_PATH);
-    if (!this.textures.exists("character-prin-student")) this.load.image("character-prin-student", "assets/ai/character-prin-student.png");
+    if (!this.textures.exists("character-prin-student")) this.load.image("character-prin-student", "assets/ai/character-prin-student-fashion.png");
     NPC_COLORWAYS.forEach(color => {
       if (!this.textures.exists(color.atlas)) this.load.image(color.atlas, color.path);
     });
