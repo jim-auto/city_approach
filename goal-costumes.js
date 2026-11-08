@@ -1,17 +1,17 @@
 // The street sprite determines both the person and palette in the ending CG.
 // Atlas cells use the same 4 x 3 layout as the street-character artwork.
 export const GOAL_COSTUMES = {
-  'npc-waiting': { cell: 1, label: 'クラシックメイド', room: 'rose', quote: 'この衣装、ちょっと似合ってるかも。' },
-  'npc-busy': { cell: 2, label: 'ステージマジシャン', room: 'neon', quote: 'それじゃ、一回だけマジック見せるね。' },
-  'npc-friends': { cell: 3, label: 'ゴシックプリンセス', room: 'rose', quote: 'こういう世界観、けっこう好き。' },
-  'npc-eye': { cell: 4, label: '猫耳パーカー', room: 'rose', quote: '猫耳って、つけると楽しくなるね。' },
-  'npc-earphones': { cell: 5, label: 'ネオンアイドル', room: 'neon', quote: '一曲だけ、ライブっぽくやってみる？' },
-  'npc-tourist': { cell: 6, label: '花柄の浴衣', room: 'rose', quote: '旅行の記念写真みたいでいいね。' },
-  'npc-student': { cell: 7, label: '星空の魔法使い', room: 'neon', quote: '今日は魔法使いってことで。' },
-  'npc-reader': { cell: 8, label: 'クラシカルドレス', room: 'rose', quote: '物語の中に入ったみたい。' },
-  'npc-cafe': { cell: 9, label: 'スイートパティシエ', room: 'rose', quote: '写真が撮れたら、お茶にしよう。' },
-  'npc-jogger': { cell: 10, label: 'スペースパイロット', room: 'neon', quote: 'このスーツ、意外と動きやすい！' },
-  'npc-prin-student': { cell: null, label: 'ブルーアリス', room: 'rose', quote: 'これ着てみたかったんだ。写真撮ろ！' },
+  'npc-waiting': { cell: 1, family: 'maid', label: '定番メイド', room: 'rose', quote: '着てみると、けっこう楽しいね。' },
+  'npc-busy': { cell: 2, family: 'police', label: 'ミニスカポリス', room: 'neon', quote: '今日はポリス役ってことで（笑）' },
+  'npc-friends': { cell: 3, family: 'maid', label: 'ピンクメイド', room: 'rose', quote: 'このフリル、思ったより好き。' },
+  'npc-eye': { cell: 4, family: 'sailor', label: '赤リボンセーラー', room: 'rose', quote: 'この服、一度着てみたかった。' },
+  'npc-earphones': { cell: 5, family: 'swimsuit', label: '紺のスクール水着', room: 'neon', quote: 'このシンプルな感じ、逆に新鮮だね。' },
+  'npc-tourist': { cell: 6, family: 'nurse', label: 'ピンクナース', room: 'rose', quote: 'この帽子、ちょっとかわいいかも。' },
+  'npc-student': { cell: 7, family: 'sailor', label: '紺襟セーラー', room: 'rose', quote: 'リボン、ちゃんと結べてる？' },
+  'npc-reader': { cell: 8, family: 'nurse', label: '白ナース', room: 'rose', quote: 'ドラマの衣装みたい。似合ってる？' },
+  'npc-cafe': { cell: 9, family: 'maid', label: 'カフェメイド', room: 'rose', quote: '写真が撮れたら、お茶にしよう。' },
+  'npc-jogger': { cell: 10, family: 'gym', label: '体操服＆ブルマ', room: 'neon', quote: 'レトロな体操服、意外と動きやすい！' },
+  'npc-prin-student': { cell: null, family: 'police', label: '金髪ミニスカポリス', room: 'neon', quote: '一回だけ、敬礼ポーズね！' },
 };
 export const GOAL_PALETTES = ['original', 'pastel', 'street', 'chic'];
 
@@ -24,9 +24,9 @@ export function goalCostumeFor(textureKey = 'npc-waiting-0') {
   const palette = base === 'npc-prin-student' ? 'prin' : color;
   return {
     ...costume, base, palette,
-    atlasKey: `goal-costumes-${palette}`,
-    atlasPath: `assets/ai/costumes-${palette}.png`,
-    portraitKey: `goal-portrait-${base}-${palette}`,
+    atlasKey: `goal-costumes-retail-${palette}`,
+    atlasPath: `assets/ai/costumes-retail-${palette}.png`,
+    portraitKey: `goal-portrait-retail-${base}-${palette}`,
     roomKey: `goal-room-${costume.room}`,
     roomPath: `assets/ai/room-${costume.room}.png`,
   };

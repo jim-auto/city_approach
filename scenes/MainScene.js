@@ -1,7 +1,7 @@
-import { bindTouchReset } from "../mobile.js?v=20261108-action2";
-import { sfx } from "../sfx.js?v=20261108-action2";
-import { getBest, setBest, getDifficulty, cycleDifficulty, getSpriteMode } from "../storage.js?v=20261108-action2";
-import { NPC_COLORWAYS, npcColorKey, CHARACTER_STYLE_LABELS, aiSourceKeyFor, buildCharacterTextures, registerCharacterAnimations } from "../characters.js?v=20261108-action2";
+import { bindTouchReset } from "../mobile.js?v=20261108-retail1";
+import { sfx } from "../sfx.js?v=20261108-retail1";
+import { getBest, setBest, getDifficulty, cycleDifficulty, getSpriteMode } from "../storage.js?v=20261108-retail1";
+import { NPC_COLORWAYS, npcColorKey, CHARACTER_STYLE_LABELS, aiSourceKeyFor, buildCharacterTextures, registerCharacterAnimations } from "../characters.js?v=20261108-retail1";
 
 const NPC_VARIANT_KEYS = {
   "待ち合わせ系": "npc-waiting",

@@ -1,4 +1,4 @@
-import { sfx } from './sfx.js?v=20261108-action2';
+import { sfx } from './sfx.js?v=20261108-retail1';
 
 const SPOTS = [360, 510, 910, 1120, 1530, 1760, 2220, 2440];
 const JUMP_SECONDS = .82;

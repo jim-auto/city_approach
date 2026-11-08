@@ -10,6 +10,7 @@ const cases = Object.keys(GOAL_COSTUMES).flatMap(base =>
 assert.equal(cases.length, 41);
 assert.equal(new Set(cases.map(key => goalCostumeFor(key).portraitKey)).size, 41);
 assert.equal(new Set(cases.map(key => goalCostumeFor(key).label)).size, 11);
+assert.deepEqual([...new Set(cases.map(key => goalCostumeFor(key).family))].sort(), ['gym','maid','nurse','police','sailor','swimsuit']);
 assert.equal(goalCostumeFor('unknown').base, 'npc-waiting');
 assert.equal(goalCostumeFor(null).base, 'npc-waiting');
 for (const key of cases) assert.deepEqual(goalCostumeFor(key), goalCostumeFor(key.replace(/-0$/, '-1')));
@@ -78,7 +79,7 @@ try {
           await page.screenshot({ path: `${output}/${engine}-${expected.base}.png` });
         }
       }
-      const gallery = await page.evaluate(keys => {
+      const gallery = await page.evaluate(({keys, labels}) => {
         const e = window.cityApproachGame.scene.keys.EscortScene;
         const canvas = document.createElement('canvas'); canvas.width = 880; canvas.height = 11 * 230;
         const ctx = canvas.getContext('2d'); ctx.fillStyle = '#e9e1ee'; ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -87,13 +88,14 @@ try {
         portraits.forEach((key, i) => {
           const x = i % 4 * 220, y = Math.floor(i / 4) * 230;
           ctx.drawImage(e.textures.get(key).getSourceImage(), x + 15, y, 190, 190);
-          ctx.fillStyle = '#21132c'; ctx.font = '11px sans-serif'; ctx.fillText(key.replace('goal-portrait-npc-', ''), x + 6, y + 208);
+          ctx.fillStyle = '#21132c'; ctx.font = '13px sans-serif'; ctx.fillText(labels[key], x + 6, y + 205);
+          ctx.font = '10px sans-serif'; ctx.fillText(key.replace('goal-portrait-retail-npc-', ''), x + 6, y + 222);
         });
         return canvas.toDataURL('image/png').split(',')[1];
-      }, cases.map(key => goalCostumeFor(key).portraitKey));
+      }, {keys: cases.map(key => goalCostumeFor(key).portraitKey), labels: Object.fromEntries(cases.map(key => {const s=goalCostumeFor(key); return [s.portraitKey,s.label];}))});
       await writeFile(`${output}/${engine}-all-41.png`, Buffer.from(gallery, 'base64'));
       assert.deepEqual(errors, []);
-      console.log(`PASS ${engine}: all 41 costume CGs, 11 outfits, 2 rooms, transparency, palette identity, captions and score`);
+      console.log(`PASS ${engine}: all 41 costume CGs, 6 costume families / 11 outfit variants, 2 rooms, transparency, palette identity, captions and score`);
     } finally { await browser.close(); }
   }
 } finally { await server.close(); }

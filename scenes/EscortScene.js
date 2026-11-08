@@ -1,10 +1,10 @@
-import { WalkAction } from "../walk-action.js?v=20261108-action2";
-import { goalCostumeFor, buildGoalPortrait, goalPortraitBounds } from "../goal-costumes.js?v=20261108-action2";
-import { createNativeButtons } from "../native-buttons.js?v=20261108-action2";
-import { drawCitySky, drawCityStreet } from "../scenery.js?v=20261108-action2";
-import { bindTouchReset } from "../mobile.js?v=20261108-action2";
-import { sfx } from "../sfx.js?v=20261108-action2";
-import { getBest, setBest } from "../storage.js?v=20261108-action2";
+import { WalkAction } from "../walk-action.js?v=20261108-retail1";
+import { goalCostumeFor, buildGoalPortrait, goalPortraitBounds } from "../goal-costumes.js?v=20261108-retail1";
+import { createNativeButtons } from "../native-buttons.js?v=20261108-retail1";
+import { drawCitySky, drawCityStreet } from "../scenery.js?v=20261108-retail1";
+import { bindTouchReset } from "../mobile.js?v=20261108-retail1";
+import { sfx } from "../sfx.js?v=20261108-retail1";
+import { getBest, setBest } from "../storage.js?v=20261108-retail1";
 
 const START_X = 150;
 const HOTEL_X = 2900;
