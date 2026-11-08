@@ -11,7 +11,9 @@
     "test:encounters": "node tests/encounters.mjs",
     "test:goal": "node tests/goal.mjs",
     "test:costumes": "node tests/costumes.mjs",
-    "test:escort": "node tests/escort.mjs"
+    "test:escort": "node tests/escort.mjs",
+    "demo:record": "node scripts/record-demo.mjs",
+    "demo:build": "node scripts/build-demo.mjs"
   },
   "devDependencies": {
     "playwright": "1.65.0"

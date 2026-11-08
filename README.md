@@ -1,16 +1,14 @@
-# city-approach
+# CITY APPROACH
 
-街で相手のサインを読み、声をかけるか離れるかを判断するPhaser 3製の2Dゲームです。ブラウザだけで動き、GitHub Pagesにそのまま置けます。
+**「まあまあまあ」は、何回まで通じる？**
 
-![CITY APPROACH app icon](./assets/app-icon.png)
+[![実プレイ：声かけ、4枚の会話フリップ、横スクロールの同行、相手別のゴールCG](./assets/demo.gif)](https://jim-auto.github.io/city_approach/)
 
-## Demo
+**[▶ ブラウザで遊ぶ](https://jim-auto.github.io/city_approach/)** · **[投稿用MP4](./assets/demo.mp4)** · [WebM](./assets/demo.webm)
 
-[公開版で遊ぶ](https://jim-auto.github.io/city_approach/)
+街で声をかけ、相手の不安に4枚の返答で応える会話ゲーム。連れ出したあとも会話は続く。相手に合う軽口はウケるけど、流しすぎると同行終了。二人でホテルに着いたら、相手ごとのゴールCGへ。
 
-![CITY APPROACH demo](./assets/demo.gif)
-
-[WebM版を見る](./assets/demo.webm)
+スマホ・PC対応。インストール不要。上のGIFは実際のブラウザ操作を約21秒に編集したものです。
 
 ## GitHub About
 
@@ -214,3 +212,14 @@ Chromiumではドラッグ、複数の指、タッチキャンセルも検証し
 「まあまあまあ」の連続では従来どおり不信感が上がり、3回で同行終了。行き先を確認し、相手も入ると決めて到着すると、相手ごとのコスプレCGと+100点の到着ボーナスが出る。4枚のフリップはスマホ縦横とも2列で、HTMLの標準ボタンからタップを受け取る。
 
 台詞・タイプ別の効果は `escort-conversation.js`。`npm run test:escort` で7タイプの相性差、無難な返しの加点とゴール成功、連続加点、連続ごまかしによる終了、画面回転・タップ入力・CGへの接続を検証する。
+
+## READMEのプレイ動画を作る
+
+```bash
+npm run demo:record
+npm run demo:build
+```
+
+Playwrightが自然に出現した相手へ実際のキー入力・タップで声をかけ、会話からホテル到着まで録画する。ゲーム状態・成功率・得点は書き換えない。録画と区切り時刻は `test-results/demo/` に保存し、FFmpegで時系列の見どころを切り出す。生成にはFFmpegとNoto Sans CJKフォントが必要。
+
+README用GIFは880×640・10fps・ループ再生。投稿用MP4は1100×800・H.264・約21秒。WebMも同じ内容。字幕は編集で加えた説明で、ゲーム画面は実際の録画。編集区間は `assets/demo.json` に記録する。Xへの投稿はMP4を使用できる。

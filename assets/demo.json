@@ -1,0 +1,46 @@
+{
+  "description": "Actual browser play, recorded with Playwright and edited into chronological excerpts. No game state or outcomes were altered.",
+  "width": 1100,
+  "height": 800,
+  "duration": 20.96,
+  "gifFps": 10,
+  "clips": [
+    {
+      "start": 4.982,
+      "end": 6.932,
+      "caption": "街で声をかける。\nそこから始まる会話ゲーム。"
+    },
+    {
+      "start": 7.835,
+      "end": 11.147,
+      "caption": "相手の不安に、どう返す？\n4枚のフリップからタップ。"
+    },
+    {
+      "start": 23.799999999999997,
+      "end": 25.838,
+      "caption": "連れ出したあとも、\n歩きながら会話は続く。"
+    },
+    {
+      "start": 26.137999999999998,
+      "end": 30.296,
+      "caption": "「まあまあまあ」で流す。\nでも、連発すると同行終了。"
+    },
+    {
+      "start": 33.905,
+      "end": 37.834,
+      "caption": "相手に合う返しで、\n会話が盛り上がる。"
+    },
+    {
+      "start": 55.196,
+      "end": 57.42,
+      "caption": "入口でも、気持ちを確認。\n二人で決めて、ゴールへ。"
+    },
+    {
+      "start": 57.519999999999996,
+      "end": 60.87,
+      "caption": "到着すると、相手ごとのCG。\n次は、どんな出会い？"
+    }
+  ],
+  "capture": "npm run demo:record",
+  "edit": "npm run demo:build"
+}
