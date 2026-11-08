@@ -7,7 +7,7 @@
 // Both modes emit the same texture keys so the rest of the scene doesn't
 // branch on mode.
 
-import { getSpriteMode } from "./storage.js?v=20261108-ending2";
+import { getSpriteMode } from "./storage.js?v=20261108-cosplay1";
 
 const BASE_AI_SOURCE_KEYS = {
   player: "ai_player_raw",

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 import { chromium, webkit } from 'playwright';
 import { getDifficulty, setDifficulty } from '../storage.js';
+import { goalCostumeFor } from '../goal-costumes.js';
 import { startTestServer } from './helpers.mjs';
 
 const saved=new Map();
@@ -39,7 +40,8 @@ for(const [engine,width,height,reduced] of [['chromium',320,568,false],['webkit'
  const art=await page.evaluate(()=>{const e=window.cityApproachGame.scene.keys.EscortScene;
   return {x:e.goalArt.x,y:e.goalArt.y,width:e.goalArt.width,height:e.goalArt.height,
    textures:e.goalArt.list.filter(o=>o.texture).map(o=>o.texture.key)};});
- assert.deepEqual(art.textures,['goal-cg-backdrop','ai_player_raw',portraitKey],'CG must keep the actual companion and palette');
+ const selection=goalCostumeFor(`${companionKey}-0`);
+ assert.deepEqual(art.textures,[selection.roomKey,'ai_player_raw',selection.portraitKey],'CG must keep the actual companion and palette');
  assert(art.x>=0 && art.y>=0 && art.x+art.width<=width && art.y+art.height<=height,'CG stays inside the viewport');
  const screenshot=await page.screenshot({path:`test-results/easy-goal/${engine}-${width}${reduced?'-reduced':''}.png`});
  // Inspect the rendered frame, rather than just checking that scene objects exist.

@@ -1,9 +1,9 @@
-import { aiSourceKeyFor } from "../characters.js?v=20261108-ending2";
-import { createNativeButtons } from "../native-buttons.js?v=20261108-ending2";
-import { drawCitySky, drawCityStreet } from "../scenery.js?v=20261108-ending2";
-import { bindTouchReset } from "../mobile.js?v=20261108-ending2";
-import { sfx } from "../sfx.js?v=20261108-ending2";
-import { getBest, setBest } from "../storage.js?v=20261108-ending2";
+import { goalCostumeFor, buildGoalPortrait, goalPortraitBounds } from "../goal-costumes.js?v=20261108-cosplay1";
+import { createNativeButtons } from "../native-buttons.js?v=20261108-cosplay1";
+import { drawCitySky, drawCityStreet } from "../scenery.js?v=20261108-cosplay1";
+import { bindTouchReset } from "../mobile.js?v=20261108-cosplay1";
+import { sfx } from "../sfx.js?v=20261108-cosplay1";
+import { getBest, setBest } from "../storage.js?v=20261108-cosplay1";
 
 const START_X = 150;
 const HOTEL_X = 2900;
@@ -29,18 +29,26 @@ const WALK_QUESTIONS = [
 export default class EscortScene extends Phaser.Scene {
   constructor() { super("EscortScene"); }
 
+  init(data = {}) {
+    this.goalSelection = goalCostumeFor(data.companion?.textureKey);
+  }
+
   preload() {
-    if (!this.textures.exists("goal-cg-backdrop")) {
-      const loading = this.add.text(this.scale.width / 2, this.scale.height / 2, "ホテルへ向かっています…", {
-        fontFamily: "system-ui, sans-serif", fontSize: "17px", color: "#ffdbbb",
-      }).setOrigin(.5);
-      this.load.image("goal-cg-backdrop", "assets/ai/goal-cg-backdrop.png");
-      this.load.once("complete", () => loading.destroy());
-    }
+    const assets = [
+      [this.goalSelection.atlasKey, this.goalSelection.atlasPath],
+      [this.goalSelection.roomKey, this.goalSelection.roomPath],
+    ].filter(([key]) => !this.textures.exists(key));
+    if (!assets.length) return;
+    const loading = this.add.text(this.scale.width / 2, this.scale.height / 2, "ホテルへ向かっています…", {
+      fontFamily: "system-ui, sans-serif", fontSize: "17px", color: "#ffdbbb",
+    }).setOrigin(.5);
+    assets.forEach(([key, path]) => this.load.image(key, path));
+    this.load.once("complete", () => loading.destroy());
   }
 
   create(data = {}) {
     this.runData = data;
+    buildGoalPortrait(this, this.goalSelection);
     this.mapKey = data.mapKey || "nagoya";
     this.score = data.score || 0;
     this.finished = false;
@@ -48,6 +56,7 @@ export default class EscortScene extends Phaser.Scene {
     this.goalTitle = null;
     this.goalArt = null;
     this.goalArtFrame = null;
+    this.goalCaption = null;
     this.goalArtCompanionKey = null;
     this.goalConfetti = [];
     this.doubt = 0;
@@ -426,7 +435,7 @@ export default class EscortScene extends Phaser.Scene {
     this.layoutConversation();
     this.finishShade = this.add.graphics().setScrollFactor(0).setDepth(60);
     this.resultBody = success
-      ? `二人でラブホテルに到着\n到着ボーナス +100\nScore ${this.score}`
+      ? `「${this.goalSelection.quote}」\n到着ボーナス +100\nScore ${this.score}`
       : `同行終了\n${reason}\n\n到着ボーナスなし\nScore ${this.score}`;
     this.finishText = this.add.text(0, 0, "", {
       fontFamily: "system-ui, sans-serif", fontSize: "26px", color: success ? "#ffe0a0" : "#ffb4a6", align: "center", lineSpacing: 14,
@@ -450,8 +459,11 @@ export default class EscortScene extends Phaser.Scene {
     if (success) {
       this.goalArt = this.add.container(0, 0).setScrollFactor(0).setDepth(60.1);
       this.goalArtFrame = this.add.graphics().setScrollFactor(0).setDepth(60.2);
-      const portrait = this.runData.companion?.portraitTextureKey;
-      this.goalArtCompanionKey = portrait && this.textures.exists(portrait) ? portrait : aiSourceKeyFor(this.partnerBase);
+      this.goalArtCompanionKey = this.goalSelection.portraitKey;
+      this.goalCaption = this.add.text(0, 0, `${this.goalSelection.label}で記念撮影`, {
+        fontFamily: "system-ui, sans-serif", fontSize: "13px", color: "#fff0cf", align: "center",
+        backgroundColor: "#26192e", padding: { left: 10, right: 10, top: 5, bottom: 5 },
+      }).setOrigin(.5, 0).setScrollFactor(0).setDepth(60.3);
       this.goalTitle = this.add.text(0, 0, "ゴール！", {
         fontFamily: "system-ui, sans-serif", fontSize: "64px", color: "#ffe584", fontStyle: "bold",
         stroke: "#723e29", strokeThickness: 7,
@@ -485,21 +497,30 @@ export default class EscortScene extends Phaser.Scene {
 
   drawGoalArt(x, y, width, height) {
     this.goalArt.removeAll(true).setPosition(x, y).setSize(width, height);
-    this.textures.get("goal-cg-backdrop").setFilter(Phaser.Textures.FilterMode.LINEAR);
-    const backdrop = this.add.image(width / 2, height / 2, "goal-cg-backdrop");
+    this.textures.get(this.goalSelection.roomKey).setFilter(Phaser.Textures.FilterMode.LINEAR);
+    const backdrop = this.add.image(width / 2, height / 2, this.goalSelection.roomKey);
     // Crop the square illustration to the card without stretching it.
     const cover = Math.max(width / backdrop.width, height / backdrop.height);
     const cropWidth = width / cover, cropHeight = height / cover;
     backdrop.setCrop((backdrop.width - cropWidth) / 2, (backdrop.height - cropHeight) / 2, cropWidth, cropHeight)
       .setScale(cover);
-    const box = Math.min(height * .82, width * .94);
-    const positions = [width * .32, width * .69];
+    const keys = ["ai_player_raw", this.goalArtCompanionKey];
+    const bounds = keys.map(key => goalPortraitBounds(this, key));
+    const ratios = bounds.map(b => b.width / b.height);
+    // Wide dresses and tall hats must fit beside the protagonist without clipping.
+    const gap = 10;
+    const figureHeight = Math.min(height * .80, (width - 24 - gap) / (ratios[0] + ratios[1]));
+    const figureWidths = ratios.map(ratio => ratio * figureHeight);
+    const start = (width - figureWidths[0] - figureWidths[1] - gap) / 2;
+    const centers = [start + figureWidths[0] / 2, start + figureWidths[0] + gap + figureWidths[1] / 2];
     const shadows = this.add.graphics();
     shadows.fillStyle(0x141326, .32);
-    positions.forEach(px => shadows.fillEllipse(px, height - 12, box * .4, 12));
-    const people = ["ai_player_raw", this.goalArtCompanionKey].map((key, index) =>
-      this.add.image(positions[index], height - 6, key)
-        .setOrigin(.5, 1).setDisplaySize(box, box));
+    centers.forEach((px, i) => shadows.fillEllipse(px, height - 9, figureWidths[i] * .7, 10));
+    const people = keys.map((key, index) => {
+      const b = bounds[index], factor = figureHeight / b.height;
+      return this.add.image(centers[index] - (b.x + b.width / 2) * factor,
+        height - 6 - (b.y + b.height) * factor, key).setOrigin(0).setScale(factor);
+    });
     this.goalArt.add([backdrop, shadows, ...people]);
     this.goalArtFrame.clear().lineStyle(2, 0xf6c98e, .8).strokeRect(x - 1, y - 1, width + 2, height + 2);
   }
@@ -513,6 +534,7 @@ export default class EscortScene extends Phaser.Scene {
       const artWidth = landscape ? Math.round(w * .57) : w - 24;
       const artHeight = landscape ? h - 24 : Math.min(h * .62, h - 278);
       this.drawGoalArt(artX, artY, artWidth, artHeight);
+      this.goalCaption.setFontSize(w < 360 ? 11 : 13).setPosition(artX + artWidth / 2, artY + 10);
       const panelLeft = landscape ? artX + artWidth + 12 : 16;
       const panelWidth = w - panelLeft - 16;
       const center = panelLeft + panelWidth / 2;
