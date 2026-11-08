@@ -1,8 +1,9 @@
-import { createNativeButtons } from "../native-buttons.js?v=20261107-goal1";
-import { drawCitySky, drawCityStreet } from "../scenery.js?v=20261107-goal1";
-import { bindTouchReset } from "../mobile.js?v=20261107-goal1";
-import { sfx } from "../sfx.js?v=20261107-goal1";
-import { getBest, setBest } from "../storage.js?v=20261107-goal1";
+import { aiSourceKeyFor } from "../characters.js?v=20261108-ending1";
+import { createNativeButtons } from "../native-buttons.js?v=20261108-ending1";
+import { drawCitySky, drawCityStreet } from "../scenery.js?v=20261108-ending1";
+import { bindTouchReset } from "../mobile.js?v=20261108-ending1";
+import { sfx } from "../sfx.js?v=20261108-ending1";
+import { getBest, setBest } from "../storage.js?v=20261108-ending1";
 
 const START_X = 150;
 const HOTEL_X = 2900;
@@ -28,6 +29,16 @@ const WALK_QUESTIONS = [
 export default class EscortScene extends Phaser.Scene {
   constructor() { super("EscortScene"); }
 
+  preload() {
+    if (!this.textures.exists("goal-cg-backdrop")) {
+      const loading = this.add.text(this.scale.width / 2, this.scale.height / 2, "ホテルへ向かっています…", {
+        fontFamily: "system-ui, sans-serif", fontSize: "17px", color: "#ffdbbb",
+      }).setOrigin(.5);
+      this.load.image("goal-cg-backdrop", "assets/ai/goal-cg-backdrop.png");
+      this.load.once("complete", () => loading.destroy());
+    }
+  }
+
   create(data = {}) {
     this.runData = data;
     this.mapKey = data.mapKey || "nagoya";
@@ -35,6 +46,9 @@ export default class EscortScene extends Phaser.Scene {
     this.finished = false;
     this.outcome = null;
     this.goalTitle = null;
+    this.goalArt = null;
+    this.goalArtFrame = null;
+    this.goalArtCompanionKey = null;
     this.goalConfetti = [];
     this.doubt = 0;
     this.evasionStreak = 0;
@@ -434,6 +448,10 @@ export default class EscortScene extends Phaser.Scene {
       });
     });
     if (success) {
+      this.goalArt = this.add.container(0, 0).setScrollFactor(0).setDepth(60.1);
+      this.goalArtFrame = this.add.graphics().setScrollFactor(0).setDepth(60.2);
+      const portrait = this.runData.companion?.portraitTextureKey;
+      this.goalArtCompanionKey = portrait && this.textures.exists(portrait) ? portrait : aiSourceKeyFor(this.partnerBase);
       this.goalTitle = this.add.text(0, 0, "ゴール！", {
         fontFamily: "system-ui, sans-serif", fontSize: "64px", color: "#ffe584", fontStyle: "bold",
         stroke: "#723e29", strokeThickness: 7,
@@ -446,6 +464,8 @@ export default class EscortScene extends Phaser.Scene {
   playGoalCelebration() {
     this.goalConfetti = [];
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    this.goalArt?.setAlpha(0);
+    if (this.goalArt) this.tweens.add({ targets: this.goalArt, alpha: 1, duration: 600, ease: "Sine.easeOut" });
     this.goalTitle.setScale(0.25).setAlpha(0);
     this.tweens.add({ targets: this.goalTitle, scale: 1, alpha: 1, duration: 650, ease: "Back.easeOut" });
     this.cameras.main.flash(180, 255, 223, 157);
@@ -463,20 +483,55 @@ export default class EscortScene extends Phaser.Scene {
     }
   }
 
+  drawGoalArt(x, y, width, height) {
+    this.goalArt.removeAll(true).setPosition(x, y).setSize(width, height);
+    this.textures.get("goal-cg-backdrop").setFilter(Phaser.Textures.FilterMode.LINEAR);
+    const backdrop = this.add.image(width / 2, height / 2, "goal-cg-backdrop");
+    // Crop the square illustration to the card without stretching it.
+    const cover = Math.max(width / backdrop.width, height / backdrop.height);
+    const cropWidth = width / cover, cropHeight = height / cover;
+    backdrop.setCrop((backdrop.width - cropWidth) / 2, (backdrop.height - cropHeight) / 2, cropWidth, cropHeight)
+      .setScale(cover);
+    const box = Math.min(height * .82, width * .94);
+    const positions = [width * .32, width * .69];
+    const shadows = this.add.graphics();
+    shadows.fillStyle(0x141326, .32);
+    positions.forEach(px => shadows.fillEllipse(px, height - 12, box * .4, 12));
+    const people = ["ai_player_raw", this.goalArtCompanionKey].map((key, index) =>
+      this.add.image(positions[index], height - 6, key)
+        .setOrigin(.5, 1).setDisplaySize(box, box));
+    this.goalArt.add([backdrop, shadows, ...people]);
+    this.goalArtFrame.clear().lineStyle(2, 0xf6c98e, .8).strokeRect(x - 1, y - 1, width + 2, height + 2);
+  }
+
   layoutFinish() {
     const w = this.scale.width, h = this.scale.height;
-    this.finishShade.clear().fillStyle(0x080e18, 0.9).fillRect(0, 0, w, h);
+    this.finishShade.clear().fillStyle(0x080e18, this.goalTitle ? 1 : .9).fillRect(0, 0, w, h);
     if (this.goalTitle) {
-      const size = Math.min(64, w * .16, h * .18);
-      const titleY = h * (h < 450 ? .22 : .25);
-      this.goalTitle.setPosition(w / 2, titleY).setFontSize(size);
-      this.finishShade.fillStyle(0xffc96a, .12).fillRect(0, titleY - size * .75, w, size * 1.5)
-        .lineStyle(1, 0xffd477, .6).lineBetween(0, titleY - size * .75, w, titleY - size * .75)
-        .lineBetween(0, titleY + size * .75, w, titleY + size * .75);
+      const landscape = w > h && h < 600;
+      const artX = 12, artY = landscape ? 12 : 102;
+      const artWidth = landscape ? Math.round(w * .57) : w - 24;
+      const artHeight = landscape ? h - 24 : Math.min(h * .62, h - 278);
+      this.drawGoalArt(artX, artY, artWidth, artHeight);
+      const panelLeft = landscape ? artX + artWidth + 12 : 16;
+      const panelWidth = w - panelLeft - 16;
+      const center = panelLeft + panelWidth / 2;
+      const titleSize = Math.min(58, panelWidth * .16, h * .17);
+      const titleY = landscape ? 53 : 49;
+      this.goalTitle.setPosition(center, titleY).setFontSize(titleSize);
+      this.finishShade.lineStyle(1, 0xffd477, .6)
+        .lineBetween(panelLeft + 12, titleY + titleSize * .8, w - 28, titleY + titleSize * .8);
+      const fontSize = landscape ? (panelWidth < 220 ? 14 : 17) : w < 360 ? 16 : 18;
+      this.finishText.setPosition(center, landscape ? h * .5 : artY + artHeight + 53)
+        .setFontSize(fontSize).setLineSpacing(6)
+        .setText(this.wrapDialogue(this.resultBody, Math.floor(panelWidth / fontSize)));
+      this.returnButton.setFontSize(landscape ? 17 : 18).setPadding(22, 12, 22, 12)
+        .setPosition(center, h - (landscape ? 43 : 39));
+    } else {
+      const fontSize = h < 450 ? 18 : w < 360 ? 22 : 25;
+      this.finishText.setPosition(w / 2, h * .38).setFontSize(fontSize).setLineSpacing(h < 450 ? 3 : 12)
+        .setText(this.wrapDialogue(this.resultBody, Math.floor((w - 36) / fontSize)));
+      this.returnButton.setPosition(w / 2, h - 60);
     }
-    const fontSize = h < 450 ? 18 : w < 360 ? 22 : 25;
-    this.finishText.setPosition(w / 2, h * (this.goalTitle ? .49 : .38)).setFontSize(fontSize).setLineSpacing(h < 450 ? 3 : 12)
-      .setText(this.wrapDialogue(this.resultBody, Math.floor((w - 36) / fontSize)));
-    this.returnButton.setPosition(w / 2, h - 60);
   }
 }

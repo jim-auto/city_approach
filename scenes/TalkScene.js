@@ -1,8 +1,8 @@
-import { encounterFor, replyEffect } from "../encounter-rules.js?v=20261107-goal1";
-import { createNativeButtons } from "../native-buttons.js?v=20261107-goal1";
-import { buildFlipLines } from "../conversation-flips.js?v=20261107-goal1";
-import { sfx } from "../sfx.js?v=20261107-goal1";
-import { DIFFICULTIES, getDifficulty } from "../storage.js?v=20261107-goal1";
+import { encounterFor, replyEffect } from "../encounter-rules.js?v=20261108-ending1";
+import { createNativeButtons } from "../native-buttons.js?v=20261108-ending1";
+import { buildFlipLines } from "../conversation-flips.js?v=20261108-ending1";
+import { sfx } from "../sfx.js?v=20261108-ending1";
+import { DIFFICULTIES, getDifficulty } from "../storage.js?v=20261108-ending1";
 
 const CHOICES = [
   { key: "listen", label: "聞く", color: 0x3b4652 },
