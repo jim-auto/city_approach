@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node smoke.mjs && node tests/goal.mjs && node tests/action.mjs && node tests/costumes.mjs && node tests/encounters.mjs && node tests/talk-taps.mjs && node tests/colorways.mjs && node tests/mobile.mjs",
+    "test": "node smoke.mjs && node tests/goal.mjs && node tests/escort.mjs && node tests/costumes.mjs && node tests/encounters.mjs && node tests/talk-taps.mjs && node tests/colorways.mjs && node tests/mobile.mjs",
     "test:smoke": "node smoke.mjs",
     "test:mobile": "node tests/mobile.mjs",
     "test:colorways": "node tests/colorways.mjs",
@@ -11,7 +11,7 @@
     "test:encounters": "node tests/encounters.mjs",
     "test:goal": "node tests/goal.mjs",
     "test:costumes": "node tests/costumes.mjs",
-    "test:action": "node tests/action.mjs"
+    "test:escort": "node tests/escort.mjs"
   },
   "devDependencies": {
     "playwright": "1.65.0"

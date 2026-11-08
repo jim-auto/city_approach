@@ -29,11 +29,11 @@ for(const [engine,width,height,reduced] of [['chromium',320,568,false],['webkit'
  await page.evaluate(({companionKey,portraitKey})=>window.cityApproachGame.scene.keys.MainScene.scene.start('EscortScene',
   {score:10,companion:{textureKey:`${companionKey}-0`,portraitTextureKey:portraitKey}}),{companionKey,portraitKey});
  await page.waitForFunction(()=>window.cityApproachGame.scene.keys.EscortScene?.player?.active);
- await page.evaluate(()=>{const e=window.cityApproachGame.scene.keys.EscortScene;e.walkAction.bonus=200;e.score+=200;e.nextQuestionIndex=4;e.questionsAnswered=4;e.destinationConfirmed=true;e.player.x=2900;e.partner.x=2832;});
+ await page.evaluate(()=>{const e=window.cityApproachGame.scene.keys.EscortScene;e.conversationBonus=80;e.score+=80;e.nextQuestionIndex=4;e.questionsAnswered=4;e.destinationConfirmed=true;e.player.x=2900;e.partner.x=2832;});
  await page.waitForFunction(()=>window.cityApproachGame.scene.keys.EscortScene.finished);
  await page.waitForFunction(()=>{const e=window.cityApproachGame.scene.keys.EscortScene;return e.goalTitle?.alpha===1 && !e.tweens.isTweening(e.goalTitle);});
  const goal=await page.evaluate(()=>{const e=window.cityApproachGame.scene.keys.EscortScene;const score=e.score;e.finish();return {title:e.goalTitle.text,active:e.goalTitle.active,scale:e.goalTitle.scaleX,particles:e.goalConfetti.length,score:e.score,previous:score,bounds:{x:e.goalTitle.getBounds().x,y:e.goalTitle.getBounds().y,right:e.goalTitle.getBounds().right,bottom:e.goalTitle.getBounds().bottom},width:e.scale.width,height:e.scale.height};});
- assert.equal(goal.title,'ゴール！');assert(goal.active);assert.equal(goal.score,310);assert.equal(goal.score,goal.previous);
+ assert.equal(goal.title,'ゴール！');assert(goal.active);assert.equal(goal.score,190);assert.equal(goal.score,goal.previous);
  assert(Math.abs(goal.scale-1)<.01);
  assert.equal(goal.particles,reduced?0:40);
  assert(goal.bounds.x>=0 && goal.bounds.y>=0 && goal.bounds.right<=goal.width && goal.bounds.bottom<=goal.height);
@@ -47,7 +47,7 @@ for(const [engine,width,height,reduced] of [['chromium',320,568,false],['webkit'
   const a=new Phaser.Geom.Rectangle(e.goalArt.x,e.goalArt.y,e.goalArt.width,e.goalArt.height);
   const body=e.finishText.getBounds(),button=e.returnButton.getBounds();
   return !Phaser.Geom.Rectangle.Overlaps(a,body) && body.bottom<button.top && button.width>=44 && button.height>=44;
- }),'action reward text must fit between the CG and return button');
+ }),'conversation reward text must fit between the CG and return button');
  const screenshot=await page.screenshot({path:`test-results/easy-goal/${engine}-${width}${reduced?'-reduced':''}.png`});
  // Inspect the rendered frame, rather than just checking that scene objects exist.
  const pixels=await page.evaluate(async({png,art})=>{

@@ -5,9 +5,10 @@ export function createNativeButtons(scene, controls) {
   layer.className = 'game-native-buttons';
   layer.dataset.scene = scene.scene.key;
   document.body.append(layer);
-  const entries = controls.map(({ object, label, enabled = () => true, activate }) => {
+  const entries = controls.map(({ key, object, label, enabled = () => true, activate }) => {
     const button = document.createElement('button');
     button.type = 'button';
+    if (key) button.dataset.choice = key;
     button.className = 'game-native-button';
     button.addEventListener('pointerdown', event => event.stopPropagation());
     button.addEventListener('click', event => {
