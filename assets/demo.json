@@ -2,49 +2,49 @@
   "description": "Actual browser play, recorded with Playwright and edited into chronological excerpts. No game state or outcomes were altered.",
   "width": 1100,
   "height": 800,
-  "duration": 23.98,
+  "duration": 25.29,
   "gifFps": 10,
   "gifWidth": 480,
   "gifHeight": 800,
   "clips": [
     {
-      "start": 14.466,
-      "end": 16.416,
+      "start": 4.67,
+      "end": 6.62,
       "caption": "街で声をかける。\nそこから始まる会話ゲーム。"
     },
     {
-      "start": 17.637,
-      "end": 20.815,
-      "caption": "相手の不安に、どう返す？\n4枚のフリップからタップ。"
+      "start": 7.5729999999999995,
+      "end": 10.583,
+      "caption": "ウケを狙わず、自然に返す。\n無難な返しでも先へ進める。"
     },
     {
-      "start": 34.789,
-      "end": 37.039,
+      "start": 22.56,
+      "end": 24.81,
       "caption": "連れ出したあとも、\n歩きながら会話は続く。"
     },
     {
-      "start": 38.208,
-      "end": 42.816,
+      "start": 25.52,
+      "end": 29.708,
       "caption": "「まあまあまあ」で流す。\nでも、連発すると同行終了。"
     },
     {
-      "start": 71.19500000000001,
-      "end": 75.34299999999999,
+      "start": 53.512,
+      "end": 58.107,
       "caption": "入口で「まだ迷ってる（笑）」\nここでも、返しを選ぶ。"
     },
     {
-      "start": 77.06,
-      "end": 80.809,
+      "start": 60.672,
+      "end": 65.383,
       "caption": "料金？ 終電？ 友達？\n相手ごとの迷いに返す。"
     },
     {
-      "start": 87.516,
-      "end": 88.263,
+      "start": 72.82900000000001,
+      "end": 74.062,
       "caption": "入口でも、気持ちを確認。\n二人で決めて、ゴールへ。"
     },
     {
-      "start": 88.363,
-      "end": 91.71300000000001,
+      "start": 74.16199999999999,
+      "end": 77.512,
       "caption": "ホテルの客室で、記念CG。\nラストは黒バニー。"
     }
   ],

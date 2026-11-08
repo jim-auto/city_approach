@@ -71,12 +71,14 @@ try {
     await page.waitForFunction(()=>{const t=window.cityApproachGame.scene.keys.TalkScene;return t.resultShown||!t.choiceLocked;});
     const decision=await page.evaluate(()=>{const t=window.cityApproachGame.scene.keys.TalkScene;
       if(t.resultShown)return {done:true};
-      const line=t.lines[t.lineIndex];return {line:t.lineIndex,index:line.cards.findIndex(c=>c.key===line.correct[0])};});
+      const line=t.lines[t.lineIndex];return {line:t.lineIndex,guard:t.discomfort,index:line.cards.findIndex(c=>line.isClosing?c.key===line.correct[0]:c.safe&&!line.correct.includes(c.key))};});
     if(decision.done)break;
+    assert(decision.index>=0,'each conversation needs a calm reply or the final invitation');
     await page.waitForTimeout(turn===0?1500:650);
     const ready=await page.evaluate(line=>{const t=window.cityApproachGame.scene.keys.TalkScene;return !t.resultShown&&!t.choiceLocked&&t.lineIndex===line;},decision.line);
     if(!ready){turn--;continue;}
     await page.locator('.game-native-buttons[data-scene="TalkScene"] button').nth(decision.index).tap({timeout:5000});
+    assert(await page.evaluate(guard=>window.cityApproachGame.scene.keys.TalkScene.discomfort<=guard,decision.guard),'calm replies must not increase discomfort');
     if(turn===0)mark('talk-reaction');
     await page.waitForFunction(line=>{const t=window.cityApproachGame.scene.keys.TalkScene;return t.resultShown||t.lineIndex>line;},decision.line);
   }

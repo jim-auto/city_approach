@@ -9,7 +9,7 @@ assert(['goal','question-3','reaction-3','question-4','reaction-4','reaction-5',
 const approach=take.marks.filter(m=>m.name.startsWith('approach-')).at(-1).time;
 const cuts=[
   [approach-1.3,approach+.65,'街で声をかける。\nそこから始まる会話ゲーム。'],
-  [marks.talk+.3,marks['talk-reaction']+1.25,'相手の不安に、どう返す？\n4枚のフリップからタップ。'],
+  [marks.talk+.3,marks['talk-reaction']+1.25,'ウケを狙わず、自然に返す。\n無難な返しでも先へ進める。'],
   [marks.walk+.15,Math.min(marks['question-0']-.15,marks.walk+2.4),'連れ出したあとも、\n歩きながら会話は続く。'],
   [marks['question-0']+.15,marks['reaction-0']+2.25,'「まあまあまあ」で流す。\nでも、連発すると同行終了。'],
   [marks['question-3']+.15,marks['reaction-3']+2.1,'入口で「まだ迷ってる（笑）」\nここでも、返しを選ぶ。'],
