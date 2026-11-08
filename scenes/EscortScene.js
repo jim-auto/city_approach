@@ -1,9 +1,10 @@
-import { goalCostumeFor, buildGoalPortrait, goalPortraitBounds } from "../goal-costumes.js?v=20261108-cosplay1";
-import { createNativeButtons } from "../native-buttons.js?v=20261108-cosplay1";
-import { drawCitySky, drawCityStreet } from "../scenery.js?v=20261108-cosplay1";
-import { bindTouchReset } from "../mobile.js?v=20261108-cosplay1";
-import { sfx } from "../sfx.js?v=20261108-cosplay1";
-import { getBest, setBest } from "../storage.js?v=20261108-cosplay1";
+import { WalkAction } from "../walk-action.js?v=20261108-action1";
+import { goalCostumeFor, buildGoalPortrait, goalPortraitBounds } from "../goal-costumes.js?v=20261108-action1";
+import { createNativeButtons } from "../native-buttons.js?v=20261108-action1";
+import { drawCitySky, drawCityStreet } from "../scenery.js?v=20261108-action1";
+import { bindTouchReset } from "../mobile.js?v=20261108-action1";
+import { sfx } from "../sfx.js?v=20261108-action1";
+import { getBest, setBest } from "../storage.js?v=20261108-action1";
 
 const START_X = 150;
 const HOTEL_X = 2900;
@@ -87,7 +88,7 @@ export default class EscortScene extends Phaser.Scene {
     }).setScrollFactor(0).setDepth(40);
     this.hudBackdrop = this.add.graphics().setScrollFactor(0).setDepth(39);
     this.progress = this.add.graphics().setScrollFactor(0).setDepth(40);
-    this.caption = this.add.text(0, 0, "二人でラブホテルへ。右へ進もう →", {
+    this.caption = this.add.text(0, 0, "→で進む / ジャンプ長押しでOK！", {
       fontFamily: "system-ui, sans-serif", fontSize: "16px", color: "#ffd24f", align: "center",
     }).setOrigin(0.5).setScrollFactor(0).setDepth(40);
     this.leftButton = this.control("←", -1);
@@ -100,6 +101,7 @@ export default class EscortScene extends Phaser.Scene {
     })));
     this.cursors = this.input.keyboard?.createCursorKeys();
     this.keys = this.input.keyboard?.addKeys("A,D");
+    this.walkAction = new WalkAction(this);
     this.input.on("pointerdown", (pointer, objects) => {
       if (this.finished || this.currentQuestion || objects.length) return;
       this.tapX = Phaser.Math.Clamp(pointer.x + this.cameras.main.scrollX, START_X, HOTEL_X);
@@ -133,6 +135,7 @@ export default class EscortScene extends Phaser.Scene {
   }
 
   release(pointer) {
+    this.walkAction?.release(pointer.id);
     if (!this.heldDirections.delete(pointer.id)) return;
     const remaining = [...this.heldDirections.entries()].at(-1);
     this.heldPointer = remaining?.[0] ?? null;
@@ -144,6 +147,7 @@ export default class EscortScene extends Phaser.Scene {
     this.heldPointer = null;
     this.heldDirections.clear();
     this.tapX = null;
+    this.walkAction?.resetInput();
   }
 
   label(x, y, text, color = "#c3d5e4", size = 18) {
@@ -176,6 +180,7 @@ export default class EscortScene extends Phaser.Scene {
     drawCityStreet(this, WORLD_WIDTH, HOTEL_X);
     this.drawSky();
     this.updateHud();
+    this.walkAction.layout();
     this.layoutConversation();
     if (this.finished) this.layoutFinish();
   }
@@ -222,14 +227,16 @@ export default class EscortScene extends Phaser.Scene {
       if (!move) this.tapX = null;
     }
     const dt = Math.min(delta, 50) / 1000;
-    this.player.x = Phaser.Math.Clamp(this.player.x + move * 230 * dt, START_X, HOTEL_X);
-    this.player.y = this.groundY + (move ? Math.sin(this.time.now / 95) * 2 : 0);
+    this.walkAction.update(dt, move);
+    this.player.x = Phaser.Math.Clamp(this.player.x + move * 230 * this.walkAction.speed * dt, START_X, HOTEL_X);
+    this.walkAction.resolve(move);
+    this.player.y = this.groundY - this.walkAction.jumpOffset + (move ? Math.sin(this.time.now / 95) * 2 : 0);
     if (move) { this.player.setFlipX(move < 0); this.player.play("player-walk", true); }
     else this.player.anims.stop();
     const target = Math.max(START_X - 68, this.player.x - 68);
     this.partner.x += (target - this.partner.x) * (1 - Math.exp(-8 * dt));
     const walking = Math.abs(target - this.partner.x) > 2;
-    this.partner.y = this.groundY + (walking ? Math.sin(this.time.now / 105) * 2 : 0);
+    this.partner.y = this.groundY - this.walkAction.jumpOffset + (walking ? Math.sin(this.time.now / 105) * 2 : 0);
     if (walking) {
       this.partner.setFlipX(target < this.partner.x);
       if (this.anims.exists(`${this.partnerBase}-walk`)) this.partner.play(`${this.partnerBase}-walk`, true);
@@ -287,6 +294,8 @@ export default class EscortScene extends Phaser.Scene {
     this.dialogText.setVisible(active);
     this.leftButton.setVisible(!active && !this.finished);
     this.rightButton.setVisible(!active && !this.finished);
+    this.jumpButton.setVisible(!active && !this.finished);
+    this.walkAction.status.setVisible(!active && !this.finished);
     this.caption.setVisible(!active && !this.finished);
     this.replyButtons.forEach((button) => button.setVisible(active && this.dialogState === "asking"));
     if (!active) { this.nativeButtons?.sync(); return; }
@@ -398,7 +407,7 @@ export default class EscortScene extends Phaser.Scene {
     this.currentQuestion = null;
     this.dialogState = null;
     this.layoutConversation();
-    this.caption.setText(this.destinationConfirmed ? "行き先の確認OK。二人で入口へ →" : "会話しながら、右へ進もう →");
+    this.caption.setText(this.destinationConfirmed ? "行き先の確認OK。二人で入口へ →" : "→で進む / ジャンプ長押しで♥集め");
   }
 
   finishBreakdown(reason) {
@@ -435,7 +444,7 @@ export default class EscortScene extends Phaser.Scene {
     this.layoutConversation();
     this.finishShade = this.add.graphics().setScrollFactor(0).setDepth(60);
     this.resultBody = success
-      ? `「${this.goalSelection.quote}」\n到着ボーナス +100\nScore ${this.score}`
+      ? `「${this.goalSelection.quote}」\n${this.walkAction.bonus ? `到着 +100 / ♥+${this.walkAction.bonus}` : "到着ボーナス +100"}\nScore ${this.score}`
       : `同行終了\n${reason}\n\n到着ボーナスなし\nScore ${this.score}`;
     this.finishText = this.add.text(0, 0, "", {
       fontFamily: "system-ui, sans-serif", fontSize: "26px", color: success ? "#ffe0a0" : "#ffb4a6", align: "center", lineSpacing: 14,

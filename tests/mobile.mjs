@@ -220,7 +220,7 @@ try {
           await shot(page, `${name}-talk-result`);
           await tap(page, "TalkScene", "resultButton");
           await state(page, "EscortScene");
-          await audit(page, "EscortScene", ["hud", "caption"], ["leftButton", "rightButton"]);
+          await audit(page, "EscortScene", ["hud", "caption"], ["leftButton", "rightButton", "jumpButton"]);
           await shot(page, `${name}-escort`);
           if (cdp) {
             const left = await point(page, "EscortScene", "leftButton"), right = await point(page, "EscortScene", "rightButton");
@@ -238,7 +238,7 @@ try {
             e.player.x = 2750; e.partner.x = 2682;
             e.cameras.main.centerOn(e.player.x, e.groundY);
           });
-          const beforeGoal = await page.evaluate(() => window.cityApproachGame.scene.keys.EscortScene.score);
+          const beforeGoal = await page.evaluate(() => { const e=window.cityApproachGame.scene.keys.EscortScene; return {score:e.score,bonus:e.walkAction.bonus}; });
           for (let segment = 0; segment < 12; segment++) {
             if (await page.evaluate(() => window.cityApproachGame.scene.keys.EscortScene.finished)) break;
             if (await page.evaluate(() => Boolean(window.cityApproachGame.scene.keys.EscortScene.currentQuestion))) {
@@ -270,7 +270,7 @@ try {
             const e = window.cityApproachGame.scene.keys.EscortScene;
             return e.finished && e.outcome === "goal" && e.questionsAnswered === 4 && e.destinationConfirmed;
           }), "walking conversation did not reach confirmed goal");
-          check(await page.evaluate((score) => window.cityApproachGame.scene.keys.EscortScene.score === score + 100, beforeGoal), "goal bonus incorrect");
+          check(await page.evaluate((before) => { const e=window.cityApproachGame.scene.keys.EscortScene; return e.score === before.score + 100 + e.walkAction.bonus - before.bonus; }, beforeGoal), "goal and action bonus incorrect");
           await audit(page, "EscortScene", ["goalTitle", "finishText"], ["returnButton"]);
           await page.waitForFunction(() => {
             const e = window.cityApproachGame.scene.keys.EscortScene;

@@ -1,4 +1,8 @@
 const PRESETS = {
+  jump:    { freq: 330, end: 740, duration: .14, type: "sine", volume: .12 },
+  collect: { freq: 1050, end: 1500, duration: .09, type: "triangle", volume: .12 },
+  fever:   { chord: [660, 990, 1320], duration: .18, type: "triangle", volume: .15 },
+  splash:  { freq: 180, end: 100, duration: .09, type: "sine", volume: .08 },
   success: { freq: 660, end: 990, duration: 0.22, type: "triangle", volume: 0.22 },
   fail:    { freq: 240, end: 150, duration: 0.18, type: "square",   volume: 0.16 },
   skip:    { freq: 520, end: 380, duration: 0.18, type: "sine",     volume: 0.18 },
