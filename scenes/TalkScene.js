@@ -1,8 +1,9 @@
-import { encounterFor, replyEffect } from "../encounter-rules.js?v=20261108-proportion1";
-import { createNativeButtons } from "../native-buttons.js?v=20261108-proportion1";
-import { buildFlipLines } from "../conversation-flips.js?v=20261108-proportion1";
-import { sfx } from "../sfx.js?v=20261108-proportion1";
-import { DIFFICULTIES, getDifficulty } from "../storage.js?v=20261108-proportion1";
+import { compatibilityFor } from '../attraction.js?v=20261108-types1';
+import { encounterFor, replyEffect } from "../encounter-rules.js?v=20261108-types1";
+import { createNativeButtons } from "../native-buttons.js?v=20261108-types1";
+import { buildFlipLines } from "../conversation-flips.js?v=20261108-types1";
+import { sfx } from "../sfx.js?v=20261108-types1";
+import { DIFFICULTIES, getDifficulty, getHeight, heightFor } from "../storage.js?v=20261108-types1";
 
 const CHOICES = [
   { key: "listen", label: "聞く", color: 0x3b4652 },
@@ -37,7 +38,10 @@ export default class TalkScene extends Phaser.Scene {
     this.difficulty =
       DIFFICULTIES.find((d) => d.key === data.difficulty) || getDifficulty();
     this.encounter = encounterFor(this.profile);
-    this.favor = Phaser.Math.Clamp(42 + Math.round(((this.profile.interest ?? 50) - 50) * 0.35) + this.encounter.startFavor, 0, 100);
+    this.height = data.height ? heightFor(data.height) : getHeight();
+    this.compatibility = compatibilityFor(this.profile, {difficulty: this.difficulty.key, height:this.height.key});
+    // Four calm replies can still earn an invitation when there is no explicit exclusion.
+    this.favor = Phaser.Math.Clamp(42 + Math.round(((this.profile.interest ?? 50) - 50) * 0.35) + this.encounter.startFavor + this.compatibility.favorMod, 17, 100);
     this.discomfort = Phaser.Math.Clamp((this.mapKey === "kabukicho" ? 24 : 14) + this.encounter.startGuard, 0, 100);
     this.responseChain = 0;
     this.bestResponseChain = 0;
@@ -297,12 +301,13 @@ export default class TalkScene extends Phaser.Scene {
     }
 
     const line = this.lines[this.lineIndex];
-    if (line.isClosing && this.resolvedConcerns.size < 3) line.text = "まだちょっと不安かも。今日はどうしよう……。";
+    if (line.isClosing && !this.compatibility.eligible) line.text = this.compatibility.reaction;
+    else if (line.isClosing && this.resolvedConcerns.size < 3) line.text = "まだちょっと不安かも。今日はどうしよう……。";
     const baseSize = this.scale.width < 430 ? 29 : 40;
     this.lineText.setFontSize(line.text.length > 16 ? baseSize - 6 : baseSize);
     this.lineText.setText(this.wrapText(line.text, this.scale.width < 430 ? 12 : 22));
     const phase = line.concern ? (line.isClosing ? `LAST / ${this.encounter.label}` : `不安 ${this.lineIndex + 1}/4 / ${this.encounter.label}`) : `返答: ${line.cue}`;
-    this.topicText.setText(`${phase}\n${line.concern ? `無難な返しでOK / 安心 ${this.resolvedConcerns.size}/4` : "相手の気持ちを読もう"}`);
+    this.topicText.setText(`${phase}\n${line.concern ? `好み：${this.compatibility.preference.label}` : "相手の気持ちを読もう"}`);
     this.topicText.setAlign("center");
     this.choiceButtons.forEach((button, i) => {
       button.rawLabel = line.cards?.[i]?.text || CHOICES[i].label;
@@ -325,7 +330,7 @@ export default class TalkScene extends Phaser.Scene {
     this.encounter = encounterFor(this.profile);
     const effect = line.concern ? replyEffect(this.profile, line, choiceKey, this.responseChain) : null;
     this.lastReplyEffect = effect;
-    const readyToInvite = this.favor >= (line.concern ? this.encounter.inviteAt : 68) && this.discomfort < 60;
+    const readyToInvite = this.compatibility.eligible && this.favor >= (line.concern ? this.encounter.inviteAt + this.compatibility.inviteMod : 68) && this.discomfort < 60;
     const correct = effect ? ["match", "safe"].includes(effect.quality) : line.weak ? line.correct.includes(choiceKey) : choiceKey === "listen";
     if (correct) {
       this.responseChain += 1;
@@ -475,6 +480,7 @@ export default class TalkScene extends Phaser.Scene {
       score: this.score + total,
       best: this.best,
       difficulty: this.difficulty.key,
+      height: this.height.key,
       history: this.history,
       lastOutcome: `${this.lastOutcome || "中間"} +${total}`,
       streak: nextStreak,

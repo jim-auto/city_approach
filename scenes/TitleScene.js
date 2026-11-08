@@ -1,6 +1,6 @@
-import { PLAYER_CAST_KEY, PLAYER_CAST_PATH, buildPlayerCast, playerForDifficulty } from "../player-appearance.js?v=20261108-proportion1";
-import { sfx } from "../sfx.js?v=20261108-proportion1";
-import { getBest, getDifficulty, cycleDifficulty } from "../storage.js?v=20261108-proportion1";
+import { PLAYER_CAST_KEY, PLAYER_CAST_PATH, buildPlayerCast, playerForDifficulty } from "../player-appearance.js?v=20261108-types1";
+import { sfx } from "../sfx.js?v=20261108-types1";
+import { getBest, getDifficulty, cycleDifficulty, getHeight, cycleHeight } from "../storage.js?v=20261108-types1";
 
 const TUTORIAL_LINES = [
   "街を歩く  →  状態を見る  →  オープナーを選ぶ",
@@ -22,6 +22,7 @@ export default class TitleScene extends Phaser.Scene {
 
   create() {
     this.difficulty = getDifficulty();
+    this.height = getHeight();
     buildPlayerCast(this);
     this.best = getBest();
     this.started = false;
@@ -86,6 +87,11 @@ export default class TitleScene extends Phaser.Scene {
       this.refreshTexts();
       sfx.play("tick");
     });
+    this.heightText = this.add.text(0, 0, '', {fontFamily:'system-ui, sans-serif', fontSize:'16px', color:'#a5eee4', fontStyle:'bold'}).setOrigin(.5).setDepth(2);
+    this.heightButton = this.add.rectangle(0, 0, 240, 42, 0x243c40, .96).setStrokeStyle(2, 0xffffff, .45).setDepth(1).setInteractive({useHandCursor:true});
+    this.heightButton.on('pointerdown', (_pointer, _lx, _ly, event) => {
+      event?.stopPropagation?.(); this.height = cycleHeight(this.height.key); this.refreshTexts(); sfx.play('tick');
+    });
     this.input.on("pointerdown", () => this.startGame());
     this.input.keyboard?.on("keydown", () => this.startGame());
     this.scale.on("resize", this.layout, this);
@@ -106,7 +112,8 @@ export default class TitleScene extends Phaser.Scene {
 
   refreshTexts() {
     this.bestText.setText(`Best ${this.best}`);
-    this.diffText.setText(`${this.difficulty.label} / ${this.difficulty.persona} ↻`);
+    this.diffText.setText(`タイプ：${this.difficulty.persona} ↻`);
+    this.heightText.setText(`身長：${this.height.label} ↻`);
     this.iconImage.setTexture(playerForDifficulty(this.difficulty.key).portraitKey);
   }
 
@@ -130,9 +137,11 @@ export default class TitleScene extends Phaser.Scene {
       this.titleText.setPosition(left, h * 0.52).setFontSize(Math.min(30, w * 0.039));
       this.subText.setPosition(left, h * 0.68).setFontSize(12).setWordWrapWidth(w * 0.42);
       this.tutorialText.setPosition(w * 0.72, h * 0.25).setFontSize(w < 700 ? 11 : 14).setLineSpacing(5);
-      this.bestText.setPosition(w * 0.72, h * 0.52).setFontSize(16);
-      this.diffButton.setPosition(w * 0.72, h * 0.68);
-      this.diffText.setPosition(w * 0.72, h * 0.68);
+      this.bestText.setPosition(w * 0.72, h * 0.49).setFontSize(16);
+      this.diffButton.setPosition(w * 0.72, h * 0.64);
+      this.diffText.setPosition(w * 0.72, h * 0.64);
+      this.heightButton.setPosition(w * 0.72, h * .80);
+      this.heightText.setPosition(w * 0.72, h * .80);
       this.startText.setPosition(w * 0.72, h - 25).setFontSize(20);
     } else {
       const iconSize = Math.min(104, h * 0.15);
@@ -140,9 +149,11 @@ export default class TitleScene extends Phaser.Scene {
       this.titleText.setPosition(cx, h * 0.235).setFontSize(Math.min(mobile ? 34 : 54, (w - 28) / 8.9));
       this.subText.setPosition(cx, h * 0.305).setFontSize(mobile ? 13 : 15).setWordWrapWidth(w - 32);
       this.tutorialText.setPosition(cx, h * 0.48).setFontSize(w < 360 ? 12 : mobile ? 14 : 17).setLineSpacing(8);
-      this.bestText.setPosition(cx, h * 0.68).setFontSize(18);
-      this.diffButton.setPosition(cx, h * 0.79);
-      this.diffText.setPosition(cx, h * 0.79);
+      this.bestText.setPosition(cx, h * 0.64).setFontSize(18);
+      this.diffButton.setPosition(cx, h * 0.735);
+      this.diffText.setPosition(cx, h * 0.735);
+      this.heightButton.setPosition(cx, h * .83);
+      this.heightText.setPosition(cx, h * .83);
       this.startText.setPosition(cx, h - 30).setFontSize(22);
     }
   }

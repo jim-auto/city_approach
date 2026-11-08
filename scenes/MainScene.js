@@ -1,8 +1,9 @@
-import { PLAYER_CAST_KEY, PLAYER_CAST_PATH, buildPlayerCast, playerForDifficulty } from "../player-appearance.js?v=20261108-proportion1";
-import { bindTouchReset } from "../mobile.js?v=20261108-proportion1";
-import { sfx } from "../sfx.js?v=20261108-proportion1";
-import { getBest, setBest, getDifficulty, cycleDifficulty, getSpriteMode } from "../storage.js?v=20261108-proportion1";
-import { NPC_COLORWAYS, npcColorKey, CHARACTER_STYLE_LABELS, aiSourceKeyFor, buildCharacterTextures, registerCharacterAnimations } from "../characters.js?v=20261108-proportion1";
+import { PREFERENCES, compatibilityFor } from '../attraction.js?v=20261108-types1';
+import { PLAYER_CAST_KEY, PLAYER_CAST_PATH, buildPlayerCast, playerForDifficulty } from "../player-appearance.js?v=20261108-types1";
+import { bindTouchReset } from "../mobile.js?v=20261108-types1";
+import { sfx } from "../sfx.js?v=20261108-types1";
+import { getBest, setBest, getDifficulty, cycleDifficulty, getSpriteMode, getHeight, heightFor, cycleHeight } from "../storage.js?v=20261108-types1";
+import { NPC_COLORWAYS, npcColorKey, CHARACTER_STYLE_LABELS, aiSourceKeyFor, buildCharacterTextures, registerCharacterAnimations } from "../characters.js?v=20261108-types1";
 
 const NPC_VARIANT_KEYS = {
   "待ち合わせ系": "npc-waiting",
@@ -260,13 +261,6 @@ const ACTIONS = {
   },
 };
 
-const ACTION_HINTS = {
-  weather: "共感: 余裕がある相手に安定",
-  outfit: "状況いじり: 迷い/人混み/偶然を拾う",
-  item: "持ち物: スマホ/本/カメラ/コーヒー向け",
-  joke: "ユーモア: 刺されば強いが警戒には危険",
-};
-
 const SITUATION_STATUS = {
   waiting: {
     label: "待ち中",
@@ -364,6 +358,7 @@ export default class MainScene extends Phaser.Scene {
     this.previousBest = getBest();
     this.best = Math.max(this.previousBest, this.score);
     this.difficulty = getDifficulty();
+    this.height = data.height ? heightFor(data.height) : getHeight();
     this.spriteMode = getSpriteMode().key;
     this.history = Array.isArray(data.history) ? data.history.slice(-3) : [];
     this.streak = data.streak || 0;
@@ -409,7 +404,7 @@ export default class MainScene extends Phaser.Scene {
 
     this.player = this.physics.add
       .sprite(0, 0, this.playerAppearance.spriteKey)
-      .setScale(1.6)
+      .setScale(1.6 * this.height.figureScale)
       .setDepth(10);
     this.player.body.setSize(14, 20).setOffset(9, 10);
     this.player.setCollideWorldBounds(true);
@@ -793,9 +788,11 @@ export default class MainScene extends Phaser.Scene {
 
   spawnNpcs(map) {
     const usedStops = Phaser.Utils.Array.Shuffle([...map.stopPoints]);
+    const preferenceDeck = Phaser.Utils.Array.Shuffle([...PREFERENCES]);
     const colorDeck = Phaser.Utils.Array.Shuffle([...NPC_COLORWAYS]);
     for (let i = 0; i < map.npcCount; i += 1) {
       const profile = this.makeProfile(map, i === 0 ? PRIN_STUDENT : null);
+      profile.preferenceKey = preferenceDeck[i % preferenceDeck.length].key;
       const stop = usedStops[i % usedStops.length];
       const x =
         map.key === "nagoya"
@@ -1061,12 +1058,13 @@ export default class MainScene extends Phaser.Scene {
 
     this.mapButton = this.createHudButton("街切替", () => this.switchMap(), 118, 46, 0x223340);
     this.difficultyButton = this.createHudButton(
-      `${this.difficulty.label}\n${this.difficulty.persona}`,
+      `タイプ\n${this.difficulty.persona}`,
       () => this.toggleDifficulty(),
       148,
       46,
       0x2f2a3a
     );
+    this.heightButton = this.createHudButton(`身長\n${this.height.label}`, () => this.toggleHeight(), 118, 46, 0x243c40);
     this.actionButtons = [
       this.createHudButton(ACTIONS.weather.label, () => this.tryApproach("weather"), 148, 48, 0x204a42),
       this.createHudButton(ACTIONS.outfit.label, () => this.tryApproach("outfit"), 148, 48, 0x51323d),
@@ -1135,8 +1133,13 @@ export default class MainScene extends Phaser.Scene {
     const landscape = width > height && height < 600;
     const mobile = width < 600 || landscape;
     this.resetMovement();
-    this.mapButton.setPosition(width - 130, 12);
-    this.difficultyButton.setPosition(12, 12);
+    let topX = 12;
+    [this.difficultyButton, this.heightButton, this.mapButton].forEach((button, i) => {
+      const bw = Math.min(i === 0 ? 148 : 118, (width - 40) / 3);
+      button.buttonWidth = bw; button.setSize(bw, 46); button.input.hitArea.setTo(bw / 2, 23, bw, 46);
+      button.list[1].setPosition(bw / 2, 23).setFontSize(bw < 110 ? 13 : 15);
+      button.setPosition(i === 2 ? width - bw - 12 : topX, 12); button.redraw(true); topX += bw + 8;
+    });
     this.infoText.setPosition(12, mobile ? 66 : 68).setFontSize(mobile ? 13 : 16);
     this.infoText.setWordWrapWidth(width - 44);
     const columns = landscape ? 2 : 1;
@@ -1268,6 +1271,7 @@ export default class MainScene extends Phaser.Scene {
     const buttons = [
       this.mapButton,
       this.difficultyButton,
+      this.heightButton,
       ...(this.actionButtons || []),
     ].filter(Boolean);
     for (const button of buttons) {
@@ -1510,12 +1514,12 @@ export default class MainScene extends Phaser.Scene {
       : "";
     const baseText = mobile
       ? `${map.label} / ${nearText}\nScore ${this.score}  Best ${this.best}  R${rank}\nGoal ${goalText}  ${hotelText}  連続${this.streak}`
-      : `${map.label} ${map.period} / ${this.difficulty.label}\n` +
+      : `${map.label} ${map.period} / ${this.difficulty.persona}・${this.height.label}\n` +
         `Score ${this.score} / Best ${this.best} / Rank ${rank}\n` +
         `Goal ${goalText} / ${hotelText} / 連続${this.streak} / ${nearText}`;
     const situation = this.nearNpc?.profile.situation;
-    const state = situation ? `${situation.label} / 余${ROOM_LABELS[situation.room]} 警${CAUTION_LABELS[situation.caution]}\n${this.nearNpc.profile.styleLabel || "きっかけ"} / ${situation.hook}` : "街をタップ / ドラッグで移動";
-    const compact = `${map.label} / ${this.difficulty.persona}　${goalText}\nScore ${this.score} / Best ${this.best} / R${rank}\n${state}`;
+    const state = situation ? `${situation.label} / 余${ROOM_LABELS[situation.room]} 警${CAUTION_LABELS[situation.caution]}\n${this.nearNpc.profile.styleLabel || "きっかけ"} / ${compatibilityFor(this.nearNpc.profile, this.playerTraits()).preference.label}` : "街をタップ / ドラッグで移動";
+    const compact = `${map.label} / ${this.difficulty.persona}・${this.height.label}\nScore ${this.score} / Best ${this.best} / R${rank}\n${state}`;
     this.infoText.setText(mobile ? compact : baseText + historyLine);
     this.drawProgress();
     this.updateActionHint();
@@ -1529,7 +1533,7 @@ export default class MainScene extends Phaser.Scene {
     if (compact) {
       return `${profile.styleLabel || profile.type} / ${s.label} / 余${room} 警${caution} / ${s.hook}`;
     }
-    return `${profile.styleLabel || profile.type} / ${s.label} / 余裕${room} / 警戒${caution} / きっかけ:${s.hook}`;
+    return `${profile.styleLabel || profile.type} / ${s.label} / 余裕${room} / 警戒${caution} / ${compatibilityFor(profile, this.playerTraits()).preference.label}`;
   }
 
   updateActionHint() {
@@ -1549,8 +1553,8 @@ export default class MainScene extends Phaser.Scene {
       rate: this.estimateActionRate(profile, key),
     })).sort((a, b) => b.rate - a.rate);
     const best = ranked[0];
-    const s = profile.situation || SITUATION_STATUS.waiting;
-    return `${s.label}/${s.hook}: ${ACTION_HINTS[best.key]} / 目安${Math.round(best.rate * 100)}%`;
+    const match = compatibilityFor(profile, this.playerTraits());
+    return `好み：${match.preference.label} / ${match.label}\n${match.eligible ? `${ACTIONS[best.key].label} 目安${Math.round(best.rate * 100)}%` : match.reaction}`;
   }
 
   drawProgress() {
@@ -1742,13 +1746,24 @@ export default class MainScene extends Phaser.Scene {
   }
 
   toggleDifficulty() {
+    if (this.approachPending) return;
     this.difficulty = cycleDifficulty(this.difficulty.key);
     this.playerAppearance = playerForDifficulty(this.difficulty.key);
     this.player.anims.stop();
-    this.player.setTexture(this.playerAppearance.spriteKey);
+    this.player.setTexture(this.playerAppearance.spriteKey).setScale(1.6 * this.height.figureScale);
     const text = this.difficultyButton.list.find((c) => c.text !== undefined);
-    if (text) text.setText(`${this.difficulty.label}\n${this.difficulty.persona}`);
-    this.showMessage(`${this.difficulty.label} / ${this.difficulty.persona}`, 1100);
+    if (text) text.setText(`タイプ\n${this.difficulty.persona}`);
+    this.showMessage(`${this.difficulty.persona} / ${this.height.label}`, 1100);
+  }
+
+  playerTraits() { return { difficulty: this.difficulty.key, height: this.height.key }; }
+
+  toggleHeight() {
+    if (this.approachPending) return;
+    this.height = cycleHeight(this.height.key);
+    this.player.setScale(1.6 * this.height.figureScale);
+    this.heightButton.list[1].setText(`身長\n${this.height.label}`);
+    this.updateHud();
   }
 
   tryApproach(actionKey) {
@@ -1760,6 +1775,12 @@ export default class MainScene extends Phaser.Scene {
     }
 
     const target = this.nearNpc;
+    const match = compatibilityFor(target.profile, this.playerTraits());
+    if (!match.eligible) {
+      this.showMessage(`「${match.reaction}」`, 2400);
+      this.pushHistory(`${match.preference.label} / タイプが合わなかった`);
+      return;
+    }
     const rate = this.calculateSuccessRate(target.profile, actionKey);
     const roll = Math.random();
     const actionLabel = ACTIONS[actionKey].label;
@@ -1782,6 +1803,7 @@ export default class MainScene extends Phaser.Scene {
           score: this.score,
           best: this.best,
           difficulty: this.difficulty.key,
+          height: this.height.key,
           history: this.history.slice(),
           npcTextureKey: target.sprite.texture.key,
           portraitTextureKey: target.portraitTextureKey || target.sprite.texture.key,
@@ -2111,6 +2133,8 @@ export default class MainScene extends Phaser.Scene {
     const map = MAPS[this.currentMapKey];
     const action = ACTIONS[actionKey];
     const diff = this.difficulty;
+    const match = compatibilityFor(profile, this.playerTraits());
+    if (!match.eligible) return 0;
     let rate =
       0.3 + map.baseBonus + diff.baseMod - map.noisePenalty - diff.noiseMod + (profile.interest - 50) / 190;
     profile.traits.forEach((trait) => {
@@ -2122,7 +2146,7 @@ export default class MainScene extends Phaser.Scene {
       rate += (profile.situation.room - 1) * 0.025;
       rate -= profile.situation.caution * 0.025;
     }
-    rate += action.defaultMod;
+    rate += action.defaultMod + match.rateMod;
 
     const distance = Phaser.Math.Distance.Between(
       this.player.x,
@@ -2139,6 +2163,8 @@ export default class MainScene extends Phaser.Scene {
     const map = MAPS[this.currentMapKey];
     const action = ACTIONS[actionKey];
     const diff = this.difficulty;
+    const match = compatibilityFor(profile, this.playerTraits());
+    if (!match.eligible) return 0;
     let rate =
       0.3 + map.baseBonus + diff.baseMod - map.noisePenalty - diff.noiseMod + (profile.interest - 50) / 190;
     profile.traits.forEach((trait) => {
@@ -2150,7 +2176,7 @@ export default class MainScene extends Phaser.Scene {
       rate += (profile.situation.room - 1) * 0.025;
       rate -= profile.situation.caution * 0.025;
     }
-    rate += action.defaultMod;
+    rate += action.defaultMod + match.rateMod;
     return Phaser.Math.Clamp(rate, 0.04, 0.86);
   }
 

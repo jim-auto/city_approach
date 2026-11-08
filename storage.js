@@ -1,5 +1,6 @@
 const BEST_KEY = "city_approach_best";
 const DIFF_KEY = "city_approach_difficulty";
+const HEIGHT_KEY = "city_approach_height";
 const MODE_KEY = "city_approach_sprite_mode";
 
 export const SPRITE_MODES = [
@@ -10,7 +11,7 @@ export const SPRITE_MODES = [
 export const DIFFICULTIES = [
   { key: "easy",   label: "やさしい", persona: "ガチイケ", baseMod:  0.06, noiseMod: -0.02, mult: 0.7 },
   { key: "normal", label: "ふつう", persona: "フツメン", baseMod:  0,    noiseMod:  0,    mult: 1.0 },
-  { key: "hard",   label: "むずかしい", persona: "おじさん", baseMod: -0.04, noiseMod:  0.04, mult: 1.4 },
+  { key: "hard",   label: "むずかしい", persona: "オジ", baseMod: -0.04, noiseMod:  0.04, mult: 1.4 },
 ];
 
 function safeGet(key) {
@@ -62,4 +63,15 @@ export function cycleSpriteMode(currentKey) {
   const next = SPRITE_MODES[(idx + 1) % SPRITE_MODES.length];
   setSpriteMode(next.key);
   return next;
+}
+
+export const HEIGHTS = [
+  { key: 'tall', label: '高身長', figureScale: 1 },
+  { key: 'short', label: '低身長', figureScale: .88 },
+];
+export function heightFor(key) { return HEIGHTS.find(h => h.key === key) || HEIGHTS[0]; }
+export function getHeight() { return heightFor(safeGet(HEIGHT_KEY)); }
+export function cycleHeight(key) {
+  const next = HEIGHTS[(HEIGHTS.findIndex(h => h.key === key) + 1) % HEIGHTS.length];
+  safeSet(HEIGHT_KEY, next.key); return next;
 }

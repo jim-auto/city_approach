@@ -5,7 +5,7 @@ import { DIFFICULTIES } from '../storage.js';
 import { playerForDifficulty } from '../player-appearance.js';
 import { startTestServer } from './helpers.mjs';
 
-assert.deepEqual(DIFFICULTIES.map(d=>d.persona),['ガチイケ','フツメン','おじさん']);
+assert.deepEqual(DIFFICULTIES.map(d=>d.persona),['ガチイケ','フツメン','オジ']);
 assert.equal(playerForDifficulty('invalid').difficulty,'easy');
 assert.equal(new Set(DIFFICULTIES.map(d=>playerForDifficulty(d.key).portraitKey)).size,3);
 const server=await startTestServer();await mkdir('test-results/difficulty',{recursive:true});
