@@ -2,7 +2,7 @@
 
 **「まあまあまあ」は、何回まで通じる？**
 
-[![GIF用シナリオ：声かけから散歩、ホテル前の会話、客室のバニーCGまで](./assets/demo.gif?v=story1)](https://jim-auto.github.io/city_approach/)
+[![GIF用シナリオ：声かけから散歩、ホテル前の会話、客室のバニーCGまで](./assets/demo.gif?v=story2)](https://jim-auto.github.io/city_approach/)
 
 **[▶ ブラウザで遊ぶ](https://jim-auto.github.io/city_approach/)** · **[投稿用MP4](./assets/demo.mp4)** · [WebM](./assets/demo.webm)
 
