@@ -1,6 +1,6 @@
 import TitleScene from "./scenes/TitleScene.js?v=20261108-fashion1";
 import MainScene from "./scenes/MainScene.js?v=20261108-fashion1";
-import EscortScene from "./scenes/EscortScene.js?v=20261108-fashion1";
+import EscortScene from "./scenes/EscortScene.js?v=20261110-signs1";
 import TalkScene from "./scenes/TalkScene.js?v=20261108-fashion1";
 
 document.addEventListener(

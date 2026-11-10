@@ -122,7 +122,8 @@ export function drawCityStreet(scene, worldWidth, hotelX) {
     g.fillStyle(0x3c3331).fillRect(x, y - 35, 80, 7).fillRect(x, y - 49, 80, 5);
     g.fillStyle(0x263544).fillRect(x + 7, y - 28, 5, 16).fillRect(x + 68, y - 28, 5, 16);
   }
-  const names = night ? ['ネオン横丁', '月あかり広場', 'ラブホテル通り'] : ['名駅・駅前通り', 'こもれび広場', 'ラブホテル通り'];
+  // Descriptive area signs, not real street names or directions around the station.
+  const names = night ? ['繁華街エリア', '広場', '路地の先'] : ['駅前エリア', '広場', '路地の先'];
   names.forEach((name, i) => {
     const x = 600 + i * 850, top = Math.max(118, y - 240);
     g.fillStyle(0x273e4b).fillRect(x - 80, top, 160, 30);

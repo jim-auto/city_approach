@@ -8,7 +8,7 @@
   },
   "width": 1100,
   "height": 800,
-  "duration": 20.01,
+  "duration": 19.97,
   "gifFps": 10,
   "gifWidth": 480,
   "gifHeight": 800,
@@ -16,8 +16,8 @@
   "targetDurationSeconds": 20,
   "playbackSpeed": 1,
   "initialConversation": {
-    "start": 8.233,
-    "end": 11.133,
+    "start": 19.088,
+    "end": 21.988,
     "rounds": 1,
     "uninterrupted": false
   },
@@ -26,38 +26,38 @@
   "endingScore": "Original recorded bonus and Score lines remain visible",
   "clips": [
     {
-      "start": 4.454,
-      "end": 5.454,
+      "start": 15.188,
+      "end": 16.188,
       "caption": "街で声をかける。\nここから始まる。"
     },
     {
-      "start": 8.233,
-      "end": 11.133,
+      "start": 19.088,
+      "end": 21.988,
       "caption": "「めちゃくちゃタイプです！」\n返しを選んで、距離が縮まる。"
     },
     {
-      "start": 33.125,
-      "end": 34.725,
+      "start": 44.246,
+      "end": 45.846000000000004,
       "caption": "連れ出したら、横スクロール。\n歩いている間も会話は続く。"
     },
     {
-      "start": 37.55,
-      "end": 40.75,
+      "start": 48.537,
+      "end": 51.737,
       "caption": "「まあまあまあ」\n流しすぎると、どうなる？"
     },
     {
-      "start": 61.87899999999999,
-      "end": 64.479,
+      "start": 72.986,
+      "end": 75.58600000000001,
       "caption": "街を抜けて、ホテルへ。\n最後まで相手の反応を見よう。"
     },
     {
-      "start": 82.53999999999999,
-      "end": 87.90299999999999,
+      "start": 93.898,
+      "end": 99.216,
       "caption": "無言の相手に、気持ちを伝える。\n返事を待ってから、ゴールへ。"
     },
     {
-      "start": 89.795,
-      "end": 93.14500000000001,
+      "start": 101.222,
+      "end": 104.572,
       "caption": "ホテルの客室で、ゴール！\nスマホ・ブラウザですぐ遊べる。"
     }
   ],

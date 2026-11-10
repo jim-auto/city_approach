@@ -3,7 +3,7 @@ import { WALK_REPLY_KEYS, WALK_QUESTION_X, walkQuestion, walkReplyEffect } from 
 import { encounterFor } from "../encounter-rules.js?v=20261108-fashion1";
 import { goalCostumeFor, buildGoalPortrait, goalPortraitBounds } from "../goal-costumes.js?v=20261108-fashion1";
 import { createNativeButtons } from "../native-buttons.js?v=20261108-fashion1";
-import { drawCitySky, drawCityStreet } from "../scenery.js?v=20261108-fashion1";
+import { drawCitySky, drawCityStreet } from "../scenery.js?v=20261110-signs1";
 import { bindTouchReset } from "../mobile.js?v=20261108-fashion1";
 import { sfx } from "../sfx.js?v=20261108-fashion1";
 import { DIFFICULTIES, getDifficulty, getBest, setBest, getHeight, heightFor } from "../storage.js?v=20261108-fashion1";
