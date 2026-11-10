@@ -1,10 +1,10 @@
 // Dialogue used only by Playwright's recording routes. Normal play imports none of this.
 export const scenario = {
-  id: 'conversation-story-2',
+  id: 'conversation-story-3',
   title: '今日の授業、これ？',
   companion: '21歳のプリン髪大学生',
   talk: [
-    ['safety', 'なに、ナンパ？（笑）', 'タイプだったから\n通り過ぎるのもったいなくて', 'めっちゃストレート（笑）'],
+    ['safety', 'なに、ナンパ？（笑）', 'めちゃくちゃタイプです！', 'めっちゃストレート（笑）'],
     ['freeTime', '誰にでも言ってそう。', '誰にでもは無理\n普通に緊張するし', 'そのわりに堂々としてる（笑）'],
     ['vibe', '今日、大学サボったんだよね。', '俺に声かけられたところで\n出席にしとこ', '何の授業（笑）'],
     ['pressure', '何の授業になるの、それ（笑）', '会話の実習。先生、\n採点は甘めでお願いします', 'いつの間に先生になってる（笑）'],

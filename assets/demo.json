@@ -1,6 +1,6 @@
 {
   "description": "GIF dialogue scenario recorded through actual Playwright browser inputs. Recording-only module routes replace dialogue and reaction timing; normal game files, success rates and scoring rules are unchanged. All conversations and the final silence, reassurance and affirmative reply are included.",
-  "scenario": "conversation-story-2",
+  "scenario": "conversation-story-3",
   "scenarioSource": "scripts/demo-scenario.mjs",
   "finalConfirmation": {
     "silentQuestion": true,
@@ -8,66 +8,66 @@
   },
   "width": 1100,
   "height": 800,
-  "duration": 78.53,
+  "duration": 78.38,
   "gifFps": 10,
   "gifWidth": 480,
   "gifHeight": 800,
   "initialConversation": {
-    "start": 7.118,
-    "end": 34.149,
+    "start": 6.205,
+    "end": 33.025,
     "rounds": 5,
     "uninterrupted": true
   },
   "walkingExchanges": 6,
   "clips": [
     {
-      "start": 4.54,
-      "end": 6.64,
+      "start": 3.604,
+      "end": 5.704,
       "caption": "街で声をかける。\nそこから始まる会話ゲーム。"
     },
     {
-      "start": 7.118,
-      "end": 34.149,
+      "start": 6.205,
+      "end": 33.025,
       "caption": "会話から、お誘いまで。\nやり取りを飛ばさず見せる。"
     },
     {
-      "start": 34.149,
-      "end": 35.899,
+      "start": 33.025,
+      "end": 34.775,
       "caption": "二人で歩き出す。\nこのあとも会話は続く。"
     },
     {
-      "start": 36.412,
-      "end": 43.14,
+      "start": 35.306,
+      "end": 42.05,
       "caption": "「まあまあまあ」で流す。\n返答とリアクションまで見せる。"
     },
     {
-      "start": 46.112,
-      "end": 52.781,
+      "start": 45.061,
+      "end": 51.719,
       "caption": "「目的地ないの？」には、\nちゃんと答え直す。"
     },
     {
-      "start": 55.763,
-      "end": 62.471,
+      "start": 54.688,
+      "end": 61.425,
       "caption": "さっきの冗談が、また話題に。\n会話がひと続きになる。"
     },
     {
-      "start": 65.6,
-      "end": 72.292,
+      "start": 64.579,
+      "end": 71.256,
       "caption": "ホテルが見えてきた。\nここで初めて、お誘い。"
     },
     {
-      "start": 73.079,
-      "end": 79.80900000000001,
+      "start": 72.091,
+      "end": 78.83300000000001,
       "caption": "「ちょっと急じゃない？」\nここで一度、立ち止まる。"
     },
     {
-      "start": 80.381,
-      "end": 90.955,
+      "start": 79.34,
+      "end": 89.94500000000001,
       "caption": "無言の相手に、気持ちを伝える。\n返事を待ってからゴールへ。"
     },
     {
-      "start": 90.955,
-      "end": 94.505,
+      "start": 89.94500000000001,
+      "end": 93.495,
       "caption": "ホテルの客室で、記念CG。\nラストは黒バニー。"
     }
   ],
