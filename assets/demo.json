@@ -1,5 +1,5 @@
 {
-  "description": "GIF dialogue scenario recorded through actual Playwright browser inputs. Recording-only module routes replace dialogue and reaction timing; normal game files, success rates and scoring rules are unchanged. All conversations and the final silence, reassurance and affirmative reply are included.",
+  "description": "GIF dialogue scenario recorded through actual Playwright browser inputs. Recording-only module routes replace dialogue and reaction timing; normal game files, success rates and scoring rules are unchanged. The hero uses short chronological excerpts at normal speed, retaining the final silence, reassurance and affirmative reply. An edited play invitation replaces the ending score footer.",
   "scenario": "conversation-story-3",
   "scenarioSource": "scripts/demo-scenario.mjs",
   "finalConfirmation": {
@@ -8,67 +8,56 @@
   },
   "width": 1100,
   "height": 800,
-  "duration": 78.38,
+  "duration": 20.01,
   "gifFps": 10,
   "gifWidth": 480,
   "gifHeight": 800,
+  "purpose": "README hero teaser",
+  "targetDurationSeconds": 20,
+  "playbackSpeed": 1,
   "initialConversation": {
-    "start": 6.205,
-    "end": 33.025,
-    "rounds": 5,
-    "uninterrupted": true
+    "start": 8.233,
+    "end": 11.133,
+    "rounds": 1,
+    "uninterrupted": false
   },
-  "walkingExchanges": 6,
+  "walkingExchanges": 2,
+  "endingOverlay": "Play invitation over the score footer",
   "clips": [
     {
-      "start": 3.604,
-      "end": 5.704,
-      "caption": "街で声をかける。\nそこから始まる会話ゲーム。"
+      "start": 4.454,
+      "end": 5.454,
+      "caption": "街で声をかける。\nここから始まる。"
     },
     {
-      "start": 6.205,
-      "end": 33.025,
-      "caption": "会話から、お誘いまで。\nやり取りを飛ばさず見せる。"
+      "start": 8.233,
+      "end": 11.133,
+      "caption": "「めちゃくちゃタイプです！」\n返しを選んで、距離が縮まる。"
     },
     {
-      "start": 33.025,
-      "end": 34.775,
-      "caption": "二人で歩き出す。\nこのあとも会話は続く。"
+      "start": 33.125,
+      "end": 34.725,
+      "caption": "連れ出したら、横スクロール。\n歩いている間も会話は続く。"
     },
     {
-      "start": 35.306,
-      "end": 42.05,
-      "caption": "「まあまあまあ」で流す。\n返答とリアクションまで見せる。"
+      "start": 37.55,
+      "end": 40.75,
+      "caption": "「まあまあまあ」\n流しすぎると、どうなる？"
     },
     {
-      "start": 45.061,
-      "end": 51.719,
-      "caption": "「目的地ないの？」には、\nちゃんと答え直す。"
+      "start": 61.87899999999999,
+      "end": 64.479,
+      "caption": "街を抜けて、ホテルへ。\n最後まで相手の反応を見よう。"
     },
     {
-      "start": 54.688,
-      "end": 61.425,
-      "caption": "さっきの冗談が、また話題に。\n会話がひと続きになる。"
+      "start": 82.53999999999999,
+      "end": 87.90299999999999,
+      "caption": "無言の相手に、気持ちを伝える。\n返事を待ってから、ゴールへ。"
     },
     {
-      "start": 64.579,
-      "end": 71.256,
-      "caption": "ホテルが見えてきた。\nここで初めて、お誘い。"
-    },
-    {
-      "start": 72.091,
-      "end": 78.83300000000001,
-      "caption": "「ちょっと急じゃない？」\nここで一度、立ち止まる。"
-    },
-    {
-      "start": 79.34,
-      "end": 89.94500000000001,
-      "caption": "無言の相手に、気持ちを伝える。\n返事を待ってからゴールへ。"
-    },
-    {
-      "start": 89.94500000000001,
-      "end": 93.495,
-      "caption": "ホテルの客室で、記念CG。\nラストは黒バニー。"
+      "start": 89.795,
+      "end": 93.14500000000001,
+      "caption": "ホテルの客室で、ゴール！\nスマホ・ブラウザですぐ遊べる。"
     }
   ],
   "capture": "npm run demo:record",
