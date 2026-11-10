@@ -1,5 +1,5 @@
 {
-  "description": "GIF dialogue scenario recorded through actual Playwright browser inputs. Recording-only module routes replace dialogue and reaction timing; normal game files, success rates and scoring rules are unchanged. The hero uses short chronological excerpts at normal speed, retaining the final silence, reassurance and affirmative reply. An edited play invitation replaces the ending score footer.",
+  "description": "GIF dialogue scenario recorded through actual Playwright browser inputs. Recording-only module routes replace dialogue and reaction timing; normal game files, success rates and scoring rules are unchanged. The hero uses short chronological excerpts at normal speed, retaining the final silence, reassurance and affirmative reply. The recorded final bonus and Score remain visible; the edited play invitation replaces only the quote and return button.",
   "scenario": "conversation-story-3",
   "scenarioSource": "scripts/demo-scenario.mjs",
   "finalConfirmation": {
@@ -22,7 +22,8 @@
     "uninterrupted": false
   },
   "walkingExchanges": 2,
-  "endingOverlay": "Play invitation over the score footer",
+  "endingOverlay": "Play invitation above and below the recorded score",
+  "endingScore": "Original recorded bonus and Score lines remain visible",
   "clips": [
     {
       "start": 4.454,

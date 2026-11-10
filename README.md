@@ -2,7 +2,7 @@
 
 **「まあまあまあ」は、何回まで通じる？**
 
-[![GIF用シナリオ：声かけから散歩、ホテル前の会話、客室のバニーCGまで](./assets/demo.gif?v=hero1)](https://jim-auto.github.io/city_approach/)
+[![GIF用シナリオ：声かけから散歩、ホテル前の会話、客室のバニーCGまで](./assets/demo.gif?v=hero-score1)](https://jim-auto.github.io/city_approach/)
 
 **[▶ ブラウザで遊ぶ](https://jim-auto.github.io/city_approach/)** · **[投稿用MP4](./assets/demo.mp4)** · [WebM](./assets/demo.webm)
 
@@ -255,4 +255,4 @@ GIF用の会話台本は `scripts/demo-scenario.mjs`。21歳のプリン髪大�
 
 録画と区切り時刻は `test-results/demo/` に保存し、FFmpegで時系列に編集する。ヒーローGIFは約20秒の予告編として、声かけ→最初の返答→横スクロールと「まあまあまあ」→ホテルへ歩く→最後の返答→ゴールCGへ絞る。会話の大半と移動の待ち時間を省き、残した場面は等速で表示する。最後は相手の無言、プレイヤーの「君の嫌がることはしないよ。嫌なことしたら、いつでも帰っていいから」、相手の「うん。じゃあ、入ろっか。」を順に表示してからゴールへ進む。生成にはFFmpegとNoto Sans CJKフォントが必要。
 
-README用GIFはゲーム画面だけの480×800・10fps・ループ再生。投稿用MP4は1100×800・H.264・約20秒。WebMも同じ内容。MP4／WebMの左側の字幕は編集で加えた説明。ゲーム画面は実際の録画を使い、最後の得点欄だけ「タップして遊ぶ」の案内に差し替える。READMEのGIFをタップするとゲームを開く。編集区間は `assets/demo.json` に記録する。Xへの投稿はMP4を使用できる。
+README用GIFはゲーム画面だけの480×800・10fps・ループ再生。投稿用MP4は1100×800・H.264・約20秒。WebMも同じ内容。MP4／WebMの左側の字幕は編集で加えた説明。ゲーム画面は実際の録画を使い、最後は録画内の到着ボーナス・会話ボーナス・合計スコアを表示し、その下に「タップして遊ぶ」の案内を添える。READMEのGIFをタップするとゲームを開く。編集区間は `assets/demo.json` に記録する。Xへの投稿はMP4を使用できる。

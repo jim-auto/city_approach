@@ -57,11 +57,12 @@ const filter=[
   draw('badge',48,42,16,'aab7ca',false),draw('brand',48,89,28,'72ddd2'),
   draw('hook',44,155,64),draw('sub',48,355,22,'ffb5d4'),...captions,
   draw('cta',48,655,24,'72ddd2'),draw('url',48,750,20,'aab7ca',false),
-  // Replace the long take's callback and score footer with the hero's play invitation.
-  `drawbox=x=620:y=608:w=480:h=192:color=0x090e1a:t=fill${endingEnable}`,
-  draw('endingHook','620+(480-text_w)/2',642,24,'ffffff',true,endingEnable),
-  draw('endingCta','620+(480-text_w)/2',694,24,'72ddd2',true,endingEnable),
-  draw('url','620+(480-text_w)/2',754,14,'aab7ca',false,endingEnable),
+  // Keep the recorded bonus and Score lines visible between the hero caption and CTA.
+  `drawbox=x=620:y=608:w=480:h=30:color=0x090e1a:t=fill${endingEnable}`,
+  `drawbox=x=620:y=708:w=480:h=92:color=0x090e1a:t=fill${endingEnable}`,
+  draw('endingHook','620+(480-text_w)/2',614,22,'ffffff',true,endingEnable),
+  draw('endingCta','620+(480-text_w)/2',728,24,'72ddd2',true,endingEnable),
+  draw('url','620+(480-text_w)/2',775,14,'aab7ca',false,endingEnable),
 ].join(',')+'[out]';
 await writeFile(`${dir}/edit.ffscript`,filter);
 function ffmpeg(args){execFileSync('ffmpeg',['-hide_banner','-loglevel','warning','-y',...args],{stdio:'inherit'});}
@@ -72,12 +73,12 @@ ffmpeg(['-i','assets/demo.mp4','-vf','crop=480:800:620:0,fps=10,split[a][b];[a]p
 ffmpeg(['-i','assets/demo.mp4','-an','-c:v','libvpx-vp9','-cpu-used','4','-crf','34','-b:v','0','-row-mt','1','-threads','2','assets/demo.webm']);
 ffmpeg(['-ss','3','-i','assets/demo.mp4','-frames:v','1','-update','1',`${dir}/hero-preview.png`]);
 await writeFile('assets/demo.json',JSON.stringify({
-  description:'GIF dialogue scenario recorded through actual Playwright browser inputs. Recording-only module routes replace dialogue and reaction timing; normal game files, success rates and scoring rules are unchanged. The hero uses short chronological excerpts at normal speed, retaining the final silence, reassurance and affirmative reply. An edited play invitation replaces the ending score footer.',
+  description:'GIF dialogue scenario recorded through actual Playwright browser inputs. Recording-only module routes replace dialogue and reaction timing; normal game files, success rates and scoring rules are unchanged. The hero uses short chronological excerpts at normal speed, retaining the final silence, reassurance and affirmative reply. The recorded final bonus and Score remain visible; the edited play invitation replaces only the quote and return button.',
   scenario:scenario.id,scenarioSource:'scripts/demo-scenario.mjs',finalConfirmation:{silentQuestion:true,answerAfterReassurance:true},
   width:1100,height:800,duration:Number(offset.toFixed(2)),gifFps:10,gifWidth:480,gifHeight:800,
   purpose:'README hero teaser',targetDurationSeconds:20,playbackSpeed:1,
   initialConversation:{start:cuts[1][0],end:cuts[1][1],rounds:1,uninterrupted:false},
-  walkingExchanges:2,endingOverlay:'Play invitation over the score footer',
+  walkingExchanges:2,endingOverlay:'Play invitation above and below the recorded score',endingScore:'Original recorded bonus and Score lines remain visible',
   clips:cuts.map(([start,end,caption])=>({start,end,caption})),
   capture:'npm run demo:record',edit:'npm run demo:build',
 },null,2)+'\n');
